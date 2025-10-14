@@ -1,0 +1,223 @@
+*{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* CSS AISLADO PARA EL MENÚ DE NAVEGACIÓN */
+:root {
+    --sidebar-width: 250px; 
+    --sidebar-collapsed-width: 60px;
+    --header-height: 60px;
+    --primary-color: #2c3e50;
+    --secondary-color: #2c3e50;
+    --text-color: #ecf0f1;
+    --text-primary: #1f2937;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Contenedor principal */
+.navegator-nav {
+    position: relative;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+}
+
+/* Sidebar diseño del menú */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    min-height: 100vh;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar.collapsed .logo h2,
+.sidebar.collapsed .menu span {
+    display: none;
+}
+
+.logo {
+    height: var(--header-height);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--secondary-color);
+    overflow: hidden;
+}
+
+.logo h2 {
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu li {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.menu li:hover {
+    background-color: var(--text-primary);
+}
+
+.menu li i {
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.menu span {
+    transition: opacity 0.3s ease;
+}
+
+/* Contenido principal */
+.page-content {
+    padding: 20px;
+    min-height: calc(100vh - var(--header-height));
+    transition: margin-left 0.3s ease, width 0.3s ease;
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+}
+
+.sidebar.collapsed ~ .page-content {
+    margin-left: var(--sidebar-collapsed-width);
+    width: calc(100% - var(--sidebar-collapsed-width));
+}
+
+/* Overlay para los móviles */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.overlay.active {
+    opacity: 1;
+    display: block;
+}
+
+/* Menú personalizado para móviles */
+#mobileToggle {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: var(--primary-color);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1002;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        height: 100%;
+        width: var(--sidebar-width) !important;
+    }
+
+    /* Clase para activar el menú en móvil */
+    .sidebar.mobile-active {
+        transform: translateX(0);
+    }
+    
+    /* Importante: desactivar el modo collapsed en móvil */
+    .sidebar.collapsed.mobile-active {
+        width: var(--sidebar-width) !important;
+        transform: translateX(0);
+    }
+    
+    /* Mostrar los elementos que se ocultan en modo collapsed cuando está activo en móvil */
+    .sidebar.collapsed.mobile-active .logo h2,
+    .sidebar.collapsed.mobile-active .menu span {
+        display: block;
+    }
+
+    .page-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-top: 50px;
+    }
+
+    #mobileToggle {
+        display: flex;
+    }
+
+    #mobileToggle.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .sidebar .toggle-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        box-shadow: none;
+        padding: 10px;
+    }
+}
+
+/* Ajustes para las tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
