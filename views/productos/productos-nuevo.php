@@ -29,80 +29,8 @@ $_SESSION['last_activity'] = time();
 
 /* Fin de verificacion de sesion */
 
-require '../../models/conexion.php';
+include_once '../../models/conexion.php';
 
-// Validar si el formulario fue enviado
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // Obtener y sanitizar los datos del formulario
-    $descripcion = htmlspecialchars(trim($_POST['descripcion']));
-    $idTipo = isset($_POST['tipo']) ? intval($_POST['tipo']) : 0; // Captura el idTipo aquí
-    $cantidad = floatval($_POST['cantidad']);
-    $precioCompra = floatval($_POST['precioCompra']);
-    $precio1 = floatval($_POST['precio1']);
-    $precio2 = floatval($_POST['precio2']);
-    $reorden = floatval($_POST['reorden']);
-
-    // Debug: Imprimir el idTipo para verificar
-    error_log("ID Tipo: " . $idTipo); // Esto se registrará en el log de errores
-
-    // Manejo de errores con consultas preparadas
-    try {
-        // Iniciar la transacción
-        $conn->begin_transaction();
-    
-        // Insertar en la tabla 'productos'
-        $stmt = $conn->prepare("INSERT INTO productos (descripcion, idTipo, existencia, precioCompra, precioVenta1, precioVenta2, reorden, fechaRegistro, activo) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), TRUE)");
-        $stmt->bind_param("siidddd", $descripcion, $idTipo, $cantidad, $precioCompra, $precio1, $precio2, $reorden);
-        $stmt->execute();
-    
-        // Obtener el ID del producto recién insertado
-        $idProducto = $stmt->insert_id;
-    
-        // Insertar en la tabla 'inventario'
-        $stmt = $conn->prepare("INSERT INTO inventario (idProducto, existencia, ultima_actualizacion) 
-                                VALUES (?, ?, NOW())");
-        $stmt->bind_param("id", $idProducto, $cantidad);
-        $stmt->execute();
-
-        // Insertar en la tabla 'inventariotransacciones'
-        $stmt = $conn->prepare("INSERT INTO `inventariotransacciones`(`tipo`, `idProducto`, `cantidad`, `fecha`, `descripcion`,`idEmpleado`) VALUES (?,?,?,NOW(),?,?)");
-        $tipo = "ingreso";
-        $descripcionTransaccion = "Ingreso por nuevo producto: ";
-        $stmt->bind_param("siisi", $tipo, $idProducto, $cantidad, $descripcionTransaccion, $_SESSION['idEmpleado']);
-        $stmt->execute();
-
-        /**
-         *  2. Auditoria de acciones de usuario
-         */
-
-        require_once '../../models/auditorias.php';
-        $usuario_id = $_SESSION['idEmpleado'];
-        $accion = 'Nuevo Producto';
-        $detalle = 'Se ha registrado un nuevo producto: ' . $idProducto . ' - ' . $descripcion;
-        $ip = $_SERVER['REMOTE_ADDR']; // Obtener la dirección IP del cliente
-        registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-    
-        // Confirmar la transacción
-        $conn->commit();
-    
-        // Almacenar mensaje de éxito en sesión y redirigir
-        $_SESSION['status'] = 'success';
-        header("Location: productos-nuevo.php");
-        exit;
-    
-    } catch (Exception $e) {
-        // En caso de error, revertir la transacción
-        $conn->rollback();
-        $_SESSION['errors'][] = "Error al registrar producto: " . $e->getMessage();
-        header("Location: productos-nuevo.php");
-        exit;
-    } finally {
-        // Cerrar las declaraciones preparadas
-        if (isset($stmt)) $stmt->close();
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -439,68 +367,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-container">
                 <h1 class="form-title">Registro de Productos</h1>
                 
-                <form class="registration-form" action="" method="POST">
-                    <fieldset>
-                        <legend>Datos del Producto</legend>
-                        <div class="form-grid-producto">
-                            <div class="form-group">
-                                <label for="descripcion">Descripción:</label>
-                                <input type="text" id="descripcion" name="descripcion" autocomplete="off" placeholder="Nombre del producto" required>   
-                            </div>
-
-                            <div class="form-group">
-                                <label for="tipo_identificacion">Tipo de Producto:</label>
-                                <div class="input-button-container">
-                                    <select id="tipo" name="tipo" required>
-                                        <option value="" disabled selected>Seleccionar</option>
-                                        <?php
-                                        // Obtener el id y la descripción de los tipos de producto
-                                        $sql = "SELECT id, descripcion FROM productos_tipo ORDER BY descripcion ASC";
-                                        $resultado = $conn->query($sql);
-
-                                        if ($resultado->num_rows > 0) {
-                                            while ($fila = $resultado->fetch_assoc()) {
-                                                echo "<option value='" . $fila['id'] . "'>" . $fila['descripcion'] . "</option>";
-                                            }
-                                        } else {
-                                            echo "<option value='' disabled>No hay opciones</option>";
-                                        }
-                                        ?>
-                                    </select>
-                                    <!-- Botón para abrir el modal -->
-                                    <button id="openModalBtn" onclick="" class="btn-abrir">Tipo Producto</button>
-                                </div>
-                            </div>    
-                            <div class="form-group">
-                                <label for="precioCompra">Precio de Compra:</label>
-                                <input type="number" id="precioCompra" name="precioCompra" step="0.01" autocomplete="off" placeholder="Precio de Compra" min="1" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="precio1">Precio de Venta 1:</label>
-                                <input type="number" id="precio1" name="precio1" step="0.01" autocomplete="off" placeholder="Precio de venta 1" min="1" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="precio2">Precio de Venta 2:</label>
-                                <input type="number" id="precio2" name="precio2" step="0.01" autocomplete="off" placeholder="Precio de venta 2" min="1" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="cantidad">Cantidad Existente:</label>
-                                <input type="number" id="cantidad" name="cantidad" step="0.01" autocomplete="off" placeholder="Cantidad existente" min="1" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="telefono">Reorden:</label>
-                                <input type="number" id="reorden" name="reorden" step="0.01" autocomplete="off" placeholder="Reorden de producto" min="0" required>
-                            </div>
+                <fieldset>
+                    <legend>Datos del Producto</legend>
+                    <div class="form-grid-producto">
+                        <div class="form-group">
+                            <label for="descripcion">Descripción:</label>
+                            <input type="text" id="descripcion" name="descripcion" autocomplete="off" placeholder="Nombre del producto" required>   
                         </div>
-                    </fieldset>
 
-                    <button type="submit" class="btn-submit1">Registrar Producto</button>
-                    <button class="btn-volver" onclick="history.back()">← Volver atrás</button>
-                </form>
+                        <div class="form-group">
+                            <label for="tipo_identificacion">Tipo de Producto:</label>
+                            <div class="input-button-container">
+                                <select id="tipo" name="tipo" required>
+                                    <option value="" disabled selected>Seleccionar</option>
+                                    <?php
+                                    // Obtener el id y la descripción de los tipos de producto
+                                    $sql = "SELECT id, descripcion FROM productos_tipo ORDER BY descripcion ASC";
+                                    $resultado = $conn->query($sql);
+
+                                    if ($resultado->num_rows > 0) {
+                                        while ($fila = $resultado->fetch_assoc()) {
+                                            echo "<option value='" . $fila['id'] . "'>" . $fila['descripcion'] . "</option>";
+                                        }
+                                    } else {
+                                        echo "<option value='' disabled>No hay opciones</option>";
+                                    }
+                                    ?>
+                                </select>
+                                <!-- Botón para abrir el modal -->
+                                <button id="openModalBtn" onclick="" class="btn-abrir">Tipo Producto</button>
+                            </div>
+                        </div>    
+                        <div class="form-group">
+                            <label for="precioCompra">Precio de Compra:</label>
+                            <input type="number" id="precioCompra" name="precioCompra" step="0.01" autocomplete="off" placeholder="Precio de Compra" min="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="precio1">Precio de Venta 1:</label>
+                            <input type="number" id="precio1" name="precio1" step="0.01" autocomplete="off" placeholder="Precio de venta 1" min="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="precio2">Precio de Venta 2:</label>
+                            <input type="number" id="precio2" name="precio2" step="0.01" autocomplete="off" placeholder="Precio de venta 2" min="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cantidad">Cantidad Existente:</label>
+                            <input type="number" id="cantidad" name="cantidad" step="0.01" autocomplete="off" placeholder="Cantidad existente" min="1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="telefono">Reorden:</label>
+                            <input type="number" id="reorden" name="reorden" step="0.01" autocomplete="off" placeholder="Reorden de producto" min="0" required>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <button type="submit" class="btn-submit1">Registrar Producto</button>
+                <!-- <button class="btn-volver" onclick="history.back()">← Volver atrás</button> -->
+
             </div>
         
         <!-- TODO EL CONTENIDO DE ESTA PAGINA ENCIMA DE ESTA LINEA -->
@@ -582,6 +509,165 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Scripts adicionales -->
     <script src="../../assets/js/producto_modal.js"></script>
+
+    <!-- Script para manejar el formulario de registro de productos -->
+    <script>
+
+        document.querySelector('.btn-submit1').addEventListener('click', function() {
+            event.preventDefault(); // Evitar el envío del formulario por defecto
+
+            // Obtener los valores de los campos
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const tipo = document.getElementById('tipo').value;
+            const precioCompra = parseFloat(document.getElementById('precioCompra').value);
+            const precio1 = parseFloat(document.getElementById('precio1').value);
+            const precio2 = parseFloat(document.getElementById('precio2').value);
+            const cantidad = parseFloat(document.getElementById('cantidad').value);
+            const reorden = parseFloat(document.getElementById('reorden').value);
+            let errors = [];
+
+            const productoData = {
+                descripcion: descripcion,
+                idTipo: tipo,
+                cantidad: cantidad,
+                precioCompra: precioCompra,
+                precio1: precio1,
+                precio2: precio2,
+                reorden: reorden
+            };
+
+            // Validaciones
+            if (descripcion === '') {
+                errors.push('La descripción no puede estar vacía.');
+            }
+            if (!tipo) {
+                errors.push('Debe seleccionar un tipo de producto.');
+            }
+            if (isNaN(precioCompra) || precioCompra <= 0) {
+                errors.push('El precio de compra debe ser un número positivo.');
+            }
+            if (isNaN(precio1) || precio1 <= 0) {
+                errors.push('El precio de venta 1 debe ser un número positivo.');
+            }
+            if (isNaN(precio2) || precio2 <= 0) {
+                errors.push('El precio de venta 2 debe ser un número positivo.');
+            }
+            if (isNaN(cantidad) || cantidad <= 0) {
+                errors.push('La cantidad existente debe ser un número no negativo.');
+            }
+            if (isNaN(reorden) || reorden < 0) {
+                errors.push('El reorden debe ser un número no negativo.');
+            }
+            if (precio1 <= precioCompra) {
+                errors.push('El precio de venta 1 no puede ser menor o igual que el precio de compra.');
+            }
+            if (precio2 <= precioCompra) {
+                errors.push('El precio de venta 2 no puede ser menor o igual que el precio de compra.');
+            }
+
+            // Mostrar errores o enviar el formulario
+            if (errors.length > 0) {
+                Swal.fire({
+                    title: '¡Error!',
+                    html: errors.join('<br>'),
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
+            } else {
+                // enviar los datos al servidor usando fetch
+
+                const url = '../../controllers/productos/producto-nuevo.php';
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(productoData) 
+                })
+                .then(async response => {
+                    // Intentar leer la respuesta como JSON, manejando el caso donde el body esté vacío o no sea JSON
+                    const data = await response.json().catch(() => ({})); 
+
+                    // Verificación de la respuesta HTTP (código fuera del rango 200-299)
+                    if (!response.ok) {
+                        
+                        const errorMessage = data.message || `Error en la comunicación con el servidor (Código HTTP: ${response.status}).`;
+                        
+                        // Manejo específico de errores basados en el código de estado HTTP
+                        if (response.status === 400 && data.errors) {
+                            // Error 400: Solicitud Incorrecta (Errores de Validación)
+                            let errorList = '<ul>' + data.errors.map(err => `<li>${err}</li>`).join('') + '</ul>';
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Validación de Datos Incompleta',
+                                html: 'Se identificaron los siguientes requerimientos pendientes:<br>' + errorList,
+                                confirmButtonText: 'Revisar'
+                            });
+                        } else if (response.status === 409) {
+                            // Error 409: Conflicto (Ej. Identificación duplicada)
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Conflicto de Integridad de Datos',
+                                text: errorMessage,
+                                confirmButtonText: 'Aceptar'
+                            });
+                        } else {
+                            // Otros Errores del Servidor (500, 405, etc.)
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de Procesamiento en el Servidor',
+                                text: errorMessage,
+                                confirmButtonText: 'Cerrar'
+                            });
+                        }
+
+                        // Se lanza un error para detener la ejecución de las promesas 'then' subsiguientes
+                        throw new Error(`Fallo en la Solicitud (HTTP ${response.status}): ${errorMessage}`);
+                    }
+
+                    // Si la respuesta es OK (ej. 201 Created), se retorna el objeto de datos
+                    return data; 
+                })
+                .then(data => {
+                    // Manejo de la respuesta exitosa (success: true)
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Registro del Producto Exitoso',
+                            html: `El producto con ID **${data.idProducto}** ha sido registrado satisfactoriamente: ${data.message}`,
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            window.location.reload(); // Recargar la página para limpiar el formulario
+                        });
+                    } else {
+                        // En caso de que response.ok sea true, pero el cuerpo JSON indique un fallo lógico (success: false)
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Fallo Lógico en la Aplicación',
+                            text: data.message,
+                            confirmButtonText: 'Cerrar'
+                        });
+                    }
+                })
+                .catch(error => {
+                    // Captura errores de red (e.g., servidor inactivo, problemas de CORS) que no tienen código HTTP
+                    if (!error.message.includes('HTTP')) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Interrupción de Conexión de Red',
+                            text: 'No fue posible establecer comunicación con el servidor. Por favor, verifique su conexión e intente nuevamente.',
+                            footer: `Detalle: ${error.message}`
+                        });
+                    }
+                    // Opcional: Registrar el error completo en la consola para depuración.
+                    // console.error('Error total en la solicitud fetch:', error);
+                });
+
+            }
+        });
+
+    </script>
 
 </body>
 </html>
