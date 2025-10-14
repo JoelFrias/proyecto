@@ -175,7 +175,7 @@ try {
         $pdf->SetFont('Arial', 'B', 12);
         
         // Store name and info
-        $pdf->Cell(66, 6, '              ' . utf8_decode(htmlspecialchars($info['name'])), 0, 1, 'L');
+        $pdf->Cell(66, 6, '               ' . utf8_decode(htmlspecialchars($info['name'])), 0, 1, 'L');
         $pdf->SetFont('Arial', '', 7);
         $pdf->Cell(66, 4, utf8_decode(htmlspecialchars($info['text1'])), 0, 1, 'C');
         $pdf->Cell(66, 4, utf8_decode(htmlspecialchars($info['text2'])), 0, 1, 'C');
