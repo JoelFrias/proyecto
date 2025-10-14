@@ -16,6 +16,8 @@ if ($periodo === 'previous') {
     $whereClause = "MONTH(f.fecha) = MONTH(CURDATE()) AND YEAR(f.fecha) = YEAR(CURDATE())";
 }
 
+$whereClause = $whereClause . " AND f.estado != 'Cancelada'";
+
 // Cantidad de productos a mostrar (por defecto 10)
 $limite = isset($_GET['limite']) ? (int)$_GET['limite'] : 10;
 

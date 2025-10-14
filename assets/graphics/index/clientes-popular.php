@@ -18,6 +18,8 @@ if ($periodo === 'previous') {
     $whereClause = "MONTH(f.fecha) = MONTH(CURDATE()) AND YEAR(f.fecha) = YEAR(CURDATE())";
 }
 
+$whereClause = $whereClause . " AND f.estado != 'Cancelada'";
+
 $sql = "SELECT
             CONCAT(c.nombre,' ',c.apellido) AS nombre_cliente,
             COUNT(f.numFactura) AS ventas,

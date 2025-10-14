@@ -16,6 +16,8 @@ if ($periodo === 'previous') {
     $whereClause = "MONTH(f.fecha) = MONTH(CURDATE()) AND YEAR(f.fecha) = YEAR(CURDATE())";
 }
 
+$whereClause = $whereClause . " AND f.estado != 'Cancelada'";
+
 $sql = "SELECT
             CONCAT(e.nombre,' ',e.apellido) AS empleado,
             SUM(f.total_ajuste) AS ventas
