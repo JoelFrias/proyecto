@@ -993,7 +993,7 @@
                     <button id="manager-cashiers" onclick="redirectCuadre()">Cuadres de Caja</button>
                 </div>
                 <div id="div-transactions-inventory">
-                    <button id="transactions-inventory" onclick="inventario_transaccion()">Transacción de Inventario</button>
+                    <button id="transactions-inventory" onclick="inventario_transaccion()">Transacciones de Inventario</button>
                 </div>
                 <div id="div-inventory">
                     <button id="manager-inventory" onclick="gestion_inventario()">Administrar Inventario</button>
@@ -1645,7 +1645,7 @@
                     text: 'No tienes permiso para realizar esta acción.'
                 });
             } else {
-                window.location.href = "../../views/inventario/inventario-transaccion.php";
+                window.location.href = "../../views/inventario/registro-transacciones.php";
             }
         }
 

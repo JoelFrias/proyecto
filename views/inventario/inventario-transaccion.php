@@ -100,6 +100,123 @@ if ($result->num_rows > 0) {
             margin-top: 10px;
             }
         }
+        /* Contenedor de botones */
+        .buttons-top {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Estilo base del botón */
+        .btntop {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 180px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btntop::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btntop:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btntop i {
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btntop span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Botón de Entrega (Azul) */
+        .btntop-entrega {
+            background: linear-gradient(135deg, #4de664ff 0%, #28bd2aff 100%);
+            color: white;
+        }
+
+        .btntop-entrega:hover {
+            background: linear-gradient(135deg, #4de664ff 0%, #28bd2aff 100%);
+            box-shadow: 0 4px 12px rgba(37, 235, 83, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btntop-entrega:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Botón de Retorno (Rojo) */
+        .btntop-retorno {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btntop-retorno:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btntop-retorno:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+        }   
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .buttons-top {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .btntop {
+                width: 100%;
+                min-width: unset;
+                padding: 0.875rem 1.25rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .btntop {
+                padding: 0.75rem 1rem;
+                font-size: 0.85rem;
+            }
+            
+            .btntop i {
+                font-size: 1rem;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -135,20 +252,31 @@ if ($result->num_rows > 0) {
             <button class="toggle-menu" id="toggleMenuFacturacion">☰</button>
 
             <div class="facturacion-container">
-                <h2>Transacciones de Inventario</h2><br>
-                <button id="regresar" onclick="navigateTo('inventario-devAlmacen.php')">Devolver Productos a Almacén</button>
-                <br><br>
+
+                <div class="buttons-top">
+                    <button class="btntop btntop-entrega" onclick="window.location.href='registro-transacciones.php'">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Regresar a Registro</span>
+                    </button>
+                    <button class="btntop btntop-retorno" onclick="window.location.href='inventario-devAlmacen.php'">
+                        <i class="fas fa-box-open"></i>
+                        <span>Realizar Retorno</span>
+                    </button>
+                </div>
+
+                <h2>Realizar Entrega de Productos</h2><br>
+
                 <h3>Seleccione los productos</h3><br>
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Buscar productos...">
                 </div>
-                <div class="products-grid" id="productsGrid">
                     <?php
                     if ($result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
-                            echo '<div class="product-card">';
-                            echo '    <div class="product-info">';
-                            echo '        <div>';
+                            echo '<div class="products-grid" id="productsGrid">';
+                            echo '  <div class="product-card">';
+                            echo '       <div class="product-info">';
+                            echo '         <div>';
                             echo '            <div class="product-name">' . $row["id"] .'   '. $row["descripcion"] . '</div>';
                             echo '            <div class="product-quantity">Existencia General: ' . $row["existenciaGeneral"] . '</div>';
                             echo '            <div class="product-quantity">Existencia en Almacén: ' . $row["existenciaInventario"] . '</div>';   
@@ -157,6 +285,7 @@ if ($result->num_rows > 0) {
                             echo '    </div>';
                             echo '    <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
                             echo '    <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["existenciaGeneral"] . ', ' . $row["existenciaInventario"] . ')">Agregar Producto</button>';
+                            echo '  </div>';
                             echo '</div>';
                         }
                     } else {
