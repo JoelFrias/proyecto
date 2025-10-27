@@ -240,6 +240,44 @@ try {
     }
 
     /**
+     *     2. Registrar trasnaccion de inventario
+     */
+
+    $stmt = $conn->prepare("INSERT INTO transacciones_inv (fecha, id_emp_reg, id_emp_des, tipo_mov) VALUES (NOW(), ?, ?, ?)");
+    if (!$stmt) {
+        throw new Exception("Error preparando registro de movimientos de inventario: " . $conn->error);
+    }
+    $tipo_mov = 'retorno';
+    $stmt->bind_param("iis", $_SESSION['idEmpleado'], $idEmpleado, $tipo_mov);
+    if (!$stmt->execute()) {
+        throw new Exception("Error ejecutando registro de movimientos de inventario: " . $stmt->error);
+    }
+    logDebug("Registro de movimiento de inventario realizado", [
+        'id_emp_reg' => $_SESSION['idEmpleado'],
+        'id_emp_des' => $idEmpleado,
+        'tipo_mov' => $tipo_mov
+    ]);
+
+    /**
+     *     2. Registrar detalle de transaccion de inventario
+     */
+
+    $idTransaccion = $stmt->insert_id;
+
+    foreach ($productos as $producto) {
+        $stmt = $conn->prepare("INSERT INTO transacciones_det (no, id_producto, cantidad) VALUES (?, ?, ?)");
+        if (!$stmt) {
+            throw new Exception("Error preparando detalle de transacción de inventario: " . $conn->error);
+        }
+        $stmt->bind_param("iii", $idTransaccion, $producto['id'], $producto['cantidad']);
+        if (!$stmt->execute()) {
+            throw new Exception("Error ejecutando detalle de transacción de inventario: " . $stmt->error);
+        }
+        logDebug("Detalle de transacción de inventario registrado", $producto);
+    }
+
+
+    /**
      *      2. Auditoria de acciones de usuario
      */
 
@@ -260,7 +298,10 @@ try {
     
     echo json_encode([
         'success' => true, 
-        'message' => 'Transaccion realizada correctamente'
+        'message' => 'Transaccion realizada correctamente',
+        'response' => [
+            'idtransaccion' => $idTransaccion
+        ]
     ]);
 
 } catch (Exception $e) {

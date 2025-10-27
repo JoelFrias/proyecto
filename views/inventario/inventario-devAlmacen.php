@@ -357,6 +357,8 @@ $resultEmpleados = $stmtEmp->get_result();
         <div class="page-content">
         <!-- TODO EL CONTENIDO DE LA PAGINA DEBE DE ESTAR DEBAJO DE ESTA LINEA -->
 
+        <button class="toggle-menu" id="toggleMenuFacturacion">☰</button>
+
             <div class="facturacion-container">
 
                 <div class="buttons-top">
@@ -549,6 +551,17 @@ $resultEmpleados = $stmtEmp->get_result();
 
     </script>
 
+    <!-- PARA ABRIR EL MENU DESPEJABLE DE FACTURA -->
+    <script>
+        // Toggle del menú
+        const toggleButton = document.getElementById('toggleMenuFacturacion');
+        const orderMenu = document.getElementById('orderMenu');
+
+        toggleButton.addEventListener('click', () => {
+            orderMenu.classList.toggle('active');
+        });
+    </script>
+
     <script>
 
         function guardarFactura() {
@@ -591,6 +604,7 @@ $resultEmpleados = $stmtEmp->get_result();
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         }).then(() => {
+                            window.open('../../pdf/transacciones/reporte-transaccion.php?no=' + data.response.idtransaccion, '_blank');
                             location.reload();
                         });
                         

@@ -586,6 +586,7 @@ if ($result->num_rows > 0) {
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         }).then(() => {
+                            window.open('../../pdf/transacciones/reporte-transaccion.php?no=' + data.response.idtransaccion, '_blank');
                             location.reload();
                         });
                         

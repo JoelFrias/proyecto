@@ -39,7 +39,6 @@ $inicio = ($pagina_actual - 1) * $registros_por_pagina;
 $sql_base = "SELECT
                 ti.no AS no,
                 DATE_FORMAT(ti.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
-                ti.valor_total AS valor_total,
                 CONCAT(e1.nombre, ' ', e1.apellido) AS emisor,
                 CONCAT(e2.nombre, ' ', e2.apellido) AS destinatario,
                 ti.tipo_mov AS tipo
@@ -782,7 +781,6 @@ function construirQueryFiltros($filtros) {
                             <tr>
                                 <th>No.</th>
                                 <th>Fecha y Hora</th>
-                                <th>Valor Total</th>
                                 <th>Emisor</th>
                                 <th>Destinatario</th>
                                 <th>Tipo de Movimiento</th>
@@ -795,13 +793,16 @@ function construirQueryFiltros($filtros) {
                                 if ($results->num_rows > 0) {
                                     while ($row = $results->fetch_assoc()) {
                                         // FORMATO DE MONEDA
-                                        $valor_totalf = number_format($row['valor_total'], 2, '.', ',');
+                                        // $valor_totalf = number_format($row['valor_total'], 2, '.', ',');
 
                                         // Determinar la clase CSS del estado
                                         $estadoClass = "";
+                                        $tipotexto = "";
                                         if ($row['tipo'] == "entrega") {
+                                            $tipotexto = "Entrega a Empleado";
                                             $estadoClass = "paid";
                                         } elseif ($row['tipo'] == "retorno") {
+                                            $tipotexto = "Retorno al Almacén";
                                             $estadoClass = "pending";
                                         } elseif ($row['tipo'] == "Cancelada") {
                                             $estadoClass = "cancel";
@@ -811,11 +812,14 @@ function construirQueryFiltros($filtros) {
                                             <tr>
                                                 <td>{$row['no']}</td>
                                                 <td>{$row['fecha']}</td>
-                                                <td>RD$ {$valor_totalf}</td>
                                                 <td>{$row['emisor']}</td>
                                                 <td>{$row['destinatario']}</td>
-                                                <td><span class='status status-{$estadoClass}'>{$row['tipo']}</span></td>
-                                                <td><button class='btn btn-secondary' onclick=\"window.location.href='factura-detalle.php?numFactura={$row['no']}'\">Ver Reporte</button></td>
+                                                <td><span class='status status-{$estadoClass}'>{$tipotexto}</span></td>
+                                                <td>
+                                                    <button class='btn btn-secondary' onclick=\"window.open('../../pdf/transacciones/reporte-transaccion-reimpresion.php?no={$row['no']}', '_blank')\">
+                                                        Ver Reporte
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ";
                                     }
@@ -837,13 +841,16 @@ function construirQueryFiltros($filtros) {
                         if ($results1->num_rows > 0) {
                             while ($row1 = $results1->fetch_assoc()) {
                                 // FORMATO DE MONEDA
-                                $totalf1 = number_format($row1['valor_total'], 2, '.', ',');
+                                // $totalf1 = number_format($row1['valor_total'], 2, '.', ',');
 
                                 // Determinar la clase CSS del estado
                                 $estadoClass1 = "";
+                                $tipotexto1 = "";
                                 if ($row1['tipo'] == "entrega") {
+                                    $tipotexto1 = "Entrega a Empleado";
                                     $estadoClass1 = "paid";
                                 } elseif ($row1['tipo'] == "retorno") {
+                                    $tipotexto1 = "Retorno al Almacén";
                                     $estadoClass1 = "pending";
                                 } elseif ($row1['tipo'] == "Cancelada") {
                                     $estadoClass1 = "cancel";
@@ -853,16 +860,12 @@ function construirQueryFiltros($filtros) {
                                 <div class="invoice-card">
                                     <div class="invoice-card-header">
                                         <span class="invoice-number">No. <?php echo $row1['no']; ?></span>
-                                        <span class="status status-<?php echo $estadoClass1; ?>"><?php echo $row1['tipo']; ?></span>
+                                        <span class="status status-<?php echo $estadoClass1; ?>"><?php echo $tipotexto1; ?></span>
                                     </div>
                                     <div class="invoice-card-body">
                                         <div class="invoice-detail">
                                             <span class="detail-label">Fecha y Hora</span>
                                             <span class="detail-value"><?php echo $row1['fecha']; ?></span>
-                                        </div>
-                                        <div class="invoice-detail">
-                                            <span class="detail-label">Valor Total</span>
-                                            <span class="detail-value">RD$ <?php echo $totalf1; ?></span>
                                         </div>
                                         <div class="invoice-detail">
                                             <span class="detail-label">Emisor</span>
