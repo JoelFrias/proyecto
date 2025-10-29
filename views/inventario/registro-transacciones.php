@@ -876,7 +876,7 @@ function construirQueryFiltros($filtros) {
                                             <span class="detail-value"><?php echo $row1['destinatario']; ?></span>
                                         </div>
                                         <div class="">
-                                            <button class='btn btn-secondary' onclick="window.location.href='factura-detalle.php?numFactura=<?php echo $row1['no']; ?>'">Ver Reporte</button>
+                                            <button class="btn btn-secondary" onclick="window.open('../../pdf/transacciones/reporte-transaccion-reimpresion.php?no=<?php echo $row1['no']; ?>', '_blank')">Ver Reporte</button>
                                         </div>
                                     </div>
                                 </div>

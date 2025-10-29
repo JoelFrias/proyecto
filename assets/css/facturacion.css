@@ -420,6 +420,15 @@ padding: 8px;
   background-color: #d3d5d8;
 }
 
+.footer-button.cliente {
+  background-color: #10B981;
+  color: #ffffff;
+}
+
+.footer-button.cliente:hover {
+  background-color: #0f976a;
+}
+
 .footer-button.primary:hover {
   background-color: #1d4ed8;
 }

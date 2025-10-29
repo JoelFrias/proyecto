@@ -38,5 +38,4 @@ El titular de este software ("Licenciante") otorga al usuario final ("Licenciata
 
 ## Constribuidores
 
-- **Franklin Joel Frias** Owner, desarrollador, optimizacion de codigo, backend, pruebas, Diseño de interfaz, etc.
-- **Eduardo Persia** Diseño de interfaz y pruebas.
+- **Franklin Joel Frias**

@@ -259,7 +259,7 @@ if ($result->num_rows > 0) {
                         <span>Regresar a Registro</span>
                     </button>
                     <button class="btntop btntop-retorno" onclick="window.location.href='inventario-devAlmacen.php'">
-                        <i class="fas fa-box-open"></i>
+                        <i class="fas fa-undo-alt"></i>
                         <span>Realizar Retorno</span>
                     </button>
                 </div>

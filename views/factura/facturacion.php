@@ -69,6 +69,326 @@ if ($result->num_rows > 0) {
     <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
+    <style>
+        .btn-cotizaciones {
+            background-color: #f5f5f5;
+            border: 2px solid #a5a5a5ff;
+            color: #333;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-cotizaciones:hover {
+            background-color: #e0e0e0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-cotizaciones:active {
+            background-color: #d5d5d5;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal Container */
+        .modal-overlay .modal-container {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay .modal-container {
+                width: 95%;
+                max-height: 95vh;
+                border-radius: 8px;
+            }
+        }
+
+        /* Modal Header */
+        .modal-overlay .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-overlay .modal-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-overlay .modal-header h3 {
+                font-size: 18px;
+            }
+        }
+
+        .modal-overlay .btn-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #666;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay .btn-close:hover {
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        /* Search Bar */
+        .modal-overlay .search-container-modal {
+            padding: 20px 28px;
+            background: #fafafa;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .modal-overlay .search-input-modal {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d4d4d4;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay .search-container-modal {
+                padding: 16px 20px;
+            }
+
+            .modal-overlay .search-input-modal {
+                padding: 10px 14px;
+                font-size: 16px; /* Evita zoom en iOS */
+            }
+        }
+
+        .modal-overlay .search-input-modal:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Modal Body */
+        .modal-overlay .modal-body {
+            padding: 28px;
+            max-height: calc(90vh - 200px);
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay .modal-body {
+                padding: 20px;
+                max-height: calc(95vh - 180px);
+            }
+        }
+
+        /* Table Styles */
+        .modal-overlay .table-container {
+            overflow-x: auto;
+        }
+
+        .modal-overlay table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 700px;
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay table {
+                font-size: 13px;
+                min-width: 650px;
+            }
+
+            .modal-overlay .table-container {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        .modal-overlay thead {
+            background: #fafafa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-overlay th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e5e5;
+            white-space: nowrap;
+        }
+
+        .modal-overlay td {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #1a1a1a;
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay th {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+
+            .modal-overlay td {
+                padding: 12px;
+                font-size: 13px;
+            }
+        }
+
+        .modal-overlay tbody tr {
+            transition: background 0.2s;
+        }
+
+        .modal-overlay tbody tr:hover {
+            background: #fafafa;
+        }
+
+        /* Button Styles */
+        .modal-overlay .btn-seleccionar {
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .modal-overlay .btn-seleccionar:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .modal-overlay .btn-seleccionar:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .modal-overlay .btn-seleccionar {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* Empty State */
+        .modal-overlay .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #999;
+        }
+
+        .modal-overlay .empty-state p {
+            font-size: 15px;
+        }
+
+        /* Loading State */
+        .modal-overlay .loading {
+            text-align: center;
+            padding: 48px 20px;
+            color: #999;
+        }
+
+        .modal-overlay .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        .modal-overlay .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-overlay .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .modal-overlay .modal-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .modal-overlay .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        
+    </style>
 </head>
 <body>
 
@@ -85,6 +405,59 @@ if ($result->num_rows > 0) {
             <div class="facturacion-container">
 
                 <h2>Facturación</h2><br>
+
+                <button id="btn-cotizaciones" class="btn-cotizaciones">Abrir Lista Pre-Facturas</button><br><br>
+
+                <!-- Modal Pre-Facturas -->
+                <div id="modal-overlay" class="modal-overlay">
+                    <div class="modal-container">
+                        <!-- Header -->
+                        <div class="modal-header">
+                            <h3>Lista de Pre-Facturas</h3>
+                            <button class="btn-close" onclick="cerrarModal()">&times;</button>
+                        </div>
+
+                        <!-- Search Bar -->
+                        <div class="search-container-modal">
+                            <input 
+                                type="text" 
+                                id="search-input-modal" 
+                                class="search-input-modal" 
+                                placeholder="Buscar por número, cliente, fecha o emisor..."
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <!-- Body -->
+                        <div class="modal-body">
+                            <div class="table-container">
+                                <table id="prefactura-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Acción</th>
+                                            <th>NO</th>
+                                            <th>Cliente</th>
+                                            <th>Fecha</th>
+                                            <th>Total</th>
+                                            <th>Emisor</th>
+                                            <th>Notas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="prefactura-body">
+                                        <tr>
+                                            <td colspan="6" class="loading">
+                                                <div class="spinner"></div>
+                                                <p>Cargando datos...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <h3>Seleccione los productos</h3><br>
 
                 <div class="search-container">
@@ -156,9 +529,11 @@ if ($result->num_rows > 0) {
                     <div class="input-group">
                         <input type="text" class="menu-input" id="empresa" placeholder="Empresa" readonly>
                     </div>
+                    
+                    <button class="footer-button cliente" id="buscar-cliente">Buscar Cliente</button><br><br>
 
                     <div class="menu-footer">
-                        <button class="footer-button secundary" id="buscar-cliente">Buscar Cliente</button>
+                        <button class="footer-button secundary" id="guardar-prefactura">Guardar como Pre-Factura</button>
                         <button class="footer-button primary" id="btn-generar">Procesar Factura</button>
                     </div>
 
@@ -287,5 +662,436 @@ if ($result->num_rows > 0) {
 
     <script src="../../assets/js/facturacion.js"></script>
     
+    <!-- Script para guardar como pre-factura -->
+    <script>
+        // Event listener para el botón de guardar pre-factura
+        document.getElementById('guardar-prefactura').addEventListener('click', function() {
+            guardarPrefactura();
+        });
+
+        function guardarPrefactura() {
+            let idCliente = document.getElementById("id-cliente").value.trim();
+            let descuento = document.getElementById("input-descuento") ? document.getElementById("input-descuento").value.trim() : '';
+            let total = document.getElementById("totalAmount").textContent.replace(/,/g, "");
+
+            // Convertir valores numéricos
+            idCliente = idCliente ? parseInt(idCliente) : null;
+            descuento = descuento ? parseFloat(descuento) : 0;
+            total = total ? parseFloat(total) : null;
+
+            // Validación de selección de cliente
+            if (!idCliente) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validación',
+                    text: 'Por favor, seleccione un cliente.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Validar que hayan productos agregados
+            if (productos.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validación',
+                    text: 'Ningún producto ha sido agregado a la pre-factura.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Validar que el total sea válido
+            if (Number.isNaN(total) || total <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Error',
+                    text: 'El total de la pre-factura no es válido.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Mensaje de confirmación con opción de agregar notas
+            Swal.fire({
+                title: '¿Confirmar Pre-Factura?',
+                html: `
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${document.getElementById("nombre-cliente").value}</p>
+                        <p style="margin: 5px 0;"><strong>Productos:</strong> ${productos.length}</p>
+                        <p style="margin: 5px 0;"><strong>Total:</strong> RD$ ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                    <hr style="margin: 15px 0;">
+                    <p style="margin-bottom: 10px; text-align: left;"><strong>Notas adicionales (opcional):</strong></p>
+                    <textarea id="swal-notas" class="swal2-textarea" placeholder="Ejemplo: Cliente requiere entrega el día lunes..." style="width: 80%; min-height: 100px; font-size: 14px; padding: 10px; border: 1px solid #d4d4d4; border-radius: 6px; font-family: inherit;"></textarea>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, Guardar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#6b7280',
+                width: '500px',
+                preConfirm: () => {
+                    return document.getElementById('swal-notas').value;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const notas = result.value || '';
+                    
+                    // Preparar datos para enviar
+                    const datos = {
+                        idCliente,
+                        descuento,
+                        total,
+                        notas,
+                        productos
+                    };
+
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Guardando pre-factura...',
+                        html: 'Por favor espere un momento',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Enviar datos al servidor
+                    fetch("../../controllers/facturacion/cotizacion-guardar.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(datos)
+                    })
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            let data = JSON.parse(text);
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Pre-Factura Guardada!',
+                                    html: `
+                                        <div style="text-align: center; padding: 10px;">
+                                            <p style="font-size: 16px; margin: 10px 0;">
+                                                <strong>Número de Cotización:</strong>
+                                            </p>
+                                            <p style="font-size: 24px; font-weight: bold; color: #2563eb; margin: 10px 0;">
+                                                ${data.noCotizacion}
+                                            </p>
+                                            <p style="font-size: 14px; color: #666; margin-top: 15px;">
+                                                ${data.mensaje}
+                                            </p>
+                                        </div>
+                                    `,
+                                    showDenyButton: true,
+                                    showCancelButton: false,
+                                    confirmButtonText: 'Imprimir PDF',
+                                    denyButtonText: 'Cerrar',
+                                    confirmButtonColor: '#2563eb',
+                                    denyButtonColor: '#6b7280'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // Abrir PDF en nueva ventana
+                                        window.open(`../../pdf/factura/cotizacion.php?cotizacion=${data.noCotizacion}`, '_blank');
+                                        setTimeout(() => {
+                                            location.reload();
+                                        }, 500);
+                                    } else {
+                                        location.reload();
+                                    }
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al Guardar',
+                                    text: data.error || 'Error desconocido al guardar la pre-factura',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Aceptar',
+                                    confirmButtonColor: '#dc2626'
+                                });
+                                console.error("Error al guardar:", data.error);
+                            }
+                        } catch (error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error del Servidor',
+                                html: `
+                                    <p>Se produjo un error inesperado en el servidor.</p>
+                                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Por favor, contacte al administrador del sistema.</p>
+                                `,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar',
+                                confirmButtonColor: '#dc2626'
+                            });
+                            console.error("Error: Respuesta no es JSON válido:", text);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de Conexión',
+                            html: `
+                                <p>No se pudo conectar con el servidor.</p>
+                                <p style="font-size: 12px; color: #666; margin-top: 10px;">Verifique su conexión a internet e intente nuevamente.</p>
+                            `,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#dc2626'
+                        });
+                        console.error("Error de red:", error);
+                    });
+                }
+            });
+        }
+    </script>
+
+    <!-- Script para el modal de pre-facturas -->
+    <script>
+
+        let searchTimeout;
+
+        // Abrir modal
+        document.getElementById('btn-cotizaciones').addEventListener('click', function() {
+            document.getElementById('modal-overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            cargarDatos(''); // Se envian datos vacios para cargar los primeros 10 registros
+        });
+
+        // Cerrar modal
+        function cerrarModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('search-input-modal').value = '';
+        }
+
+        // Cerrar al hacer clic fuera del modal
+        document.getElementById('modal-overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+
+        // Cerrar con tecla Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarModal();
+            }
+        });
+
+        // Búsqueda con debounce
+        document.getElementById('search-input-modal').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                cargarDatos(e.target.value);
+            }, 300);
+        });
+
+        // Función para cargar datos
+        function cargarDatos(campo) {
+            const tbody = document.getElementById('prefactura-body');
+            
+            // Mostrar loading
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando datos...</p>
+                    </td>
+                </tr>
+            `;
+
+            // Realizar fetch
+            const formData = new FormData();
+            formData.append('campo', campo);
+
+            fetch('../../controllers/facturacion/cotizacion-buscador.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                tbody.innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p>Error al cargar los datos. Por favor, intente nuevamente.</p>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Función que se llama al seleccionar una pre-factura
+        function seleccionarprefactura(no) {
+            if (!no) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Número de cotización no válido.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Mostrar loading
+            Swal.fire({
+                title: 'Cargando cotización...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Hacer fetch para obtener los datos de la cotización
+            fetch(`../../controllers/facturacion/cotizacion-detalle.php?no=${no}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.error,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar'
+                        });
+                        return;
+                    }
+
+                    // Cargar datos del cliente
+                    document.getElementById("id-cliente").value = data.cliente.id;
+                    document.getElementById("nombre-cliente").value = data.cliente.nombre;
+                    document.getElementById("empresa").value = data.cliente.empresa;
+
+                    // Limpiar carrito actual
+                    const orderList = document.getElementById('orderList');
+                    const orderItems = orderList.querySelectorAll('.order-item');
+                    orderItems.forEach(item => item.remove());
+                    
+                    // Reiniciar el array de productos y el total
+                    productos = [];
+                    total = 0;
+                    counter = 0;
+
+                    // Agregar productos al carrito
+                    data.productos.forEach(producto => {
+                        // Verificar existencia antes de agregar
+                        if (producto.cantidad > producto.existencia) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Advertencia',
+                                text: `El producto "${producto.descripcion}" requiere ${producto.cantidad} unidades pero solo hay ${producto.existencia} en inventario.`,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            return;
+                        }
+
+                        // Calcular subtotal
+                        const subtotal = producto.precio * producto.cantidad;
+
+                        // Agregar al array de productos
+                        productos.push({
+                            id: producto.id,
+                            venta: producto.precio,
+                            cantidad: producto.cantidad,
+                            precio: producto.precioCompra,
+                            subtotal: subtotal,
+                            idElimination: counter
+                        });
+
+                        // Crear elemento visual en el carrito
+                        const orderItem = document.createElement('div');
+                        orderItem.classList.add('order-item');
+
+                        orderItem.innerHTML = `
+                            <div class="item-info">
+                                <span class="item-name">${producto.descripcion}</span>
+                                <span class="item-base-price">RD$${producto.precio.toFixed(2)}</span>
+                            </div>
+                            <div class="item-total">
+                                <span class="item-quantity">x${producto.cantidad}</span>
+                                <span class="item-total-price">RD$${subtotal.toFixed(2)}</span>
+                            </div>
+                            <button class="delete-item" id-producto="${producto.id}" id-elimination="${counter}" onclick="removeFromCart(this, ${subtotal})">&times;</button>
+                        `;
+
+                        orderList.appendChild(orderItem);
+
+                        // Actualizar total
+                        total += subtotal;
+                        counter++;
+                    });
+
+                    // Ocultar mensaje de carrito vacío
+                    document.getElementById('orderListEmpty').style.display = 'none';
+
+                    // Actualizar el total en la interfaz
+                    updateTotal();
+
+                    // Cerrar el modal de cotizaciones
+                    cerrarModal();
+
+                    // Mostrar mensaje de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Cotización cargada',
+                        text: `Se han cargado ${data.productos.length} productos al carrito.`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    // Abrir el menú lateral del carrito automáticamente
+                    orderMenu.classList.add('active');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al cargar la cotización. Por favor, intente nuevamente.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    });
+                });
+        }
+    </script>
+
+    <!-- Funsion para eliminar prefacturas -->
+    <script>
+        // Función para eliminar la cotización
+        function eliminarCotizacion(noCotizacion) {
+            const datos = {
+                noCotizacion: noCotizacion
+            };
+
+            fetch("../../controllers/facturacion/cotizacion-eliminar.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Cotización eliminada exitosamente:', noCotizacion);
+                } else {
+                    console.error('Error al eliminar cotización:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error en la solicitud de eliminación:', error);
+            });
+        }
+    </script>
+
 </body>
 </html>
