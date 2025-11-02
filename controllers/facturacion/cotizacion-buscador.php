@@ -20,12 +20,14 @@ $sql = "SELECT
         ON
             e.id = ci.id_empleado
         WHERE
-            ci.no LIKE ?
+            ci.estado = 'activa'
+            AND
+            (ci.no LIKE ?
             OR CONCAT(c.nombre, ' ', c.apellido) LIKE ?
             OR ci.fecha LIKE ?
             OR c.id LIKE ?
             OR e.id LIKE ?
-            OR CONCAT(e.nombre, ' ', e.apellido) LIKE ?
+            OR CONCAT(e.nombre, ' ', e.apellido) LIKE ?)
         ORDER BY
             fecha
         DESC

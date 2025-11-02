@@ -387,7 +387,10 @@ if ($result->num_rows > 0) {
             background: #a1a1a1;
         }
 
-        
+        .bloqueado:hover {
+            cursor: not-allowed;
+        }
+
     </style>
 </head>
 <body>
@@ -517,9 +520,10 @@ if ($result->num_rows > 0) {
             <!-- Campos del cliente en el menú desplegable -->
             <div class="order-menu" id="orderMenu">
                 <div class="menu-header">
-                    <h2 class="menu-title">Procesar Factura</h2>
+                    <h2 class="menu-title" id="titulo-factura">Procesar Factura</h2>
                 </div>
-                <div class="menu-content">
+                
+                    <div class="menu-content">
                     <div class="input-group">
                         <input type="text" class="menu-input" id="id-cliente" placeholder="ID del cliente" readonly>
                     </div>
@@ -621,14 +625,14 @@ if ($result->num_rows > 0) {
                             </select>
                         </div>
                         
-                        <?php if ($_SESSION['idPuesto'] <= 2) : ?>
+                        <?php // if ($_SESSION['idPuesto'] <= 2) : ?>
 
                         <div id="div-descuento">
                             <label for="input-descuento">Descuento:</label>
                             <input type="number" id="input-descuento" name="input-descuento" step="0.01" min="0" placeholder="Ingrese el descuento (Si aplica)">
                         </div>
                         
-                        <?php endif ?>
+                        <?php // endif ?>
 
                         <div id="div-monto">
                             <label for="monto-pagado">Monto Pagado:</label>
@@ -854,7 +858,8 @@ if ($result->num_rows > 0) {
     <!-- Script para el modal de pre-facturas -->
     <script>
 
-        let searchTimeout;
+        let searchTimeout;  // Variable para debounce
+        let cotizacionactiva = false; // Variable para controlar la eliminacion
 
         // Abrir modal
         document.getElementById('btn-cotizaciones').addEventListener('click', function() {
@@ -932,7 +937,7 @@ if ($result->num_rows > 0) {
 
         // Función que se llama al seleccionar una pre-factura
         function seleccionarprefactura(no) {
-            if (!no) {
+            if (!no || no.trim() === '' || isNaN(no) || parseInt(no) <= 0) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -954,127 +959,161 @@ if ($result->num_rows > 0) {
 
             // Hacer fetch para obtener los datos de la cotización
             fetch(`../../controllers/facturacion/cotizacion-detalle.php?no=${no}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: data.error,
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
-                        return;
-                    }
-
-                    // Cargar datos del cliente
-                    document.getElementById("id-cliente").value = data.cliente.id;
-                    document.getElementById("nombre-cliente").value = data.cliente.nombre;
-                    document.getElementById("empresa").value = data.cliente.empresa;
-
-                    // Limpiar carrito actual
-                    const orderList = document.getElementById('orderList');
-                    const orderItems = orderList.querySelectorAll('.order-item');
-                    orderItems.forEach(item => item.remove());
-                    
-                    // Reiniciar el array de productos y el total
-                    productos = [];
-                    total = 0;
-                    counter = 0;
-
-                    // Agregar productos al carrito
-                    data.productos.forEach(producto => {
-                        // Verificar existencia antes de agregar
-                        if (producto.cantidad > producto.existencia) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Advertencia',
-                                text: `El producto "${producto.descripcion}" requiere ${producto.cantidad} unidades pero solo hay ${producto.existencia} en inventario.`,
-                                showConfirmButton: true,
-                                confirmButtonText: 'Aceptar'
-                            });
-                            return;
-                        }
-
-                        // Calcular subtotal
-                        const subtotal = producto.precio * producto.cantidad;
-
-                        // Agregar al array de productos
-                        productos.push({
-                            id: producto.id,
-                            venta: producto.precio,
-                            cantidad: producto.cantidad,
-                            precio: producto.precioCompra,
-                            subtotal: subtotal,
-                            idElimination: counter
-                        });
-
-                        // Crear elemento visual en el carrito
-                        const orderItem = document.createElement('div');
-                        orderItem.classList.add('order-item');
-
-                        orderItem.innerHTML = `
-                            <div class="item-info">
-                                <span class="item-name">${producto.descripcion}</span>
-                                <span class="item-base-price">RD$${producto.precio.toFixed(2)}</span>
-                            </div>
-                            <div class="item-total">
-                                <span class="item-quantity">x${producto.cantidad}</span>
-                                <span class="item-total-price">RD$${subtotal.toFixed(2)}</span>
-                            </div>
-                            <button class="delete-item" id-producto="${producto.id}" id-elimination="${counter}" onclick="removeFromCart(this, ${subtotal})">&times;</button>
-                        `;
-
-                        orderList.appendChild(orderItem);
-
-                        // Actualizar total
-                        total += subtotal;
-                        counter++;
-                    });
-
-                    // Ocultar mensaje de carrito vacío
-                    document.getElementById('orderListEmpty').style.display = 'none';
-
-                    // Actualizar el total en la interfaz
-                    updateTotal();
-
-                    // Cerrar el modal de cotizaciones
-                    cerrarModal();
-
-                    // Mostrar mensaje de éxito
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Cotización cargada',
-                        text: `Se han cargado ${data.productos.length} productos al carrito.`,
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-
-                    // Abrir el menú lateral del carrito automáticamente
-                    orderMenu.classList.add('active');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Error al cargar la cotización. Por favor, intente nuevamente.',
+                        text: data.error,
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
                     });
+                    return;
+                }
+
+                // Validar existencia de productos antes de cargar
+                const productosConProblemas = [];
+
+                // console.log('Validando productos...', data.productos);
+
+                data.productos.forEach(producto => {
+                    // console.log(`Producto: ${producto.descripcion}, Cantidad: ${producto.cantidad}, Existencia: ${producto.existencia}`);
+                    
+                    if (producto.cantidad > producto.existencia) {
+                        console.log(`Problema detectado con: ${producto.descripcion}`);
+                        productosConProblemas.push({
+                            descripcion: producto.descripcion,
+                            requerida: producto.cantidad,
+                            disponible: producto.existencia
+                        });
+                    }
                 });
+
+                // console.log('Productos con problemas:', productosConProblemas);
+
+                // Si hay productos con problemas de existencia, mostrar error y detener
+                if (productosConProblemas.length > 0) {
+                    const mensajesProductos = productosConProblemas.map(p => 
+                        `• ${p.descripcion}: requiere ${p.requerida} pero hay ${p.disponible}`
+                    ).join('\n');
+                    
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Inventario Insuficiente',
+                        html: `<div style="text-align: left;">No se puede cargar la cotización. Los siguientes productos no tienen suficiente inventario:<br><br><pre>${mensajesProductos}</pre></div>`,
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    
+                    // console.log('Carga de cotización detenida por falta de inventario');
+                    return; // ESTO DEBERÍA DETENER LA EJECUCIÓN
+                }
+
+                // console.log('Validación pasada, procediendo a cargar cotización...');
+
+                // Cargar datos del cliente
+                document.getElementById("id-cliente").value = data.cliente.id;
+                document.getElementById("nombre-cliente").value = data.cliente.nombre;
+                document.getElementById("empresa").value = data.cliente.empresa;
+
+                // Limpiar carrito actual
+                const orderList = document.getElementById('orderList');
+                const orderItems = orderList.querySelectorAll('.order-item');
+                orderItems.forEach(item => item.remove());
+                
+                // Reiniciar el array de productos y el total
+                productos = [];
+                total = 0;
+                counter = 0;
+
+                // Agregar productos al carrito
+                data.productos.forEach(producto => {
+                    const subtotal = producto.precio * producto.cantidad;
+
+                    productos.push({
+                        id: producto.id,
+                        venta: producto.precio,
+                        cantidad: producto.cantidad,
+                        precio: producto.precioCompra,
+                        subtotal: subtotal,
+                        idElimination: counter
+                    });
+
+                    const orderItem = document.createElement('div');
+                    orderItem.classList.add('order-item');
+
+                    orderItem.innerHTML = `
+                        <div class="item-info">
+                            <span class="item-name">${producto.descripcion}</span>
+                            <span class="item-base-price">RD$${producto.precio.toFixed(2)}</span>
+                        </div>
+                        <div class="item-total">
+                            <span class="item-quantity">x${producto.cantidad}</span>
+                            <span class="item-total-price">RD$${subtotal.toFixed(2)}</span>
+                        </div>
+                        <button class="delete-item" id-producto="${producto.id}" id-elimination="${counter}" onclick="removeFromCart(this, ${subtotal})">&times;</button>
+                    `;
+
+                    orderList.appendChild(orderItem);
+                    total += subtotal;
+                    counter++;
+                });
+
+                // Deshabilitar búsqueda de cliente
+                document.getElementById('buscar-cliente').disabled = true;
+                document.getElementById("buscar-cliente").style.backgroundColor = "#096849ff";
+                document.getElementById("buscar-cliente").classList.add("bloqueado");
+
+                // Desabilitar botón de guardar pre-factura
+                document.getElementById('guardar-prefactura').disabled = true;
+                document.getElementById("guardar-prefactura").style.backgroundColor = "#6b7280";
+                document.getElementById("guardar-prefactura").style.color = "#8b929fff";
+                document.getElementById("guardar-prefactura").classList.add("bloqueado");
+
+                // Ocultar mensaje de carrito vacío
+                document.getElementById('orderListEmpty').style.display = 'none';
+
+                updateTotal();
+                cerrarModal();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cotización cargada',
+                    text: `Se han cargado ${data.productos.length} productos al carrito.`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                orderMenu.classList.add('active');  // Abrir el menú de la factura
+                document.getElementById("titulo-factura").textContent = "Cotización N° " + no;  // Cambiar título del menú
+                cotizacionactiva = true; // Activar la variable para eliminar luego
+                noCotizacion = no; // Guardar el número de cotización para eliminar luego
+
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al cargar la cotización. Por favor, intente nuevamente.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Aceptar'
+                });
+            });
         }
     </script>
 
     <!-- Funsion para eliminar prefacturas -->
     <script>
         // Función para eliminar la cotización
-        function eliminarCotizacion(noCotizacion) {
+        function actualizarCotizacion(noCotizacion) {
+
             const datos = {
                 noCotizacion: noCotizacion
             };
 
-            fetch("../../controllers/facturacion/cotizacion-eliminar.php", {
+            fetch("../../controllers/facturacion/cotizacion-actualizarEstado.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)
@@ -1082,9 +1121,16 @@ if ($result->num_rows > 0) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    console.log('Cotización eliminada exitosamente:', noCotizacion);
+                    console.log('Cotización actualizada exitosamente:', noCotizacion);
                 } else {
-                    console.error('Error al eliminar cotización:', data.error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Se guardo correctamente la factura pero no se pudo actualizar el estado de la cotización. Por favor, contacte al administrador del sistema.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    console.error("Error al actualizar cotización:", data.error);
                 }
             })
             .catch(error => {

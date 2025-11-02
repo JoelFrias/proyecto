@@ -33,21 +33,21 @@ if ($resultCliente->num_rows === 0) {
 $cliente = $resultCliente->fetch_assoc();
 
 // Obtener productos de la cotización con datos adicionales del inventario del empleado
+// Cambiado a LEFT JOIN para incluir productos aunque no estén en el inventario
 $sqlProductos = "SELECT 
                     cd.id_producto,
                     cd.cantidad,
                     cd.precio_s,
                     p.descripcion,
                     p.precioCompra,
-                    ie.cantidad AS existencia
+                    IFNULL(ie.cantidad, 0) AS existencia
                 FROM cotizaciones_det AS cd
                 INNER JOIN productos AS p ON p.id = cd.id_producto
-                INNER JOIN inventarioempleados AS ie ON ie.idProducto = cd.id_producto
-                WHERE cd.no = ?
-                AND ie.idempleado = ?";
+                LEFT JOIN inventarioempleados AS ie ON ie.idProducto = cd.id_producto AND ie.idempleado = ?
+                WHERE cd.no = ?";
 
 $stmtProductos = $conn->prepare($sqlProductos);
-$stmtProductos->bind_param('si', $no, $_SESSION['idEmpleado']);
+$stmtProductos->bind_param('is', $_SESSION['idEmpleado'], $no);
 $stmtProductos->execute();
 $resultProductos = $stmtProductos->get_result();
 

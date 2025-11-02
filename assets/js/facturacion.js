@@ -145,11 +145,13 @@ function selectCliente(id) {
     modalCliente.style.display = "none"; // Cerrar el modal después de seleccionar
 }
 
-// Variable global para almacenar el precio seleccionado
-let selectedPrices = {};
+// Variables globales
 
-// Variable global para almacenar el total de la compra
-let total = 0;
+let selectedPrices = {}; // Variable global para almacenar el precio seleccionado
+let total = 0; // Variable global para almacenar el total de la compra
+let productos = []; // Array para almacenar los productos seleccionados
+let counter = 0; // Contador para los productos eliminados
+let noCotizacion = 0; // Variable para almacenar el número de cotización activa
 
 function handleButton1(productId, price1) {
     selectedPrices[productId] = price1; // Almacenar precio1
@@ -162,9 +164,6 @@ function handleButton2(productId, price2) {
     document.getElementById(`button1-${productId}`).classList.add("selected");
     document.getElementById(`button2-${productId}`).classList.remove("selected");
 }
-
-let productos = []; // Array para almacenar los productos seleccionados
-let counter = 0; // Contador para los productos eliminados
 
 // Función para agregar productos al carrito
 function addToCart(productId, productName, venta, precio, existencia) {
@@ -210,6 +209,7 @@ function addToCart(productId, productName, venta, precio, existencia) {
     const subtotal = selectedPrice * quantity;
 
     /*
+
     // Verificar si el producto ya está en el carrito
     const existingProduct = productos.find(producto => 
         producto.id === productId && producto.venta === selectedPrice
@@ -486,19 +486,23 @@ function guardarFactura(print) {
                         text: 'Factura Guardada Exitosamente',
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        location.reload();
                     });
                 } else {
                     // Abrir el reporte en una nueva ventana y recargar la página actual
                     const invoiceUrl = `../../pdf/factura/factura.php?factura=${data.numFactura}`;
                     window.open(invoiceUrl, '_blank');
-                    
-                    // Pequeña demora antes de recargar para asegurar que la ventana se abra
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
                 }
+
+                // Eliminar cotización si aplica
+                if (cotizacionactiva) {
+                    actualizarCotizacion(noCotizacion);
+                }
+
+                // Pequeña demora antes de recargar para asegurar que la ventana se abra
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+
             } else {
                 // Rehabilitar botones en caso de error
                 document.getElementById("guardar-factura").disabled = false;

@@ -24,8 +24,9 @@ $noCotizacion = $conn->real_escape_string($data['noCotizacion']);
 $conn->begin_transaction();
 
 try {
-    // Verificar que la cotización existe y pertenece al empleado de la sesión
-    $sqlVerificar = "SELECT no, id_empleado FROM cotizaciones_inf WHERE no = ?";
+
+    // Verificar que la cotización existe
+    $sqlVerificar = "SELECT no FROM cotizaciones_inf WHERE no = ?";
     $stmtVerificar = $conn->prepare($sqlVerificar);
     $stmtVerificar->bind_param('s', $noCotizacion);
     $stmtVerificar->execute();
@@ -38,6 +39,8 @@ try {
     $cotizacion = $resultVerificar->fetch_assoc();
     
     $stmtVerificar->close();
+
+    /***
     
     // Eliminar productos de la cotización (cotizaciones_det)
     $sqlDetalle = "DELETE FROM cotizaciones_det WHERE no = ?";
@@ -49,9 +52,11 @@ try {
     }
     
     $stmtDetalle->close();
+
+    ***/
     
-    // Eliminar la cotización (cotizaciones_inf)
-    $sqlInf = "DELETE FROM cotizaciones_inf WHERE no = ?";
+    // Cambiar estado de la cotización a 'eliminada'
+    $sqlInf = "UPDATE cotizaciones_inf SET estado = 'eliminada' WHERE no = ?";
     $stmtInf = $conn->prepare($sqlInf);
     $stmtInf->bind_param('s', $noCotizacion);
     
@@ -77,4 +82,5 @@ try {
 }
 
 $conn->close();
+
 ?>
