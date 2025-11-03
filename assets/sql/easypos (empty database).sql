@@ -34,7 +34,7 @@ CREATE TABLE `auditoria_caja` (
   `detalles` text DEFAULT NULL,
   `fecha` datetime DEFAULT NULL,
   `ip` varchar(45) DEFAULT 'DESCONOCIDA'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -49,7 +49,7 @@ CREATE TABLE `auditoria_usuarios` (
   `detalles` text DEFAULT NULL,
   `fecha` datetime DEFAULT current_timestamp(),
   `ip` varchar(45) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -61,7 +61,7 @@ CREATE TABLE `bancos` (
   `id` int(6) NOT NULL,
   `nombreBanco` varchar(100) DEFAULT NULL,
   `enable` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `bancos`
@@ -78,7 +78,7 @@ INSERT INTO `bancos` (`id`, `nombreBanco`, `enable`) VALUES
 
 CREATE TABLE `cajacontador` (
   `contador` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `cajacontador`
@@ -101,7 +101,7 @@ CREATE TABLE `cajaegresos` (
   `numCaja` varchar(5) DEFAULT NULL,
   `razon` varchar(50) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -117,7 +117,7 @@ CREATE TABLE `cajaingresos` (
   `numCaja` varchar(5) DEFAULT NULL,
   `razon` varchar(50) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -131,7 +131,7 @@ CREATE TABLE `cajasabiertas` (
   `fechaApertura` datetime DEFAULT NULL,
   `saldoApertura` float DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -148,7 +148,7 @@ CREATE TABLE `cajascerradas` (
   `saldoFinal` float DEFAULT NULL,
   `diferencia` float DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -167,7 +167,7 @@ CREATE TABLE `clientes` (
   `notas` varchar(500) DEFAULT NULL,
   `fechaRegistro` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -179,7 +179,7 @@ CREATE TABLE `clientes_cuenta` (
   `idCliente` int(6) DEFAULT NULL,
   `limite_credito` float DEFAULT NULL,
   `balance` float DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -195,7 +195,7 @@ CREATE TABLE `clientes_direcciones` (
   `ciudad` varchar(100) DEFAULT NULL,
   `referencia` varchar(500) DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -215,7 +215,7 @@ CREATE TABLE `clientes_historialpagos` (
   `idBanco` int(6) NOT NULL,
   `idDestino` int(6) NOT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -226,7 +226,7 @@ CREATE TABLE `clientes_historialpagos` (
 CREATE TABLE `cotizaciones_contador` (
   `contador` int(10) DEFAULT NULL,
   `ultima_actualizacion` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `cotizaciones_contador`
@@ -247,7 +247,7 @@ CREATE TABLE `cotizaciones_det` (
   `cantidad` float NOT NULL,
   `precio_s` float NOT NULL,
   `registro` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -266,7 +266,7 @@ CREATE TABLE `cotizaciones_inf` (
   `notas` text NOT NULL,
   `estado` varchar(15) NOT NULL,
   `registro` int(5) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -278,7 +278,7 @@ CREATE TABLE `destinocuentas` (
   `id` int(6) NOT NULL,
   `descripcion` varchar(100) DEFAULT NULL,
   `enable` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -296,7 +296,7 @@ CREATE TABLE `empleados` (
   `idPuesto` int(5) DEFAULT NULL,
   `fechaIngreso` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `empleados`
@@ -314,7 +314,7 @@ INSERT INTO `empleados` (`id`, `nombre`, `apellido`, `tipo_identificacion`, `ide
 CREATE TABLE `empleados_puestos` (
   `id` int(6) NOT NULL,
   `descripcion` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `empleados_puestos`
@@ -344,7 +344,7 @@ CREATE TABLE `facturas` (
   `idEmpleado` int(6) NOT NULL,
   `estado` varchar(20) DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -358,7 +358,7 @@ CREATE TABLE `facturas_cancelaciones` (
   `fecha` datetime DEFAULT NULL,
   `idEmpleado` int(6) DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -376,7 +376,7 @@ CREATE TABLE `facturas_detalles` (
   `ganancias` float NOT NULL,
   `fecha` datetime DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -393,7 +393,7 @@ CREATE TABLE `facturas_metodopago` (
   `idBanco` int(5) DEFAULT NULL,
   `idDestino` int(5) DEFAULT NULL,
   `noCaja` varchar(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -406,7 +406,7 @@ CREATE TABLE `infofactura` (
   `text1` text DEFAULT NULL,
   `text2` text DEFAULT NULL,
   `text3` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `infofactura`
@@ -426,7 +426,7 @@ CREATE TABLE `inventario` (
   `existencia` float DEFAULT NULL,
   `ultima_actualizacion` datetime DEFAULT NULL,
   `registro` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -438,7 +438,7 @@ CREATE TABLE `inventarioempleados` (
   `idProducto` int(6) DEFAULT NULL,
   `cantidad` float DEFAULT NULL,
   `idEmpleado` int(6) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -454,7 +454,7 @@ CREATE TABLE `inventariotransacciones` (
   `fecha` datetime DEFAULT NULL,
   `descripcion` varchar(200) DEFAULT NULL,
   `idEmpleado` int(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -464,7 +464,7 @@ CREATE TABLE `inventariotransacciones` (
 
 CREATE TABLE `numfactura` (
   `num` varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `numfactura`
@@ -490,7 +490,7 @@ CREATE TABLE `productos` (
   `reorden` float DEFAULT NULL,
   `fechaRegistro` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -501,7 +501,7 @@ CREATE TABLE `productos` (
 CREATE TABLE `productos_tipo` (
   `id` int(6) NOT NULL,
   `descripcion` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -513,7 +513,7 @@ CREATE TABLE `transacciones_det` (
   `no` int(5) NOT NULL,
   `id_producto` float NOT NULL,
   `cantidad` float NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -527,7 +527,7 @@ CREATE TABLE `transacciones_inv` (
   `id_emp_reg` int(5) NOT NULL,
   `id_emp_des` int(5) NOT NULL,
   `tipo_mov` varchar(15) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- --------------------------------------------------------
 
@@ -540,7 +540,7 @@ CREATE TABLE `usuarios` (
   `username` varchar(30) DEFAULT NULL,
   `password` varchar(500) DEFAULT NULL,
   `idEmpleado` int(5) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 --
 -- Dumping data for table `usuarios`
