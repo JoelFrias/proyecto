@@ -103,8 +103,8 @@ class PDF extends FPDF
     function Watermark()
     {
         $this->SetFont('Arial', 'B', 60);
-        $this->SetTextColor(255, 51, 51);
-        $this->RotatedText(70, 190, 'REIMPRESO', 45);
+        $this->SetTextColor(128, 128, 128);
+        $this->RotatedText(70, 190, 'DUPLICADO', 45);
     }
     
     function RotatedText($x, $y, $txt, $angle)

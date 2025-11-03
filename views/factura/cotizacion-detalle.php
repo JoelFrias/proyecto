@@ -652,7 +652,7 @@ while ($producto = $resultProductos->fetch_assoc()) {
                             </div>
                         </div>
                         <div class="action-buttons">
-                            <?php if ($cotizacionInfo['estado'] != 'cancelada'): ?>
+                            <?php if ($cotizacionInfo['estado'] == 'pendiente'): ?>
 
                                 <button class="btn-secondary" onclick="imprimir()">
                                     <span class="printer-icon">🖨️</span>
