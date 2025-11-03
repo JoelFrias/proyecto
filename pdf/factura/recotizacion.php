@@ -73,28 +73,77 @@ while ($row = $resultProductos->fetch_assoc()) {
     $productos[] = $row;
 }
 
-// Crear PDF
+// Crear PDF con marca de agua
 class PDF extends FPDF
 {
     function Header()
     {
-        // Logo (ajusta la ruta según tu estructura)
+        // Logo
         if (file_exists('../../assets/img/logo.png')) {
             $this->Image('../../assets/img/logo.png', 10, 10, 40);
         }
         
-        // Información de la empresa (ajusta según tus datos)
+        // Información de la empresa
         $this->SetFont('Arial', 'B', 16);
         $this->SetTextColor(33, 37, 41);
-        $this->Cell(0, 8, utf8_decode('EasyPOS'), 0, 1, 'R');  // Nombre de la empresa
+        $this->Cell(0, 8, utf8_decode('EasyPOS'), 0, 1, 'R');
         
         $this->SetFont('Arial', '', 9);
         $this->SetTextColor(108, 117, 125);
-        $this->Cell(0, 5, utf8_decode(''), 0, 1, 'R'); // Dirección de la empresa
-        $this->Cell(0, 5, utf8_decode('Teléfono: (809) 727-6431'), 0, 1, 'R'); // Teléfono de la empresa
-        $this->Cell(0, 5, utf8_decode('Email: fjoelfrias@gmail.com'), 0, 1, 'R'); // Email de la empresa
+        $this->Cell(0, 5, utf8_decode(''), 0, 1, 'R');
+        $this->Cell(0, 5, utf8_decode('Teléfono: (809) 727-6431'), 0, 1, 'R');
+        $this->Cell(0, 5, utf8_decode('Email: fjoelfrias@gmail.com'), 0, 1, 'R');
         
         $this->Ln(5);
+        
+        // Agregar marca de agua
+        $this->Watermark();
+    }
+    
+    function Watermark()
+    {
+        $this->SetFont('Arial', 'B', 60);
+        $this->SetTextColor(255, 51, 51);
+        $this->RotatedText(70, 190, 'REIMPRESO', 45);
+    }
+    
+    function RotatedText($x, $y, $txt, $angle)
+    {
+        $this->Rotate($angle, $x, $y);
+        $this->Text($x, $y, $txt);
+        $this->Rotate(0);
+    }
+    
+    var $angle = 0;
+    
+    function Rotate($angle, $x = -1, $y = -1)
+    {
+        if($x == -1)
+            $x = $this->x;
+        if($y == -1)
+            $y = $this->y;
+        if($this->angle != 0)
+            $this->_out('Q');
+        $this->angle = $angle;
+        if($angle != 0)
+        {
+            $angle *= M_PI / 180;
+            $c = cos($angle);
+            $s = sin($angle);
+            $cx = $x * $this->k;
+            $cy = ($this->h - $y) * $this->k;
+            $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+        }
+    }
+    
+    function _endpage()
+    {
+        if($this->angle != 0)
+        {
+            $this->angle = 0;
+            $this->_out('Q');
+        }
+        parent::_endpage();
     }
     
     function Footer()
@@ -105,31 +154,25 @@ class PDF extends FPDF
         $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo() . ' de {nb}', 0, 0, 'C');
     }
     
-    // Tabla mejorada
     function TablaProductos($header, $data)
     {
-        // Colores y anchos
         $this->SetFillColor(37, 99, 235);
         $this->SetTextColor(255, 255, 255);
         $this->SetDrawColor(200, 200, 200);
         $this->SetLineWidth(.3);
         $this->SetFont('Arial', 'B', 10);
         
-        // Anchos de columnas
         $w = array(15, 95, 25, 30, 30);
         
-        // Cabecera
         for($i = 0; $i < count($header); $i++) {
             $this->Cell($w[$i], 7, $header[$i], 1, 0, 'C', true);
         }
         $this->Ln();
         
-        // Restaurar colores
         $this->SetFillColor(248, 249, 250);
         $this->SetTextColor(33, 37, 41);
         $this->SetFont('Arial', '', 9);
         
-        // Datos
         $fill = false;
         foreach($data as $row) {
             $this->Cell($w[0], 6, $row[0], 'LR', 0, 'C', $fill);
@@ -141,7 +184,6 @@ class PDF extends FPDF
             $fill = !$fill;
         }
         
-        // Línea de cierre
         $this->Cell(array_sum($w), 0, '', 'T');
     }
 }
@@ -164,11 +206,10 @@ $pdf->SetLineWidth(0.5);
 $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
 $pdf->Ln(5);
 
-// Información de la cotización y cliente en dos columnas
+// Información de la cotización y cliente
 $pdf->SetFont('Arial', 'B', 11);
 $pdf->SetTextColor(33, 37, 41);
 
-// Columna izquierda - Info de cotización
 $y_start = $pdf->GetY();
 $pdf->Cell(95, 6, utf8_decode('INFORMACIÓN DE COTIZACIÓN'), 0, 1);
 $pdf->SetFont('Arial', '', 10);
@@ -193,7 +234,6 @@ $pdf->Cell(35, 5, utf8_decode('Estado:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(60, 5, utf8_decode($cotizacion['estado']), 0, 1);
 
-// Columna derecha - Info del cliente
 $pdf->SetY($y_start);
 $pdf->SetX(110);
 $pdf->SetFont('Arial', 'B', 11);
@@ -254,12 +294,10 @@ $pdf->Ln(5);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->SetTextColor(33, 37, 41);
 
-// Subtotal
 $pdf->Cell(135, 6, '', 0, 0);
 $pdf->Cell(30, 6, 'Subtotal:', 1, 0, 'R');
 $pdf->Cell(30, 6, 'RD$ ' . number_format($cotizacion['subtotal'], 2), 1, 1, 'R');
 
-// Descuento
 if ($cotizacion['descuento'] > 0) {
     $pdf->Cell(135, 6, '', 0, 0);
     $pdf->SetTextColor(220, 38, 38);
@@ -267,7 +305,6 @@ if ($cotizacion['descuento'] > 0) {
     $pdf->Cell(30, 6, '- RD$ ' . number_format($cotizacion['descuento'], 2), 1, 1, 'R');
 }
 
-// Total
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->SetFillColor(37, 99, 235);
 $pdf->SetTextColor(255, 255, 255);
@@ -288,7 +325,7 @@ if (!empty($cotizacion['notas'])) {
     $pdf->MultiCell(0, 5, utf8_decode($cotizacion['notas']), 1, 'L', true);
 }
 
-// Información adicional al final
+// Información adicional
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'I', 9);
 $pdf->SetTextColor(150, 150, 150);

@@ -59,7 +59,7 @@ try {
 
     // Insertar en cotizaciones_inf
     $sqlInf = "INSERT INTO cotizaciones_inf (no, fecha, id_cliente, id_empleado, subtotal, descuento, total, notas, estado) 
-               VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, 'activa')";
+               VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, 'pendiente')";
     
     $stmtInf = $conn->prepare($sqlInf);
     $stmtInf->bind_param('siiddds', $noCotizacion, $idCliente, $idEmpleado, $subtotal, $descuento, $total, $notas);

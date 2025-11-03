@@ -992,6 +992,9 @@
                 <div id="div-cashiers">
                     <button id="manager-cashiers" onclick="redirectCuadre()">Cuadres de Caja</button>
                 </div>
+                <div id="div-cotizaciones">
+                    <button id="cotizaciones" onclick="cotizaciones_()">Registro de Cotizaciones</button>
+                </div>
                 <div id="div-transactions-inventory">
                     <button id="transactions-inventory" onclick="inventario_transaccion()">Transacciones de Inventario</button>
                 </div>
@@ -1634,6 +1637,18 @@
                 });
             } else {
                 window.location.href = "../../views/gestion/usuarios-editar.php";
+            }
+        }
+
+        function cotizaciones_() {
+            if (idPuesto > 2) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso bloqueado',
+                    text: 'No tienes permiso para realizar esta acción.'
+                });
+            } else {
+                window.location.href = "../../views/factura/cotizacion-registro.php";
             }
         }
         

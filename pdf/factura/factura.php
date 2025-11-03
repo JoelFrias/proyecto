@@ -134,7 +134,7 @@ try {
                             CONCAT(p.id,' ',p.descripcion) AS descripcionp,
                             fc.importe AS importep,
                             fc.cantidad AS cantidadp,
-                            fc.precioVenta
+                            fc.precioVenta AS precioVenta
                         FROM
                             facturas_detalles fc
                         JOIN productos p ON

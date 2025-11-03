@@ -56,7 +56,7 @@ try {
     ***/
     
     // Cambiar estado de la cotización a 'eliminada'
-    $sqlInf = "UPDATE cotizaciones_inf SET estado = 'eliminada' WHERE no = ?";
+    $sqlInf = "UPDATE cotizaciones_inf SET estado = 'cancelada' WHERE no = ?";
     $stmtInf = $conn->prepare($sqlInf);
     $stmtInf->bind_param('s', $noCotizacion);
     
@@ -72,7 +72,7 @@ try {
     // Respuesta exitosa
     echo json_encode([
         'success' => true,
-        'mensaje' => 'Cotización eliminada exitosamente'
+        'mensaje' => 'Cotización cancelada exitosamente'
     ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
