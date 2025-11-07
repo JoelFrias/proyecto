@@ -28,6 +28,42 @@ $_SESSION['last_activity'] = time();
 
 /* Fin de verificacion de sesion */
 
+// Conexión a la base de datos
+require_once '../../models/conexion.php';
+
+////////////////////////////////////////////////////////////////////
+///////////////////// VALIDACION DE PERMISOS ///////////////////////
+////////////////////////////////////////////////////////////////////
+
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'EMP001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo "
+        <html>
+            <head>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            </head>
+            <body>
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ACCESO DENEGADO',
+                        text: 'No tienes permiso para acceder a esta sección.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.history.back();
+                    });
+                </script>
+            </body>
+        </html>";
+        
+    exit(); 
+}
+
+////////////////////////////////////////////////////////////////////
+
 // Obtener el ID del empleado desde la URL
 $idEmpleado = isset($_GET['id']) ? intval($_GET['id']) : 0;
 

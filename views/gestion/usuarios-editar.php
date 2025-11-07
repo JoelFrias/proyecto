@@ -1,5 +1,42 @@
 <?php
 
+/**
+ *  NOTA:
+ *      
+ *  Este archivo esta fuera de uso desde el 11 de noviembre de 2025,
+ *  debido a que se actualizo la forma de gestion de usuarios en el sistema.
+ * 
+ */
+
+echo "Este archivo ya no está en uso.";
+
+exit(); // Detener la ejecución del script para evitar su uso accidental
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Verificacion de sesion */
 
 // Iniciar sesión

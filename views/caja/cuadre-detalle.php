@@ -36,6 +36,39 @@ ini_set('display_errors', 1);
 // Conexión a la base de datos
 require_once '../../models/conexion.php';
 
+    ////////////////////////////////////////////////////////////////////
+    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    require_once '../../models/validar-permisos.php';
+    $permiso_necesario = 'CUA001';
+    $id_empleado = $_SESSION['idEmpleado'];
+    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+        echo "
+            <html>
+                <head>
+                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                </head>
+                <body>
+                    <script>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ACCESO DENEGADO',
+                            text: 'No tienes permiso para acceder a esta sección.',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            window.history.back();
+                        });
+                    </script>
+                </body>
+            </html>";
+            
+        exit(); 
+    }
+
+    ////////////////////////////////////////////////////////////////////
+
 // 1. Validación segura del parámetro numCaja
 $numCaja = '';
 if (isset($_GET['numCaja'])) {

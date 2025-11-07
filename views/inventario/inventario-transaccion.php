@@ -31,6 +31,39 @@ $_SESSION['last_activity'] = time();
 
 require_once '../../models/conexion.php';
 
+    ////////////////////////////////////////////////////////////////////
+    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    require_once '../../models/validar-permisos.php';
+    $permiso_necesario = 'ALM002';
+    $id_empleado = $_SESSION['idEmpleado'];
+    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+        echo "
+            <html>
+                <head>
+                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                </head>
+                <body>
+                    <script>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ACCESO DENEGADO',
+                            text: 'No tienes permiso para acceder a esta sección.',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            window.history.back();
+                        });
+                    </script>
+                </body>
+            </html>";
+            
+        exit(); 
+    }
+
+    ////////////////////////////////////////////////////////////////////
+
 $sql = "SELECT
             p.id AS id,
             p.descripcion AS descripcion,
@@ -220,25 +253,6 @@ if ($result->num_rows > 0) {
     </style>
 </head>
 <body>
-
-    <?php
-
-    if ($_SESSION['idPuesto'] > 2) {
-        echo "<script>
-                Swal.fire({
-                        icon: 'error',
-                        title: 'Acceso Prohibido',
-                        text: 'Usted no cuenta con permisos de administrador para entrar a esta pagina.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.location.href = '../../index.php';
-                    });
-            </script>";
-        exit();
-    }
-
-    ?>
 
     <div class="navegator-nav">
 

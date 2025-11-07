@@ -28,6 +28,39 @@ $_SESSION['last_activity'] = time();
 
 require "../../models/conexion.php";
 
+    ////////////////////////////////////////////////////////////////////
+    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
+    ////////////////////////////////////////////////////////////////////
+
+    require_once '../../models/validar-permisos.php';
+    $permiso_necesario = 'ALM003';
+    $id_empleado = $_SESSION['idEmpleado'];
+    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+        echo "
+            <html>
+                <head>
+                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+                </head>
+                <body>
+                    <script>
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ACCESO DENEGADO',
+                            text: 'No tienes permiso para acceder a esta sección.',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            window.history.back();
+                        });
+                    </script>
+                </body>
+            </html>";
+            
+        exit(); 
+    }
+
+    ////////////////////////////////////////////////////////////////////
+
 // Inicializar variables
 $result = false;
 $result_mobile = false;
