@@ -1,460 +1,472 @@
-<?php
-
-session_start();
-
-// Verificar si el usuario ya inició sesión, redirigir a la página de inicio
-if (isset($_SESSION['username'])) {
-    // Redirigir a la página de inicio
-    header('Location: ../../index.php');
-    exit(); // Detener la ejecución del script
-}
-
-require '../../models/conexion.php';
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    $user = trim($_POST['username']);
-    $pass = trim($_POST['password']);
-
-    if (empty($user) || empty($pass)) {
-        $error = "Usuario y contraseña son requeridos.";
-    } else {
-
-        $query = "SELECT
-                    u.id,
-                    e.id AS idEmpleado,
-                    u.username,
-                    u.password,
-                    CONCAT(e.nombre, ' ', e.apellido) AS nombre,
-                    e.idPuesto
-                FROM
-                    usuarios AS u
-                INNER JOIN empleados AS e
-                ON
-                    u.idEmpleado = e.id
-                  WHERE u.username = ? AND e.activo = 1
-                  LIMIT 1";
-
-        if ($stmt = $conn->prepare($query)) {
-            $stmt->bind_param("s", $user);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            if ($row = $result->fetch_assoc()) {
-                if (password_verify($pass, $row['password'])) {
-                    // Guardar datos en la sesión
-                    $_SESSION['id'] = $row['id'];
-                    $_SESSION['username'] = $row['username'];
-                    $_SESSION['idEmpleado'] = $row['idEmpleado'];
-                    $_SESSION['nombre'] = $row['nombre'];
-                    $_SESSION['idPuesto'] = $row['idPuesto'];
-
-                    // Verificar si el empleado tiene una caja abierta
-                    caja($conn);
-
-                    /**
-                     *  2. Auditoria de acciones de usuario
-                     */
-
-                    require_once '../../models/auditorias.php';
-                    $usuario_id = $_SESSION['idEmpleado'];
-                    $accion = 'Nueva sesión iniciada';
-                    $detalle = 'El usuario ' . $_SESSION['username'] . ' ha iniciado sesión.';
-                    $ip = $_SERVER['REMOTE_ADDR']; // Obtene la dirección IP del cliente
-                    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-
-                    // Redirigir a la página de inicio
-                    header("Location: ../../");
-                    exit();
-                } else {
-                    $error = "Credenciales incorrectas.";
-                }
-            } else {
-                $error = "Credenciales incorrectas.";
-            }
-
-            $stmt->close();
-        } else {
-            $error = "Se ha producido un error interno en el servidor.";
-            ?>
-
-            <script>
-                console.log("Error: <?php echo $conn->error; ?>");
-            </script>
-
-            <?php
-        }
-    }
-}
-
-// Verificar si la sesión ha expirado
-if (isset($_GET['session_expired']) && $_GET['session_expired'] === 'session_expired') {
-    $error = "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.";
-}
-
-// Verificar si el empleado tiene una caja abierta
-function caja($conn){
-    
-    $sql_verificar = "SELECT
-                        numCaja,
-                        idEmpleado,
-                        DATE_FORMAT(fechaApertura, '%d/%m/%Y %l:%i %p') AS fechaApertura,
-                        saldoApertura,
-                        registro
-                    FROM
-                        cajasabiertas
-                    WHERE
-                        idEmpleado = " . $_SESSION['idEmpleado'];
-
-    $resultado = $conn->query($sql_verificar);
-    $datos_caja = null;
-
-    if ($resultado->num_rows > 0) {
-        $datos_caja = $resultado->fetch_assoc();
-
-        // Almacenar datos de la caja abierta
-        $_SESSION['numCaja'] = strval($datos_caja['numCaja']);
-        $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
-        $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
-        $_SESSION['registro'] = $datos_caja['registro'];
-    }
-}
-
-?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Iniciar Sesión</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+    <title>EasyPOS - Iniciar Sesión</title>
     <style>
-        :root {
-            --primary-color: #4a6bff;
-            --primary-hover: #3a56e0;
-            --error-color: #ff4b4b;
-            --text-color: #333;
-            --light-bg: #f7f9ff;
-            --border-color: #e0e4f6;
-            --shadow-color: rgba(74, 107, 255, 0.2);
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        html, body {
-            height: 100%;
-            overflow-x: hidden;
         }
 
         body {
-            background: linear-gradient(135deg, #f5f7ff 0%, #e9f0ff 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100%;
-            padding: 10px;
+            padding: 20px;
         }
 
-        .login-container {
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px var(--shadow-color);
-            padding: 30px 25px;
-            width: 100%;
-            max-width: 400px;
-            transition: transform 0.3s ease;
-        }
-
-        .login-container:hover {
-            transform: translateY(-5px);
-        }
-
-        h2 {
-            color: var(--text-color);
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: 600;
-            font-size: 24px;
-        }
-
-        .logo-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .logo {
-            max-width: 60px;
-            height: auto;
-        }
-
-        .error-message {
-            background-color: #ffebee;
-            color: var(--error-color);
-            padding: 10px;
+        .container {
+            background: white;
             border-radius: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            animation: fadeIn 0.3s ease-out;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-img {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .error-message,
+        .success-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideDown 0.3s ease;
+            font-size: 14px;
+        }
+
+        .error-message {
+            background-color: #fee;
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        .success-message {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .close-btn {
             background: none;
             border: none;
-            color: var(--error-color);
-            font-size: 18px;
+            color: inherit;
+            font-size: 20px;
             cursor: pointer;
             padding: 0 5px;
+            line-height: 1;
+            transition: opacity 0.2s;
         }
 
-        .form-group {
-            position: relative;
+        .close-btn:hover {
+            opacity: 0.7;
+        }
+
+        .input-group {
             margin-bottom: 20px;
+            position: relative;
         }
 
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            background-color: var(--light-bg);
-            color: var(--text-color);
-            font-size: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        /* Modificación para ajustar el padding del campo de contraseña */
-        .form-group.password-field input {
-            padding-right: 45px; /* Espacio para el botón de ver/ocultar */
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.15);
-        }
-
-        .form-group label {
-            position: absolute;
-            top: 50%;
-            left: 15px;
-            transform: translateY(-50%);
-            color: #888;
-            font-size: 16px;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            background-color: transparent;
-        }
-
-        .form-group input:focus + label,
-        .form-group input:not(:placeholder-shown) + label {
-            top: 0;
-            left: 10px;
-            font-size: 12px;
-            padding: 0 5px;
-            background-color: white;
-            color: var(--primary-color);
-        }
-
-        input[type="submit"] {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 12px;
-            font-size: 16px;
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 14px;
             font-weight: 500;
+        }
+
+        .input-group input {
             width: 100%;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #1a1a1a;
         }
 
-        input[type="submit"]:hover {
-            background-color: var(--primary-hover);
+        .input-group.password-field input {
+            padding-right: 45px;
         }
 
-        /* Para que los inputs con placeholder vacío funcionen con las etiquetas flotantes */
-        .form-group input::placeholder {
-            color: transparent;
+        .input-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        /* Estilos para el botón de mostrar/ocultar contraseña */
+        .input-group input:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        .input-group input::placeholder {
+            color: #9ca3af;
+        }
+
         .toggle-password {
             position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
+            right: 12px;
+            top: 38px;
             background: none;
             border: none;
             cursor: pointer;
-            color: #888;
-            font-size: 16px;
+            color: #6b7280;
             padding: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: color 0.3s;
+            transition: color 0.2s;
         }
 
         .toggle-password:hover {
-            color: var(--primary-color);
+            color: #3b82f6;
         }
 
-        /* Iconos SVG para el ojo */
+        .toggle-password:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
         .eye-icon, .eye-slash-icon {
             width: 20px;
             height: 20px;
         }
 
-        /* Media queries para responsividad */
-        @media screen and (max-width: 480px) {
-            .login-container {
-                padding: 25px 15px;
-                margin: 0 10px;
+        .eye-slash-icon {
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #384f66ff;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .btn.loading {
+            color: transparent;
+        }
+
+        .spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff40;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        .btn.loading .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
             }
-            
-            h2 {
-                font-size: 22px;
-                margin-bottom: 15px;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
             }
-            
-            .logo {
-                max-width: 50px;
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
             }
-            
-            .form-group {
-                margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                background: white;
+                padding: 0;
+                min-height: 100dvh;
             }
-            
-            .form-group input {
-                padding: 10px 12px;
-                font-size: 14px;
+
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 40px 24px;
+                max-width: 100%;
+                min-height: 100dvh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
-            
-            .form-group label {
-                font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
             }
-            
-            input[type="submit"] {
-                padding: 10px;
-                font-size: 15px;
+
+            .logo-text {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 32px 20px;
             }
 
             .toggle-password {
-                right: 12px;
+                top: 36px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo-container">
-            <img class="logo" src="../../assets/img/logo.png" alt="Logo de la empresa">
-        </div>
-        
-        <h2>Iniciar Sesión</h2>
-        
-        <!-- Mensaje de error con botón de cierre -->
-        <?php if(isset($error)): ?>
-            <div class="error-message" id="error-message">
-                <?php echo $error; ?>
-                <button class="close-btn" onclick="closeErrorMessage()">×</button>
-            </div>
-        <?php endif; ?>
+    <div class="container">
 
-        <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
-            <div class="form-group">
-                <input type="text" name="username" id="username" autocomplete="off" placeholder=" " value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
+         <div class="logo">
+            <img src="../../assets/img/logo.png" alt="EasyPOS Logo" class="logo-img">
+            <div class="logo-text">EasyPOS</div>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <form id="loginForm">
+            <div class="input-group">
                 <label for="username">Usuario</label>
+                <input 
+                    type="text" 
+                    name="username" 
+                    id="username" 
+                    placeholder="Ingresa tu usuario" 
+                    autocomplete="username"
+                    required>
             </div>
-            <div class="form-group password-field">
-                <input type="password" name="password" id="password" placeholder=" " required>
+
+            <div class="input-group password-field">
                 <label for="password">Contraseña</label>
-                <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
-                    <!-- Icono de ojo (mostrar contraseña) -->
+                <input 
+                    type="password" 
+                    name="password" 
+                    id="password" 
+                    placeholder="Ingresa tu contraseña" 
+                    autocomplete="current-password"
+                    required>
+                <button type="button" class="toggle-password" id="togglePassword">
                     <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
-                    <!-- Icono de ojo tachado (ocultar contraseña) - inicialmente oculto -->
-                    <svg class="eye-slash-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                         <line x1="1" y1="1" x2="23" y2="23"></line>
                     </svg>
                 </button>
             </div>
-            <input type="submit" value="Iniciar Sesión">
+
+            <button type="submit" class="btn" id="submitBtn">
+                <span id="btnText">Ingresar</span>
+                <span class="spinner"></span>
+            </button>
         </form>
     </div>
     
     <script>
-        // Función para cerrar el mensaje de error
-        function closeErrorMessage() {
-            const errorMessage = document.getElementById('error-message');
-            if (errorMessage) {
-                errorMessage.style.display = 'none'; // Oculta el mensaje
+
+        const loginForm = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const messageContainer = document.getElementById('messageContainer');
+
+        // Manejar el envío del formulario
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            // Validación básica
+            if (!username || !password) {
+                showMessage('Usuario y contraseña son requeridos.', 'error');
+                return;
             }
-        }
-        
-        // Función para mostrar/ocultar contraseña
-        function togglePasswordVisibility() {
-            const passwordInput = document.getElementById('password');
+
+            // Deshabilitar el formulario
+            setFormLoading(true);
+
+            // Código real para tu aplicación:
+            try {
+                const response = await fetch('../../controllers/authcontroller/login.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '../../index.php';
+                    }, 1000);
+                } else {
+                    showMessage(data.error || 'Error al iniciar sesión.', 'error');
+                    setFormLoading(false);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error de conexión. Por favor, intenta nuevamente.', 'error');
+                setFormLoading(false);
+            }
+        });
+
+        // Toggle password visibility
+        togglePasswordBtn.addEventListener('click', () => {
             const eyeIcon = document.querySelector('.eye-icon');
             const eyeSlashIcon = document.querySelector('.eye-slash-icon');
             
             if (passwordInput.type === 'password') {
-                passwordInput.type = 'text'; // Cambiar a texto para mostrar
+                passwordInput.type = 'text';
                 eyeIcon.style.display = 'none';
                 eyeSlashIcon.style.display = 'block';
             } else {
-                passwordInput.type = 'password'; // Cambiar a password para ocultar
+                passwordInput.type = 'password';
                 eyeIcon.style.display = 'block';
                 eyeSlashIcon.style.display = 'none';
             }
-        }
-        
-        // Ajustar las etiquetas si los campos tienen valor
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('.form-group input');
-            
-            inputs.forEach(input => {
-                // Verificar si el input tiene valor al cargar la página
-                if (input.value !== '') {
-                    input.classList.add('has-value');
-                    // Asegurarnos que la etiqueta se mueva arriba
-                    const label = input.nextElementSibling;
-                    if (label && label.tagName === 'LABEL') {
-                        label.style.top = '0';
-                        label.style.left = '10px';
-                        label.style.fontSize = '12px';
-                        label.style.padding = '0 5px';
-                        label.style.backgroundColor = 'white';
-                        label.style.color = 'var(--primary-color)';
-                    }
-                }
-                
-                // Escuchar cambios en los inputs
-                input.addEventListener('input', function() {
-                    if (this.value !== '') {
-                        this.classList.add('has-value');
-                    } else {
-                        this.classList.remove('has-value');
-                    }
-                });
-            });
         });
+
+        // Función para mostrar mensajes
+        function showMessage(message, type = 'error') {
+            const messageClass = type === 'error' ? 'error-message' : 'success-message';
+            const messageHTML = `
+                <div class="${messageClass}" id="message-alert">
+                    <span>${message}</span>
+                    <button class="close-btn" onclick="closeMessage()" type="button">×</button>
+                </div>
+            `;
+            messageContainer.innerHTML = messageHTML;
+
+            // Auto-close after 5 seconds
+            setTimeout(() => {
+                closeMessage();
+            }, 3000);
+
+        }
+
+        // Función para cerrar el mensaje
+        function closeMessage() {
+            const messageAlert = document.getElementById('message-alert');
+            if (messageAlert) {
+                messageAlert.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    messageAlert.remove();
+                }, 300);
+            }
+        }
+
+        // Función para manejar el estado de carga
+        function setFormLoading(loading) {
+            submitBtn.disabled = loading;
+            usernameInput.disabled = loading;
+            passwordInput.disabled = loading;
+            togglePasswordBtn.disabled = loading;
+            
+            if (loading) {
+                submitBtn.classList.add('loading');
+                btnText.textContent = 'Iniciando sesión...';
+            } else {
+                submitBtn.classList.remove('loading');
+                btnText.textContent = 'Ingresar';
+            }
+        }
     </script>
 </body>
 </html>

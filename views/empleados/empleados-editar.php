@@ -9,31 +9,105 @@ $inactivity_limit = 900; // 15 minutos en segundos
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    header('Location: ../../views/auth/login.php'); // Redirigir al login
-    exit(); // Detener la ejecución del script
+    session_unset();
+    session_destroy();
+    header('Location: ../../views/auth/login.php');
+    exit();
 }
 
 // Verificar si la sesión ha expirado por inactividad
 if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    header("Location: ../../views/auth/login.php?session_expired=session_expired"); // Redirigir al login
-    exit(); // Detener la ejecución del script
+    session_unset();
+    session_destroy();
+    header("Location: ../../views/auth/login.php?session_expired=session_expired");
+    exit();
 }
 
 // Actualizar el tiempo de la última actividad
 $_SESSION['last_activity'] = time();
 
-/* Fin de verificacion de sesion */
+/* Fin de verificacion de sesion */
+
+// Obtener el ID del empleado desde la URL
+$idEmpleado = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+if ($idEmpleado === 0) {
+    header('Location: ../../views/empleados/lista_empleados.php');
+    exit();
+}
+
+// Obtener datos del empleado
+require_once '../../models/conexion.php';
+
+$sql = "SELECT e.*, u.username 
+        FROM empleados e 
+        INNER JOIN usuarios u ON e.id = u.idEmpleado 
+        WHERE e.id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $idEmpleado);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    header('Location: ../../views/empleados/lista_empleados.php');
+    exit();
+}
+
+$empleado = $result->fetch_assoc();
+$stmt->close();
+
+// Obtener permisos actuales del empleado
+$sql_permisos = "SELECT id_permiso FROM usuarios_permisos WHERE id_empleado = ?";
+$stmt_permisos = $conn->prepare($sql_permisos);
+$stmt_permisos->bind_param("i", $idEmpleado);
+$stmt_permisos->execute();
+$result_permisos = $stmt_permisos->get_result();
+
+$permisos_activos = [];
+while ($row = $result_permisos->fetch_assoc()) {
+    $permisos_activos[] = $row['id_permiso'];
+}
+$stmt_permisos->close();
+
+// Mapeo de códigos a nombres de permisos
+$mapeoPermisos = [
+    'CLI001' => 'clientes',
+    'CLI002' => 'clientes-reporte',
+    'PRO001' => 'productos',
+    'PRO002' => 'productos-reporte',
+    'CLI003' => 'avance-cuenta',
+    'FAC002' => 'cancel-facturas',
+    'ALM001' => 'almacen',
+    'ALM003' => 'inv-empleados',
+    'FAC001' => 'facturacion',
+    'COT001' => 'cot-accion',
+    'CAJ001' => 'caja',
+    'PADM001' => 'pan-adm',
+    'PADM002' => 'estadisticas',
+    'PADM003' => 'bancos-destinos',
+    'USU001' => 'usuarios',
+    'EMP001' => 'empleados',
+    'FAC003' => 'inf-factura',
+    'CUA001' => 'cuadres',
+    'COT002' => 'cot-registro',
+    'COT003' => 'cot-cancelar',
+    'ALM002' => 'tran-inventario',
+    'ALM004' => 'admi-inventario',
+];
+
+$permisos_checked = [];
+foreach ($permisos_activos as $codigo) {
+    if (isset($mapeoPermisos[$codigo])) {
+        $permisos_checked[$mapeoPermisos[$codigo]] = true;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Nuevo Empleado</title>
+    <title>Editar Empleado</title>
     <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
     <link rel="stylesheet" href="../../assets/css/registro_empleados.css">
     <link rel="stylesheet" href="../../assets/css/menu.css">
@@ -49,6 +123,7 @@ $_SESSION['last_activity'] = time();
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
         }
 
         .btn-volver:hover {
@@ -121,6 +196,35 @@ $_SESSION['last_activity'] = time();
             line-height: 1.4;
         }
 
+        .form-group-estado {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .form-group-estado label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .form-group-estado input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #28a745;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         @media (max-width: 400px) {
             .permisos-grid {
                 gap: 10px;
@@ -129,6 +233,14 @@ $_SESSION['last_activity'] = time();
             .permisos-grid label {
                 padding: 10px;
                 font-size: 13px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn-volver, .btn-submit {
+                width: 100%;
             }
         }
 
@@ -160,6 +272,13 @@ $_SESSION['last_activity'] = time();
         @keyframes spin {
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
+
+        .password-note {
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -169,54 +288,50 @@ $_SESSION['last_activity'] = time();
 
         <div class="page-content">
             <div class="form-container">
-                <h2 class="form-title">Registro de Empleado</h2><br>
+                <h2 class="form-title">Editar Empleado</h2><br>
 
                 <legend>Datos del Empleado</legend>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="nombre">Nombre:</label>
-                        <input type="text" id="nombre" name="nombre" autocomplete="off" placeholder="Nombre" required>
+                        <input type="text" id="nombre" name="nombre" autocomplete="off" placeholder="Nombre" value="<?php echo htmlspecialchars($empleado['nombre']); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="apellido">Apellido:</label>
-                        <input type="text" id="apellido" name="apellido" autocomplete="off" placeholder="Apellido" required>
+                        <input type="text" id="apellido" name="apellido" autocomplete="off" placeholder="Apellido" value="<?php echo htmlspecialchars($empleado['apellido']); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="tipo_identificacion">Tipo de Identificación:</label>
                         <select id="tipo_identificacion" name="tipo_identificacion" required>
-                            <option value="Cedula">Cédula</option>
-                            <option value="Pasaporte">Pasaporte</option>
+                            <option value="Cedula" <?php echo $empleado['tipo_identificacion'] === 'Cedula' ? 'selected' : ''; ?>>Cédula</option>
+                            <option value="Pasaporte" <?php echo $empleado['tipo_identificacion'] === 'Pasaporte' ? 'selected' : ''; ?>>Pasaporte</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="identificacion">Identificación:</label>
-                        <input type="number" id="identificacion" name="identificacion" autocomplete="off" placeholder="Identificacion" min="0" required>
+                        <input type="number" id="identificacion" name="identificacion" autocomplete="off" placeholder="Identificacion" min="0" value="<?php echo htmlspecialchars($empleado['identificacion']); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="telefono">Teléfono:</label>
-                        <input type="text" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" minlength="12" maxlength="12" required>
+                        <input type="text" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" minlength="10" maxlength="12" value="<?php echo htmlspecialchars($empleado['telefono']); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="idPuesto">Puesto:</label>
                         <select id="idPuesto" name="idPuesto" required>
-
-                            <option value="" disabled selected>Seleccione un puesto</option>
-
+                            <option value="" disabled>Seleccione un puesto</option>
                             <?php
+                            $sql_puestos = "SELECT id, descripcion FROM empleados_puestos ORDER BY descripcion ASC";
+                            $resultado_puestos = $conn->query($sql_puestos);
 
-                            require_once '../../models/conexion.php';
-
-                            // Obtener el id y la descripción de los tipos de producto
-                            $sql = "SELECT id, descripcion FROM empleados_puestos ORDER BY descripcion ASC";
-                            $resultado = $conn->query($sql);
-
-                            if ($resultado->num_rows > 0) {
-                                while ($fila = $resultado->fetch_assoc()) {
-                                    echo "<option value='" . $fila['id'] . "'>" . $fila['descripcion'] . "</option>";
+                            if ($resultado_puestos->num_rows > 0) {
+                                while ($fila = $resultado_puestos->fetch_assoc()) {
+                                    $selected = ($fila['id'] == $empleado['idPuesto']) ? 'selected' : '';
+                                    echo "<option value='" . $fila['id'] . "' $selected>" . $fila['descripcion'] . "</option>";
                                 }
                             } else {
                                 echo "<option value='' disabled>No hay opciones</option>";
                             }
+                            $conn->close();
                             ?>
                         </select>
                     </div>
@@ -226,120 +341,137 @@ $_SESSION['last_activity'] = time();
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="username">Usuario:</label>
-                        <input type="text" id="username" name="username" placeholder="Usuario" autocomplete="off" required>
+                        <input type="text" id="username" name="username" placeholder="Usuario" autocomplete="off" value="<?php echo htmlspecialchars($empleado['username']); ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="password">Contraseña:</label>
-                        <input type="password" id="password" name="password" placeholder="Contraseña" autocomplete="off" minlength="4" required>
+                        <label for="password">Nueva Contraseña (opcional):</label>
+                        <input type="password" id="password" name="password" placeholder="Dejar vacío para no cambiar" autocomplete="off" minlength="4">
+                        <p class="password-note">* Dejar en blanco si no desea cambiar la contraseña</p>
                     </div>
+                </div>
+
+                <div class="form-group-estado">
+                    <label>
+                        <input type="checkbox" id="activo" name="activo" <?php echo $empleado['activo'] ? 'checked' : ''; ?>>
+                        <span>Empleado Activo</span>
+                    </label>
                 </div>
 
                 <legend>Permisos de Usuario</legend>
                 <div class="permisos-container">
                     <div class="permisos-grid">
                         <label>
-                            <input type="checkbox" name="permisos[clientes]" id="clientes">
+                            <input type="checkbox" name="permisos[clientes]" id="clientes" <?php echo isset($permisos_checked['clientes']) ? 'checked' : ''; ?>>
                             <span>Crear/Editar Clientes</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[clientes-reporte]" id="clientes-reporte">
+                            <input type="checkbox" name="permisos[clientes-reporte]" id="clientes-reporte" <?php echo isset($permisos_checked['clientes-reporte']) ? 'checked' : ''; ?>>
                             <span>Imprimir Reporte de Clientes</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[productos]" id="productos">
+                            <input type="checkbox" name="permisos[productos]" id="productos" <?php echo isset($permisos_checked['productos']) ? 'checked' : ''; ?>>
                             <span>Crear/Editar Productos</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[productos-reporte]" id="productos-reporte">
+                            <input type="checkbox" name="permisos[productos-reporte]" id="productos-reporte" <?php echo isset($permisos_checked['productos-reporte']) ? 'checked' : ''; ?>>
                             <span>Imprimir Reporte de Productos</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[avance-cuenta]" id="avance-cuenta">
+                            <input type="checkbox" name="permisos[avance-cuenta]" id="avance-cuenta" <?php echo isset($permisos_checked['avance-cuenta']) ? 'checked' : ''; ?>>
                             <span>Avance de Cuenta</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[cancel-facturas]" id="cancel-facturas">
+                            <input type="checkbox" name="permisos[cancel-facturas]" id="cancel-facturas" <?php echo isset($permisos_checked['cancel-facturas']) ? 'checked' : ''; ?>>
                             <span>Cancelar Facturas</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[almacen]" id="almacen">
+                            <input type="checkbox" name="permisos[almacen]" id="almacen" <?php echo isset($permisos_checked['almacen']) ? 'checked' : ''; ?>>
                             <span>Almacen Principal</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[inv-empleados]" id="inv-empleados">
+                            <input type="checkbox" name="permisos[inv-empleados]" id="inv-empleados" <?php echo isset($permisos_checked['inv-empleados']) ? 'checked' : ''; ?>>
                             <span>Visualizar Inventario de Empleados</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[facturacion]" id="facturacion">
+                            <input type="checkbox" name="permisos[facturacion]" id="facturacion" <?php echo isset($permisos_checked['facturacion']) ? 'checked' : ''; ?>>
                             <span>Facturación</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[cot-accion]" id="cot-accion">
+                            <input type="checkbox" name="permisos[cot-accion]" id="cot-accion" <?php echo isset($permisos_checked['cot-accion']) ? 'checked' : ''; ?>>
                             <span>Crear/Vender Cotizaciones</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[caja]" id="caja">
+                            <input type="checkbox" name="permisos[caja]" id="caja" <?php echo isset($permisos_checked['caja']) ? 'checked' : ''; ?>>
                             <span>Abrir/Cerrar Caja</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[pan-adm]" id="pan-adm">
+                            <input type="checkbox" name="permisos[pan-adm]" id="pan-adm" <?php echo isset($permisos_checked['pan-adm']) ? 'checked' : ''; ?>>
                             <span>Panel Administrativo</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[estadisticas]" id="estadisticas">
+                            <input type="checkbox" name="permisos[estadisticas]" id="estadisticas" <?php echo isset($permisos_checked['estadisticas']) ? 'checked' : ''; ?>>
                             <span>Ver Estadísticas</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[bancos-destinos]" id="bancos-destinos">
+                            <input type="checkbox" name="permisos[bancos-destinos]" id="bancos-destinos" <?php echo isset($permisos_checked['bancos-destinos']) ? 'checked' : ''; ?>>
                             <span>Administrar Bancos y Destinos</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[usuarios]" id="usuarios">
+                            <input type="checkbox" name="permisos[usuarios]" id="usuarios" <?php echo isset($permisos_checked['usuarios']) ? 'checked' : ''; ?>>
                             <span>Administrar Usuarios</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[empleados]" id="empleados">
+                            <input type="checkbox" name="permisos[empleados]" id="empleados" <?php echo isset($permisos_checked['empleados']) ? 'checked' : ''; ?>>
                             <span>Administrar Empleados</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[inf-factura]" id="inf-factura">
+                            <input type="checkbox" name="permisos[inf-factura]" id="inf-factura" <?php echo isset($permisos_checked['inf-factura']) ? 'checked' : ''; ?>>
                             <span>Editar Información en Factura</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[cuadres]" id="cuadres">
+                            <input type="checkbox" name="permisos[cuadres]" id="cuadres" <?php echo isset($permisos_checked['cuadres']) ? 'checked' : ''; ?>>
                             <span>Cuadres de Caja</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[cot-registro]" id="cot-registro">
+                            <input type="checkbox" name="permisos[cot-registro]" id="cot-registro" <?php echo isset($permisos_checked['cot-registro']) ? 'checked' : ''; ?>>
                             <span>Ver Registro de Cotizaciones</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[cot-cancelar]" id="cot-cancelar">
+                            <input type="checkbox" name="permisos[cot-cancelar]" id="cot-cancelar" <?php echo isset($permisos_checked['cot-cancelar']) ? 'checked' : ''; ?>>
                             <span>Cancelar Cotizaciones</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[tran-inventario]" id="tran-inventario">
+                            <input type="checkbox" name="permisos[tran-inventario]" id="tran-inventario" <?php echo isset($permisos_checked['tran-inventario']) ? 'checked' : ''; ?>>
                             <span>Transferencias de Inventario</span>
                         </label>
                         <label>
-                            <input type="checkbox" name="permisos[admi-inventario]" id="admi-inventario">
+                            <input type="checkbox" name="permisos[admi-inventario]" id="admi-inventario" <?php echo isset($permisos_checked['admi-inventario']) ? 'checked' : ''; ?>>
                             <span>Administrar Inventario</span>
                         </label>
                     </div>
                 </div>
-                
-                <button class="btn-volver" onclick="window.location.href='empleados.php'">
-                    <i class="fa fa-arrow-left"></i> Volver
-                </button>
-                <button type="submit" class="btn-submit" id="submitBtn" onclick="guardarEmp()">Guardar Cambios</button>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-volver" onclick="window.location.href='empleados.php'">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+
+                    <button type="submit" class="btn-submit" id="submitBtn" onclick="actualizarEmp()">
+                        <i class="fas fa-save"></i> Actualizar Empleado
+                    </button>
+                </div>
 
             </div>
         </div>
     </div>
 
     <script>
+        const idEmpleado = <?php echo $idEmpleado; ?>;
 
-        function guardarEmp(){
+        function actualizarEmp(){
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
 
             // Datos
             const nombre = document.getElementById('nombre').value;
@@ -350,31 +482,33 @@ $_SESSION['last_activity'] = time();
             const idPuesto = document.getElementById('idPuesto').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const activo = document.getElementById('activo').checked;
+            
             const listPermisos = [
-                                    'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
-                                    'avance-cuenta', 'cancel-facturas', 'almacen', 'inv-empleados',
-                                    'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
-                                    'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
-                                    'cuadres', 'cot-registro', 'cot-cancelar', 'tran-inventario',
-                                    'admi-inventario'
-                                ];
+                'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
+                'avance-cuenta', 'cancel-facturas', 'almacen', 'inv-empleados',
+                'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
+                'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
+                'cuadres', 'cot-registro', 'cot-cancelar', 'tran-inventario',
+                'admi-inventario'
+            ];
 
             const permisos = {};
-
             listPermisos.forEach(permiso => {
                 const checkbox = document.getElementById(permiso);
                 permisos[permiso] = checkbox ? checkbox.checked : false;
             });
 
             // Enviar datos al servidor
-            const url = '../../controllers/empleados/nuevo.php';
+            const url = '../../controllers/empleados/editar.php';
 
             fetch(url, {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify({
+                    idEmpleado: idEmpleado,
                     nombre: nombre,
                     apellido: apellido,
                     tipo_identificacion: tipo_identificacion,
@@ -383,21 +517,17 @@ $_SESSION['last_activity'] = time();
                     idPuesto: idPuesto,
                     username: username,
                     password: password,
+                    activo: activo,
                     permisos: permisos
                 })
             })
             .then(async response => {
-                // Intentar leer la respuesta como JSON, manejando el caso donde el body esté vacío o no sea JSON
                 const data = await response.json().catch(() => ({})); 
 
-                // Verificación de la respuesta HTTP (código fuera del rango 200-299)
                 if (!response.ok) {
-                    
                     const errorMessage = data.message || `Error en la comunicación con el servidor (Código HTTP: ${response.status}).`;
                     
-                    // Manejo específico de errores basados en el código de estado HTTP
                     if (response.status === 400) {
-                        // Error 400: Solicitud Incorrecta (Errores de Validación)
                         let errorList = '<ul>' + data.errors.map(err => `<li>${err}</li>`).join('') + '</ul>';
                         Swal.fire({
                             icon: 'warning',
@@ -406,7 +536,6 @@ $_SESSION['last_activity'] = time();
                             confirmButtonText: 'Revisar'
                         });
                     } else if (response.status === 409) {
-                        // Error 409: Conflicto (Ej. Identificación duplicada)
                         Swal.fire({
                             icon: 'error',
                             title: 'Conflicto de Integridad de Datos',
@@ -414,7 +543,6 @@ $_SESSION['last_activity'] = time();
                             confirmButtonText: 'Aceptar'
                         });
                     } else {
-                        // Otros Errores del Servidor (500, 405, etc.)
                         Swal.fire({
                             icon: 'error',
                             title: 'Error de Procesamiento',
@@ -423,26 +551,22 @@ $_SESSION['last_activity'] = time();
                         });
                     }
 
-                    // Se lanza un error para detener la ejecución de las promesas 'then' subsiguientes
                     throw new Error(`Fallo en la Solicitud (HTTP ${response.status}): ${errorMessage}`);
                 }
 
-                // Si la respuesta es OK (ej. 201 Created), se retorna el objeto de datos
                 return data; 
             })
             .then(data => {
-                // Manejo de la respuesta exitosa (success: true)
                 if (data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Registro de Empleado Exitoso',
-                        html: `El empleado ha sido registrado satisfactoriamente: ${response.message}`,
+                        title: 'Actualización Exitosa',
+                        html: `El empleado ha sido actualizado satisfactoriamente.`,
                         confirmButtonText: 'Aceptar'
                     }).then(() => {
-                        window.location.reload(); // Recargar la página para limpiar el formulario
+                        window.location.reload();
                     });
                 } else {
-                    // En caso de que response.ok sea true, pero el cuerpo JSON indique un fallo lógico (success: false)
                     Swal.fire({
                         icon: 'error',
                         title: 'Fallo Lógico en la Aplicación',
@@ -452,7 +576,6 @@ $_SESSION['last_activity'] = time();
                 }
             })
             .catch(error => {
-                // Captura errores de red (e.g., servidor inactivo, problemas de CORS) que no tienen código HTTP
                 if (!error.message.includes('HTTP')) {
                     Swal.fire({
                         icon: 'warning',
@@ -461,11 +584,12 @@ $_SESSION['last_activity'] = time();
                         footer: `Detalle: ${error.message}`
                     });
                 }
-                // Opcional: Registrar el error completo en la consola para depuración.
-                // console.error('Error total en la solicitud fetch:', error);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
             });
         }
-
     </script>
 
 </body>

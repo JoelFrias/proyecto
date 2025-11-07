@@ -20,7 +20,7 @@ $sql = "SELECT
         ON
             e.id = ci.id_empleado
         WHERE
-            ci.estado = 'activa'
+            ci.estado = 'pendiente'
             AND
             (ci.no LIKE ?
             OR CONCAT(c.nombre, ' ', c.apellido) LIKE ?

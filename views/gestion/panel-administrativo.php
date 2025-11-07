@@ -980,9 +980,13 @@
                 <div id="div-destinations">
                     <button id="manager-destinations">Administrar Destinos</button>
                 </div>
+
+                <!--
                 <div id="div-users">
                     <button id="manager-users" onclick="redirectUsers()">Administrar Usuarios</button>
                 </div>
+                -->
+
                 <div id="div-employees">
                     <button id="manager-employees" onclick="redirectEmployee()">Administrar Empleados</button>
                 </div>

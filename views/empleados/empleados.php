@@ -701,7 +701,7 @@ if (isset($_GET['editar'])) {
                                             <td><?php echo htmlspecialchars($var) ?></td>
 
                                             <td>
-                                                <a href="empleados.php?editar=<?php echo $fila['id']; ?><?php echo !empty($busqueda) ? '&busqueda=' . urlencode($busqueda) : ''; ?>" class="emp_btn-edit">Modificar</a>
+                                                <a href="empleados-editar.php?id= <?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
                                             </td>
                                         </tr>
                                     <?php endwhile; ?>
@@ -729,7 +729,7 @@ if (isset($_GET['editar'])) {
                                         <h3 class="emp_mobile-card-title"><?php echo htmlspecialchars($fila['nombre'] . ' ' . $fila['apellido']); ?></h3>
                                         <p class="emp_mobile-card-subtitle"><?php echo htmlspecialchars($fila['puesto']); ?></p>
                                     </div>
-                                    <a href="empleados.php?editar=<?php echo $fila['id']; ?><?php echo !empty($busqueda) ? '&busqueda=' . urlencode($busqueda) : ''; ?>" class="emp_btn-edit">Modificar</a>
+                                    <a href="empleados-editar.php?id= <?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
                                 </div>
                                 <div class="emp_mobile-card-content">
                                     <div class="emp_mobile-card-item">
@@ -765,80 +765,6 @@ if (isset($_GET['editar'])) {
                     <?php endif; ?>
                 </div>
             </div>
-
-            <!-- Modal de edición mejorado con diseño de dos columnas -->
-            <?php if ($empleado_editar): ?>
-                <div class="emp_modal">
-                    <div class="emp_modal-content">
-                        <h2>Modificar Empleado</h2>
-                        <form action="" method="post">
-                            <input type="hidden" name="id" value="<?php echo $empleado_editar['id']; ?>">
-                            <?php if (!empty($busqueda)): ?>
-                            <input type="hidden" name="busqueda" value="<?php echo htmlspecialchars($busqueda); ?>">
-                            <?php endif; ?>
-                            
-                            <div class="emp_form-grid">
-                                <div class="emp_form-group">
-                                    <label for="nombre">Nombre:</label>
-                                    <input type="text" id="nombre" name="nombre" value="<?php echo htmlspecialchars($empleado_editar['nombre']); ?>" required>
-                                </div>
-                                
-                                <div class="emp_form-group">
-                                    <label for="apellido">Apellido:</label>
-                                    <input type="text" id="apellido" name="apellido" value="<?php echo htmlspecialchars($empleado_editar['apellido']); ?>" required>
-                                </div>
-                                
-                                <div class="emp_form-group">
-                                    <label for="tipo_identificacion">Tipo de Identificación:</label>
-                                    <select id="tipo_identificacion" name="tipo_identificacion" required>
-                                        <option value="Cedula" <?php echo ($empleado_editar['tipo_identificacion'] === 'Cedula' ? 'selected' : ''); ?>>Cédula</option>
-                                        <option value="Pasaporte" <?php echo ($empleado_editar['tipo_identificacion'] === 'Pasaporte' ? 'selected' : ''); ?>>Pasaporte</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="emp_form-group">
-                                    <label for="identificacion">Identificación:</label>
-                                    <input type="text" id="identificacion" name="identificacion" value="<?php echo htmlspecialchars($empleado_editar['identificacion']); ?>" required>
-                                </div>
-                                
-                                <div class="emp_form-group">
-                                    <label for="telefono">Teléfono:</label>
-                                    <input type="text" id="telefono" name="telefono" value="<?php echo htmlspecialchars($empleado_editar['telefono']); ?>" required>
-                                </div>
-                                
-                                <div class="emp_form-group">
-                                    <label for="idPuesto">Puesto:</label>
-                                    <select id="idPuesto" name="idPuesto" required>
-                                        <?php
-                                        $sql_puestos = "SELECT id, descripcion FROM empleados_puestos ORDER BY descripcion ASC";
-                                        $resultado_puestos = $conn->query($sql_puestos);
-                                        if ($resultado_puestos && $resultado_puestos->num_rows > 0) {
-                                            while ($fila = $resultado_puestos->fetch_assoc()) {
-                                                $selected = ($fila['id'] == $empleado_editar['idPuesto']) ? 'selected' : '';
-                                                echo "<option value='" . $fila['id'] . "' $selected>" . $fila['descripcion'] . "</option>";
-                                            }
-                                        }
-                                        ?>
-                                    </select>
-                                </div>
-
-                                <div class="emp_form-group">
-                                    <label for="estado">Estado:</label>
-                                    <select id="estado" name="estado" required>
-                                        <option value="activo" <?php echo ($empleado_editar['activo'] == 1 ? 'selected' : ''); ?>>Activo</option>
-                                        <option value="inactivo" <?php echo ($empleado_editar['activo'] == 0 ? 'selected' : ''); ?>>Inactivo</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="emp_form-actions">
-                                    <button type="button" onclick="window.location.href='empleados.php<?php echo !empty($busqueda) ? '?busqueda=' . urlencode($busqueda) : ''; ?>'">Cancelar</button>
-                                    <button type="submit">Actualizar</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            <?php endif; ?>
 
         <!-- TODO EL CONTENIDO DE LA PAGINA POR ENCIMA DE ESTA LINEA -->
         </div>
