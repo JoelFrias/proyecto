@@ -446,7 +446,7 @@ foreach ($permisos_activos as $codigo) {
                         </label>
                         <label>
                             <input type="checkbox" name="permisos[estadisticas]" id="estadisticas" <?php echo isset($permisos_checked['estadisticas']) ? 'checked' : ''; ?>>
-                            <span>Ver Estadísticas</span>
+                            <span>Ver Estadísticas del Negocio</span>
                         </label>
                         <label>
                             <input type="checkbox" name="permisos[bancos-destinos]" id="bancos-destinos" <?php echo isset($permisos_checked['bancos-destinos']) ? 'checked' : ''; ?>>

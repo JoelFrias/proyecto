@@ -27,6 +27,8 @@
     // Actualizar el tiempo de la última actividad
     $_SESSION['last_activity'] = time();
 
+    /* Fin de verificacion de sesion */
+
     require_once '../../models/conexion.php';
 
     ////////////////////////////////////////////////////////////////////
@@ -62,23 +64,41 @@
 
     ////////////////////////////////////////////////////////////////////
 
-    /* Fin de verificacion de sesion */
+    // Validar permiso para ver el dashboard
+    $permiso_dashboard = 'PADM002';
+    $puede_ver_dashboard = validarPermiso($conn, $permiso_dashboard, $id_empleado);
+
+    // Validar permisos específicos para cada módulo
+    $permiso_usuarios = validarPermiso($conn, 'USU001', $id_empleado);
+    $permiso_empleados = validarPermiso($conn, 'EMP001', $id_empleado);
+    $permiso_info_factura = validarPermiso($conn, 'FAC003', $id_empleado);
+    $permiso_cuadres = validarPermiso($conn, 'CUA001', $id_empleado);
+    $permiso_cotizaciones = validarPermiso($conn, 'COT002', $id_empleado);
+    $permiso_transferencias = validarPermiso($conn, 'ALM002', $id_empleado);
+    $permiso_inventario = validarPermiso($conn, 'ALM004', $id_empleado);
+    $permiso_bancos_destinos = validarPermiso($conn, 'PADM003', $id_empleado);
 
     // Tabla Bancos
-    $stmtb = $conn->prepare("SELECT id AS idBank, nombreBanco AS namebanks FROM bancos WHERE id <> 1 AND enable = 1");
-    $stmtb->execute();
-    $resultsb = $stmtb->get_result();
+    if ($permiso_bancos_destinos) {
+        $stmtb = $conn->prepare("SELECT id AS idBank, nombreBanco AS namebanks FROM bancos WHERE id <> 1 AND enable = 1");
+        $stmtb->execute();
+        $resultsb = $stmtb->get_result();
+    }
 
     // Tabla Destinos
-    $stmtd = $conn->prepare("SELECT id AS idDestination, descripcion AS namedestinations FROM destinocuentas WHERE id <> 1 AND enable = 1");
-    $stmtd->execute();
-    $resultsd = $stmtd->get_result();
+    if ($permiso_bancos_destinos) {
+        $stmtd = $conn->prepare("SELECT id AS idDestination, descripcion AS namedestinations FROM destinocuentas WHERE id <> 1 AND enable = 1");
+        $stmtd->execute();
+        $resultsd = $stmtd->get_result();
+    }
 
     // info factura
-    $stmtif = $conn->prepare("SELECT * FROM infofactura");
-    $stmtif->execute();
-    $resultsif = $stmtif->get_result();
-    $rowif = $resultsif->fetch_assoc()
+    if ($permiso_info_factura) {
+        $stmtif = $conn->prepare("SELECT * FROM infofactura");
+        $stmtif->execute();
+        $resultsif = $stmtif->get_result();
+        $rowif = $resultsif->fetch_assoc();
+    }
 
 ?>
 
@@ -1007,37 +1027,57 @@
 
             <!-- Botones principales -->
             <div id="buttons">
+
+                <?php if($permiso_bancos_destinos): ?>
                 <div id="div-banks">
                     <button id="manager-banks">Administrar Bancos</button>
                 </div>
                 <div id="div-destinations">
                     <button id="manager-destinations">Administrar Destinos</button>
                 </div>
+                <?php endif; ?>
 
-                <!--
-                <div id="div-users">
-                    <button id="manager-users" onclick="redirectUsers()">Administrar Usuarios</button>
-                </div>
-                -->
+                <?php if($permiso_usuarios): ?>
+                <!--<div id="div-users">
+                    <button id="manager-users" onclick="window.location.href='../../views/gestion/usuarios-editar.php'">Administrar Usuarios</button>
+                </div> -->
+                <?php endif; ?>
 
+                <?php if($permiso_empleados): ?>
                 <div id="div-employees">
-                    <button id="manager-employees" onclick="redirectEmployee()">Administrar Empleados</button>
+                    <button id="manager-employees" onclick="window.location.href='../../views/empleados/empleados.php'">Administrar Empleados</button>
                 </div>
+                <?php endif; ?>
+
+                <?php if($permiso_info_factura): ?>
                 <div id="div-infoInvoice">
                     <button class="manager-infoInvoice">Informacion en Factura</button>
                 </div>
+                <?php endif; ?>
+
+                <?php if($permiso_cuadres): ?>
                 <div id="div-cashiers">
-                    <button id="manager-cashiers" onclick="redirectCuadre()">Cuadres de Caja</button>
+                    <button id="manager-cashiers" onclick="window.location.href='../../views/caja/cuadre-caja.php'">Cuadres de Caja</button>
                 </div>
+                <?php endif; ?>
+
+                <?php if($permiso_cotizaciones): ?>
                 <div id="div-cotizaciones">
-                    <button id="cotizaciones" onclick="cotizaciones_()">Registro de Cotizaciones</button>
+                    <button id="cotizaciones" onclick="window.location.href='../../views/factura/cotizacion-registro.php'">Registro de Cotizaciones</button>
                 </div>
+                <?php endif; ?>
+
+                <?php if($permiso_transferencias): ?>
                 <div id="div-transactions-inventory">
-                    <button id="transactions-inventory" onclick="inventario_transaccion()">Transacciones de Inventario</button>
+                    <button id="transactions-inventory" onclick="window.location.href='../../views/inventario/registro-transacciones.php'">Transacciones de Inventario</button>
                 </div>
+                <?php endif; ?>
+
+                <?php if($permiso_inventario): ?>
                 <div id="div-inventory">
-                    <button id="manager-inventory" onclick="gestion_inventario()">Administrar Inventario</button>
+                    <button id="manager-inventory" onclick="navigateTo('../../views/inventario/inventario-gestion.php')">Administrar Inventario</button>
                 </div>
+                <?php endif; ?>
             </div>
 
             <!-- Dashboard de estadisticas -->
@@ -1047,244 +1087,254 @@
                     <p class="dashboard-subtitle">Visualización del rendimiento del negocio</p>
                 </div>
 
-                <div id="filters" class="filters-container">
-                    <div class="filter-group">
-                        <label for="months">
-                            <i class="fas fa-calendar-alt"></i> Periodo:
-                        </label>
-                        <select name="months" id="months" class="select-styled">
-                            <option value="current" <?php echo (isset($_GET['periodo']) && $_GET['periodo'] == 'current') ? 'selected' : ''; ?>>Mes Actual</option>
-                            <option value="previous" <?php echo (isset($_GET['periodo']) && $_GET['periodo'] == 'previous') ? 'selected' : ''; ?>>Mes Anterior</option>
-                        </select>
-                        <button id="btn-filters" name="btn-filters" onclick="recargar()" class="filter-button">
-                            <i class="fa-solid fa-magnifying-glass"></i> Aplicar
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="dashboard-grid">
-                    <!-- Gráfico 1: Ventas Totales -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <i class="fas fa-chart-line"></i>
-                            <h3 class="chart-title">Ventas Totales</h3>
-                        </div>
-                        <div class="chart-description">Seguimiento de las ventas diarias en el período seleccionado</div>
-                        <div class="chart-wrapper">
-                            <canvas id="ventas-totales"></canvas>
+                <?php if(!$puede_ver_dashboard): ?>
+                    <p style="text-align: center; color: red; font-weight: 600; margin-bottom: 20px;">
+                        No tienes permiso para ver las estadísticas del dashboard.
+                    </p>
+                <?php else: ?>
+                    <div id="filters" class="filters-container">
+                        <div class="filter-group">
+                            <label for="months">
+                                <i class="fas fa-calendar-alt"></i> Periodo:
+                            </label>
+                            <select name="months" id="months" class="select-styled">
+                                <option value="current" <?php echo (isset($_GET['periodo']) && $_GET['periodo'] == 'current') ? 'selected' : ''; ?>>Mes Actual</option>
+                                <option value="previous" <?php echo (isset($_GET['periodo']) && $_GET['periodo'] == 'previous') ? 'selected' : ''; ?>>Mes Anterior</option>
+                            </select>
+                            <button id="btn-filters" name="btn-filters" onclick="recargar()" class="filter-button">
+                                <i class="fa-solid fa-magnifying-glass"></i> Aplicar
+                            </button>
                         </div>
                     </div>
                     
-                    <!-- Gráfico 2: Ganancias Totales -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <i class="fas fa-coins"></i>
-                            <h3 class="chart-title">Ganancias Totales</h3>
+                    <div class="dashboard-grid">
+                        <!-- Gráfico 1: Ventas Totales -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <i class="fas fa-chart-line"></i>
+                                <h3 class="chart-title">Ventas Totales</h3>
+                            </div>
+                            <div class="chart-description">Seguimiento de las ventas diarias en el período seleccionado</div>
+                            <div class="chart-wrapper">
+                                <canvas id="ventas-totales"></canvas>
+                            </div>
                         </div>
-                        <div class="chart-description">Evolución de las ganancias obtenidas en el período</div>
-                        <div class="chart-wrapper">
-                            <canvas id="ganancias-totales"></canvas>
+                        
+                        <!-- Gráfico 2: Ganancias Totales -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <i class="fas fa-coins"></i>
+                                <h3 class="chart-title">Ganancias Totales</h3>
+                            </div>
+                            <div class="chart-description">Evolución de las ganancias obtenidas en el período</div>
+                            <div class="chart-wrapper">
+                                <canvas id="ganancias-totales"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico 3: Ventas por Empleado -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <i class="fas fa-user-tag"></i>
+                                <h3 class="chart-title">Ventas por Empleado</h3>
+                            </div>
+                            <div class="chart-description">Comparación de ventas ($) generadas por cada empleado</div>
+                            <div class="chart-wrapper">
+                                <canvas id="ventas-empleados"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico 4: Número de Ventas por Empleado -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <i class="fas fa-users"></i>
+                                <h3 class="chart-title">Número de Ventas por Empleado</h3>
+                            </div>
+                            <div class="chart-description">Distribución de la cantidad de ventas realizadas</div>
+                            <div class="chart-wrapper">
+                                <canvas id="num-ventas-empleado"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico 5: Productos más Vendidos -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <i class="fas fa-shopping-cart"></i>
+                                <h3 class="chart-title">Productos más Vendidos</h3>
+                            </div>
+                            <div class="chart-description">Ranking de productos con mayor volumen de ventas</div>
+                            <div class="chart-wrapper">
+                                <canvas id="productos-vendidos"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico 6: Productos en Reorden -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <h3 class="chart-title">Productos en Punto de Reorden</h3>
+                            </div>
+                            <div class="chart-description">Productos que requieren atención en inventario</div>
+                            <div class="chart-wrapper">
+                                <canvas id="productos-reorden"></canvas>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Gráfico 3: Ventas por Empleado -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <i class="fas fa-user-tag"></i>
-                            <h3 class="chart-title">Ventas por Empleado</h3>
-                        </div>
-                        <div class="chart-description">Comparación de ventas ($) generadas por cada empleado</div>
-                        <div class="chart-wrapper">
-                            <canvas id="ventas-empleados"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfico 4: Número de Ventas por Empleado -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <i class="fas fa-users"></i>
-                            <h3 class="chart-title">Número de Ventas por Empleado</h3>
-                        </div>
-                        <div class="chart-description">Distribución de la cantidad de ventas realizadas</div>
-                        <div class="chart-wrapper">
-                            <canvas id="num-ventas-empleado"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfico 5: Productos más Vendidos -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <i class="fas fa-shopping-cart"></i>
-                            <h3 class="chart-title">Productos más Vendidos</h3>
-                        </div>
-                        <div class="chart-description">Ranking de productos con mayor volumen de ventas</div>
-                        <div class="chart-wrapper">
-                            <canvas id="productos-vendidos"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfico 6: Productos en Reorden -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <h3 class="chart-title">Productos en Punto de Reorden</h3>
-                        </div>
-                        <div class="chart-description">Productos que requieren atención en inventario</div>
-                        <div class="chart-wrapper">
-                            <canvas id="productos-reorden"></canvas>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
 
-            <!-- Modal para bancos -->
-            <div id="modal-banks" style="display: none;">
+            <?php if($permiso_bancos_destinos): ?>
+                <!-- Modal para bancos -->
+                <div id="modal-banks" style="display: none;">
 
-                <span class="close-modal-banks">&times;</span>
+                    <span class="close-modal-banks">&times;</span>
                 
-                <h3>Bancos</h3>
+                    <h3>Bancos</h3>
 
-                <div id="new-bank">
-                    <label for="bank-name">Agregar Nuevo Banco:</label>
-                    <input type="text" id="bank-name" name="bank-name" autocomplete="off">
-                    <button type="submit" onclick="addBank()">Agregar</button>
-                </div>
+                    <div id="new-bank">
+                        <label for="bank-name">Agregar Nuevo Banco:</label>
+                        <input type="text" id="bank-name" name="bank-name" autocomplete="off">
+                        <button type="submit" onclick="addBank()">Agregar</button>
+                    </div>
 
-                <div id="bank-list">
+                    <div id="bank-list">
 
-                    <h4>Lista de Bancos</h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre del Banco</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bank-table-body">
-                            <?php
-                                if($resultsb->num_rows > 0){
-                                    while ($rowb = $resultsb->fetch_assoc()) {
-                                        echo "
-                                            <tr data-id='{$rowb['idBank']}' data-name='{$rowb['namebanks']}'>
-                                                <td>{$rowb['namebanks']}</td>
-                                                <td>
-                                                    <button class='delete-bank' onclick=\"deleteBank({$rowb['idBank']})\"><i class=\"fa-solid fa-trash\"></i></button>
-                                                    <button class='edit-bank'><i class=\"fa-regular fa-pen-to-square\"></i></button>
-                                                </td>
-                                            </tr>
-                                        ";
+                        <h4>Lista de Bancos</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Banco</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bank-table-body">
+                                <?php
+                                    if($resultsb->num_rows > 0){
+                                        while ($rowb = $resultsb->fetch_assoc()) {
+                                            echo "
+                                                <tr data-id='{$rowb['idBank']}' data-name='{$rowb['namebanks']}'>
+                                                    <td>{$rowb['namebanks']}</td>
+                                                    <td>
+                                                        <button class='delete-bank' onclick=\"deleteBank({$rowb['idBank']})\"><i class=\"fa-solid fa-trash\"></i></button>
+                                                        <button class='edit-bank'><i class=\"fa-regular fa-pen-to-square\"></i></button>
+                                                    </td>
+                                                </tr>
+                                            ";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='3'>No se encontraron resultados.</td></tr>";
                                     }
-                                } else {
-                                    echo "<tr><td colspan='3'>No se encontraron resultados.</td></tr>";
-                                }
-                            ?>
-                        </tbody>
-                    </table>
+                                ?>
+                            </tbody>
+                        </table>
 
-                </div>
-            </div>
-            
-            <!-- Modal para editar bancos -->
-            <div id="edit-banks" style="display: none;">
-                
-                <span class="close-edit-banks">&times;</span>
-
-                <h3>Editar Banco</h3>
-                <label for="edit-bank-name">Nombre del Banco:</label>
-                <input type="hidden" id="edit-bank-id" name="edit-bank-id"> <!-- ID oculto para el banco -->
-                <input type="text" id="edit-bank-name" name="edit-bank-name"  autocomplete="off">
-                <button id="update-edit-bank" onclick="updateBank()">Actualizar</button>
-                <button id="cancel-edit-bank">Cancelar</button>
-
-            </div>
-
-            <!-- Modal para destinos -->
-            <div id="modal-destinations" style="display: none;">
-                
-                <span class="close-modal-destinations">&times;</span>
-
-                <h3>Destinos</h3>
-
-                <div id="new-destination">
-                    <label for="destination-name">Agregar Nuevo Destino:</label>
-                    <input type="text" id="destination-name" name="destination-name" autocomplete="off">
-                    <button type="submit" onclick="addDestination()">Agregar</button>
+                    </div>
                 </div>
                 
-                <div id="destination-list">
+                <!-- Modal para editar bancos -->
+                <div id="edit-banks" style="display: none;">
+                    
+                    <span class="close-edit-banks">&times;</span>
 
-                    <h4>Lista de Destinos</h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre del Destino</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="destination-table-body">
-                            <?php
-                                if($resultsd->num_rows > 0){
-                                    while ($rowd = $resultsd->fetch_assoc()) {
-                                        echo "
-                                            <tr data-id='{$rowd['idDestination']}' data-name='{$rowd['namedestinations']}'>
-                                                <td>{$rowd['namedestinations']}</td>
-                                                <td>
-                                                    <button class='delete-destination' onclick=\"deleteDestination({$rowd['idDestination']})\"><i class=\"fa-solid fa-trash\"></i></button>
-                                                    <button class='edit-destination'><i class=\"fa-regular fa-pen-to-square\"></i></button>
-                                                </td>
-                                            </tr>
-                                        ";
+                    <h3>Editar Banco</h3>
+                    <label for="edit-bank-name">Nombre del Banco:</label>
+                    <input type="hidden" id="edit-bank-id" name="edit-bank-id"> <!-- ID oculto para el banco -->
+                    <input type="text" id="edit-bank-name" name="edit-bank-name"  autocomplete="off">
+                    <button id="update-edit-bank" onclick="updateBank()">Actualizar</button>
+                    <button id="cancel-edit-bank">Cancelar</button>
+
+                </div>
+
+                <!-- Modal para destinos -->
+                <div id="modal-destinations" style="display: none;">
+                    
+                    <span class="close-modal-destinations">&times;</span>
+
+                    <h3>Destinos</h3>
+
+                    <div id="new-destination">
+                        <label for="destination-name">Agregar Nuevo Destino:</label>
+                        <input type="text" id="destination-name" name="destination-name" autocomplete="off">
+                        <button type="submit" onclick="addDestination()">Agregar</button>
+                    </div>
+                    
+                    <div id="destination-list">
+
+                        <h4>Lista de Destinos</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Destino</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="destination-table-body">
+                                <?php
+                                    if($resultsd->num_rows > 0){
+                                        while ($rowd = $resultsd->fetch_assoc()) {
+                                            echo "
+                                                <tr data-id='{$rowd['idDestination']}' data-name='{$rowd['namedestinations']}'>
+                                                    <td>{$rowd['namedestinations']}</td>
+                                                    <td>
+                                                        <button class='delete-destination' onclick=\"deleteDestination({$rowd['idDestination']})\"><i class=\"fa-solid fa-trash\"></i></button>
+                                                        <button class='edit-destination'><i class=\"fa-regular fa-pen-to-square\"></i></button>
+                                                    </td>
+                                                </tr>
+                                            ";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='3'>No se encontraron resultados.</td></tr>";
                                     }
-                                } else {
-                                    echo "<tr><td colspan='3'>No se encontraron resultados.</td></tr>";
-                                }
-                            ?>
-                        </tbody>
-                    </table>
+                                ?>
+                            </tbody>
+                        </table>
 
-                </div>
-            </div>
-
-            <!-- Modal para editar destinos -->
-            <div id="edit-destinations" style="display: none;">
-
-                <span class="close-edit-destinations">&times;</span>
-
-                <h3>Editar Destino</h3>
-                <label for="edit-destination-name">Nombre del Destino:</label>
-                <input type="hidden" id="edit-destination-id" name="edit-destination-id"> <!-- ID oculto para el destino -->
-                <input type="text" id="edit-destination-name" name="edit-destination-name" autocomplete="off" autocomplete="off">
-                <button id="update-edit-destination" onclick="updateDestination()">Actualizar</button>
-                <button id="cancel-edit-destination">Cancelar</button>
-
-            </div>
-
-            <!-- Modal para info Factura -->
-            <div class="modal-overlay-infoInvoice" id="modal-overlay-infoInvoice">
-                <div class="modal-container-infoInvoice">
-                    <div class="modal-header-infoInvoice">
-                        <h2 class="modal-title-infoInvoice">Informacion en Factura</h2>
-                        <button class="close-modal-btn-infoInvoice" id="closeModalBtn-infoInvoice">&times;</button>
-                    </div>
-                    <div class="modal-body-infoInvoice">
-                        <div class="input-group-infoInvoice">
-                            <label for="texto1-infoInvoice">Texto 1</label>
-                            <input type="text" id="texto1-infoInvoice" placeholder="Ingrese el primer texto" value="<?= $rowif['text1'] ?>">
-                        </div>
-                        <div class="input-group-infoInvoice">
-                            <label for="texto2-infoInvoice">Texto 2</label>
-                            <input type="text" id="texto2-infoInvoice" placeholder="Ingrese el segundo texto" value="<?= $rowif['text2'] ?>">
-                        </div>
-                        <div class="input-group-infoInvoice">
-                            <label for="texto3-infoInvoice">Texto 3</label>
-                            <input type="text" id="texto3-infoInvoice" placeholder="Ingrese el tercer texto" value="<?= $rowif['text3'] ?>">
-                        </div>
-                    </div>
-                    <div class="modal-footer-infoInvoice">
-                        <button class="submit-btn-infoInvoice" id="submitBtn-infoInvoice">Enviar</button>
                     </div>
                 </div>
-            </div>
+
+                <!-- Modal para editar destinos -->
+                <div id="edit-destinations" style="display: none;">
+
+                    <span class="close-edit-destinations">&times;</span>
+
+                    <h3>Editar Destino</h3>
+                    <label for="edit-destination-name">Nombre del Destino:</label>
+                    <input type="hidden" id="edit-destination-id" name="edit-destination-id"> <!-- ID oculto para el destino -->
+                    <input type="text" id="edit-destination-name" name="edit-destination-name" autocomplete="off" autocomplete="off">
+                    <button id="update-edit-destination" onclick="updateDestination()">Actualizar</button>
+                    <button id="cancel-edit-destination">Cancelar</button>
+
+                </div>
+            <?php endif; ?>
+
+            <?php if($permiso_info_factura): ?>
+                <!-- Modal para info Factura -->
+                <div class="modal-overlay-infoInvoice" id="modal-overlay-infoInvoice">
+                    <div class="modal-container-infoInvoice">
+                        <div class="modal-header-infoInvoice">
+                            <h2 class="modal-title-infoInvoice">Informacion en Factura</h2>
+                            <button class="close-modal-btn-infoInvoice" id="closeModalBtn-infoInvoice">&times;</button>
+                        </div>
+                        <div class="modal-body-infoInvoice">
+                            <div class="input-group-infoInvoice">
+                                <label for="texto1-infoInvoice">Texto 1</label>
+                                <input type="text" id="texto1-infoInvoice" placeholder="Ingrese el primer texto" value="<?= $rowif['text1'] ?>">
+                            </div>
+                            <div class="input-group-infoInvoice">
+                                <label for="texto2-infoInvoice">Texto 2</label>
+                                <input type="text" id="texto2-infoInvoice" placeholder="Ingrese el segundo texto" value="<?= $rowif['text2'] ?>">
+                            </div>
+                            <div class="input-group-infoInvoice">
+                                <label for="texto3-infoInvoice">Texto 3</label>
+                                <input type="text" id="texto3-infoInvoice" placeholder="Ingrese el tercer texto" value="<?= $rowif['text3'] ?>">
+                            </div>
+                        </div>
+                        <div class="modal-footer-infoInvoice">
+                            <button class="submit-btn-infoInvoice" id="submitBtn-infoInvoice">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- TODO EL CONTENIDO DE LA PAGINA DEBE DE ESTAR POR ENCIMA DE ESTA LINEA -->
         </div>
@@ -1292,475 +1342,398 @@
     
     <!-- Script para manipular los bancos y destinos -->
     <script>
+        <?php if($permiso_bancos_destinos): ?>
+            function deleteBank(id){
 
-        function deleteBank(id){
+                const datos = {
+                    idBank: id
+                };
 
-            const datos = {
-                idBank: id
-            };
+                // console.log("Enviando datos:", datos);
+                // return;
 
-            // console.log("Enviando datos:", datos);
-            // return;
+                fetch("../../controllers/admin/admin-delete-bank.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    // console.log("Respuesta completa del servidor:", text);
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
 
-            fetch("../../controllers/admin/admin-delete-bank.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                // console.log("Respuesta completa del servidor:", text);
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Éxito',
+                                text: 'Banco eliminado correctamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
 
-                        // Mostrar mensaje de éxito
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: 'Banco eliminado correctamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
+                            // Eliminar la fila de la tabla
+                            const row = document.querySelector(`tr[data-id='${id}']`);
+                            if (row) {
+                                row.remove();
+                            }
 
-                        // Eliminar la fila de la tabla
-                        const row = document.querySelector(`tr[data-id='${id}']`);
-                        if (row) {
-                            row.remove();
-                        }
-
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: data.error,
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
-                        console.log("Error al borrar el banco:", data.error);
-                    }
-                } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Se produjo un error inesperado en el servidor.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
-                });
-                console.error("Error de red o servidor:", error);
-            });
-        }
-
-        function updateBank(){
-
-            const datos = {
-                idBank: document.getElementById('edit-bank-id').value,
-                nombre: document.getElementById('edit-bank-name').value
-            };
-
-            // console.log("Enviando datos:", datos);
-            // return;
-
-            fetch("../../controllers/admin/admin-update-bank.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                // console.log("Respuesta completa del servidor:", text);
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
-
-                        // Mostrar mensaje de éxito
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: 'Banco actualizado correctamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
-
-                        // Actualizar la fila de la tabla
-                        const row = document.querySelector(`tr[data-id='${datos.idBank}']`);
-                        if (row) {
-                            row.dataset.name = datos.nombre;
-                            row.querySelector('td').textContent = datos.nombre;
-                        }
-
-                        // Cerrar el modal de edición
-                        const editModal = document.getElementById('edit-banks');
-                        editModal.style.display = 'none';
-                        const overlay = document.querySelector('.modal-overlay');
-                        if (overlay) {
-                            overlay.remove();
-                        }
-
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: data.error,
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
-                        console.log("Error al actualizar el banco:", data.error);
-                    }
-                } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Se produjo un error inesperado en el servidor.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
-                });
-                console.error("Error de red o servidor:", error);
-            });
-        }
-
-        function deleteDestination(id){
-            const datos = {
-                idDestination: id
-            };
-
-            fetch("../../controllers/admin/admin-delete-destination.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
-                        // Mostrar mensaje de éxito
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: 'Destino eliminado correctamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
-
-                        // Eliminar la fila de la tabla - FIXED SELECTOR
-                        const row = document.querySelector(`#destination-table-body tr[data-id='${id}']`);
-                        if (row) {
-                            row.remove();
                         } else {
-                            console.log("No se encontró la fila a eliminar con id:", id);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.log("Error al borrar el banco:", data.error);
                         }
-                    } else {
+                    } catch (error) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.error,
+                            text: 'Se produjo un error inesperado en el servidor.',
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         });
-                        console.log("Error al borrar el destino:", data.error);
+                        console.error("Error: Respuesta no es JSON válido:", text);
                     }
-                } catch (error) {
+                })
+                .catch(error => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Se produjo un error inesperado en el servidor.',
+                        text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
                     });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
+                    console.error("Error de red o servidor:", error);
                 });
-                console.error("Error de red o servidor:", error);
-            });
-        }
+            }
 
-        function updateDestination(){
-            const idDestino = document.getElementById('edit-destination-id').value;
-            const nombreDestino = document.getElementById('edit-destination-name').value;
-            
-            const datos = {
-                idDestino: idDestino,
-                nombre: nombreDestino
-            };
+            function updateBank(){
 
-            fetch("../../controllers/admin/admin-update-destination.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
-                        // Mostrar mensaje de éxito
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: 'Destino actualizado correctamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        });
+                const datos = {
+                    idBank: document.getElementById('edit-bank-id').value,
+                    nombre: document.getElementById('edit-bank-name').value
+                };
 
-                        // Actualizar la fila de la tabla - FIXED SELECTOR
-                        const row = document.querySelector(`#destination-table-body tr[data-id='${idDestino}']`);
-                        if (row) {
-                            row.dataset.name = nombreDestino;
-                            row.querySelector('td').textContent = nombreDestino;
+                // console.log("Enviando datos:", datos);
+                // return;
+
+                fetch("../../controllers/admin/admin-update-bank.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    // console.log("Respuesta completa del servidor:", text);
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
+
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Éxito',
+                                text: 'Banco actualizado correctamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+
+                            // Actualizar la fila de la tabla
+                            const row = document.querySelector(`tr[data-id='${datos.idBank}']`);
+                            if (row) {
+                                row.dataset.name = datos.nombre;
+                                row.querySelector('td').textContent = datos.nombre;
+                            }
+
+                            // Cerrar el modal de edición
+                            const editModal = document.getElementById('edit-banks');
+                            editModal.style.display = 'none';
+                            const overlay = document.querySelector('.modal-overlay');
+                            if (overlay) {
+                                overlay.remove();
+                            }
+
                         } else {
-                            console.log("No se encontró la fila a actualizar con id:", idDestino);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.log("Error al actualizar el banco:", data.error);
                         }
-
-                        // Cerrar el modal de edición
-                        const editModal = document.getElementById('edit-destinations');
-                        editModal.style.display = 'none';
-                        const overlay = document.querySelector('.modal-overlay');
-                        if (overlay) {
-                            overlay.remove();
-                        }
-                    } else {
+                    } catch (error) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.error,
+                            text: 'Se produjo un error inesperado en el servidor.',
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         });
-                        console.log("Error al actualizar destino:", data.error);
+                        console.error("Error: Respuesta no es JSON válido:", text);
                     }
-                } catch (error) {
+                })
+                .catch(error => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Se produjo un error inesperado en el servidor.',
+                        text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
                     });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
+                    console.error("Error de red o servidor:", error);
                 });
-                console.error("Error de red o servidor:", error);
-            });
-        }
+            }
 
-        function updateInfoInvoice(text1, text2, text3){
+            function deleteDestination(id){
+                const datos = {
+                    idDestination: id
+                };
+
+                fetch("../../controllers/admin/admin-delete-destination.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Éxito',
+                                text: 'Destino eliminado correctamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+
+                            // Eliminar la fila de la tabla - FIXED SELECTOR
+                            const row = document.querySelector(`#destination-table-body tr[data-id='${id}']`);
+                            if (row) {
+                                row.remove();
+                            } else {
+                                console.log("No se encontró la fila a eliminar con id:", id);
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.log("Error al borrar el destino:", data.error);
+                        }
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Se produjo un error inesperado en el servidor.',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar'
+                        });
+                        console.error("Error: Respuesta no es JSON válido:", text);
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    console.error("Error de red o servidor:", error);
+                });
+            }
+
+            function updateDestination(){
+                const idDestino = document.getElementById('edit-destination-id').value;
+                const nombreDestino = document.getElementById('edit-destination-name').value;
+                
+                const datos = {
+                    idDestino: idDestino,
+                    nombre: nombreDestino
+                };
+
+                fetch("../../controllers/admin/admin-update-destination.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Éxito',
+                                text: 'Destino actualizado correctamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+
+                            // Actualizar la fila de la tabla - FIXED SELECTOR
+                            const row = document.querySelector(`#destination-table-body tr[data-id='${idDestino}']`);
+                            if (row) {
+                                row.dataset.name = nombreDestino;
+                                row.querySelector('td').textContent = nombreDestino;
+                            } else {
+                                console.log("No se encontró la fila a actualizar con id:", idDestino);
+                            }
+
+                            // Cerrar el modal de edición
+                            const editModal = document.getElementById('edit-destinations');
+                            editModal.style.display = 'none';
+                            const overlay = document.querySelector('.modal-overlay');
+                            if (overlay) {
+                                overlay.remove();
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.log("Error al actualizar destino:", data.error);
+                        }
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Se produjo un error inesperado en el servidor.',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Aceptar'
+                        });
+                        console.error("Error: Respuesta no es JSON válido:", text);
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    console.error("Error de red o servidor:", error);
+                });
+            }
+        <?php endif; ?>
+
+        <?php if($permiso_info_factura): ?>
+            function updateInfoInvoice(text1, text2, text3){
             
-            const datos = {
-                text1: text1,
-                text2: text2,
-                text3: text3
-            };
+                const datos = {
+                    text1: text1,
+                    text2: text2,
+                    text3: text3
+                };
 
-            fetch("../../controllers/admin/info-factura.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
-                        // Mostrar mensaje de éxito
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: 'Informacion Actualizada Correctamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    } else {
+                fetch("../../controllers/admin/info-factura.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Éxito',
+                                text: 'Informacion Actualizada Correctamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.log("Error al borrar el destino:", data.error);
+                        }
+                    } catch (error) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.error,
+                            text: 'Se produjo un error inesperado en el servidor.',
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         });
-                        console.log("Error al borrar el destino:", data.error);
+                        console.error("Error: Respuesta no es JSON válido:", text);
                     }
-                } catch (error) {
+                })
+                .catch(error => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Se produjo un error inesperado en el servidor.',
+                        text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
                     });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Se produjo un error de red o en el servidor. Por favor, inténtelo de nuevo.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
+                    console.error("Error de red o servidor:", error);
                 });
-                console.error("Error de red o servidor:", error);
-            });
-        }
-
+            }
+        <?php endif; ?>
     </script>
 
-    <!-- Script para manipular las funciones de redireccionamiento -->
     <script>
-
-        idPuesto = <?php echo $_SESSION['idPuesto']; ?>;
-
-        function redirectEmployee() {
-            
-            if (idPuesto > 2) {
-                Swal.fire({
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar'
-                });
-            } else {
-                window.location.href = "../../views/empleados/empleados.php";
-            }
-        }
-
-        function redirectUsers() {
-            if (idPuesto > 2) {
-                Swal.fire({
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar'
-                });
-            } else {
-                window.location.href = "../../views/gestion/usuarios-editar.php";
-            }
-        }
-
-        function cotizaciones_() {
-            if (idPuesto > 2) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.'
-                });
-            } else {
-                window.location.href = "../../views/factura/cotizacion-registro.php";
-            }
-        }
-        
-        function inventario_transaccion() {
-            if (idPuesto > 2) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.'
-                });
-            } else {
-                window.location.href = "../../views/inventario/registro-transacciones.php";
-            }
-        }
-
-        function gestion_inventario() {
-            if (idPuesto > 2) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.'
-                });
-            } else {
-                navigateTo('../../views/inventario/inventario-gestion.php');
-            }
-        }
-
-        function redirectCuadre() {
-            if (idPuesto > 2) {
-                Swal.fire({
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar'
-                });
-            } else {
-                window.location.href = "../../views/caja/cuadre-caja.php";
-            }
-        }
-
         // Manejar menu administrativo en movil
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.querySelector('.mobile-menu-toggle');
             const buttonsContainer = document.getElementById('buttons');
             
-            menuToggle.addEventListener('click', function() {
-                buttonsContainer.classList.toggle('active');
+            if (menuToggle && buttonsContainer) {
+                menuToggle.addEventListener('click', function() {
+                    buttonsContainer.classList.toggle('active');
+                    
+                    // Cambiar el ícono del botón
+                    if (buttonsContainer.classList.contains('active')) {
+                        this.innerHTML = 'Menú Administrativo ▲';
+                    } else {
+                        this.innerHTML = 'Menú Administrativo ▼';
+                    }
+                });
                 
-                // Cambiar el ícono del botón
-                if (buttonsContainer.classList.contains('active')) {
-                    this.innerHTML = 'Menú Administrativo ▲';
-                } else {
-                    this.innerHTML = 'Menú Administrativo ▼';
+                // Cerrar el menú cuando se hace clic en un botón (solo móvil)
+                if (window.innerWidth <= 768) {
+                    document.querySelectorAll('#buttons > div:not(:first-child) button').forEach(button => {
+                        button.addEventListener('click', function() {
+                            buttonsContainer.classList.remove('active');
+                            menuToggle.innerHTML = 'Menú Administrativo  ▼';
+                        });
+                    });
                 }
-            });
-            
-            // Cerrar el menú cuando se hace clic en un botón (solo móvil)
-            if (window.innerWidth <= 768) {
-                document.querySelectorAll('#buttons > div:not(:first-child) button').forEach(button => {
-                    button.addEventListener('click', function() {
+                
+                // Manejar redimensionamiento de la ventana
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth > 768) {
                         buttonsContainer.classList.remove('active');
                         menuToggle.innerHTML = 'Menú Administrativo  ▼';
-                    });
+                    }
                 });
             }
-            
-            // Manejar redimensionamiento de la ventana
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) {
-                    buttonsContainer.classList.remove('active');
-                    menuToggle.innerHTML = 'Menú Administrativo  ▼';
-                }
-            });
         });
-
     </script>
 
     <!-- Script para los graficos -->
@@ -2223,11 +2196,12 @@
         });
     </script>
 
+
     <!-- Script para manipular los modales -->
     <script>
-        
         document.addEventListener('DOMContentLoaded', function() {
-            // Elementos de los modales
+            <?php if($permiso_bancos_destinos): ?>
+            // Elementos de los modales de bancos y destinos
             const modalBanks = document.getElementById('modal-banks');
             const modalDestinations = document.getElementById('modal-destinations');
             const editBanks = document.getElementById('edit-banks');
@@ -2264,154 +2238,173 @@
             }
             
             // Abrir modal de bancos
-            btnManagerBanks.addEventListener('click', function() {
-                createOverlay();
-                modalBanks.style.display = 'block';
-            });
+            if (btnManagerBanks) {
+                btnManagerBanks.addEventListener('click', function() {
+                    createOverlay();
+                    modalBanks.style.display = 'block';
+                });
+            }
             
             // Abrir modal de destinos
-            btnManagerDestinations.addEventListener('click', function() {
-                createOverlay();
-                modalDestinations.style.display = 'block';
-            });
+            if (btnManagerDestinations) {
+                btnManagerDestinations.addEventListener('click', function() {
+                    createOverlay();
+                    modalDestinations.style.display = 'block';
+                });
+            }
             
             // Cerrar modal de bancos
-            closeModalBanks.addEventListener('click', function() {
-                modalBanks.style.display = 'none';
-                removeOverlay();
-            });
+            if (closeModalBanks) {
+                closeModalBanks.addEventListener('click', function() {
+                    modalBanks.style.display = 'none';
+                    removeOverlay();
+                });
+            }
             
             // Cerrar modal de destinos
-            closeModalDestinations.addEventListener('click', function() {
-                modalDestinations.style.display = 'none';
-                removeOverlay();
-            });
+            if (closeModalDestinations) {
+                closeModalDestinations.addEventListener('click', function() {
+                    modalDestinations.style.display = 'none';
+                    removeOverlay();
+                });
+            }
             
             // Cerrar modal de editar banco
-            closeEditBanks.addEventListener('click', function() {
-                editBanks.style.display = 'none';
-            });
+            if (closeEditBanks) {
+                closeEditBanks.addEventListener('click', function() {
+                    editBanks.style.display = 'none';
+                });
+            }
             
             // Cerrar modal de editar destino
-            closeEditDestinations.addEventListener('click', function() {
-                editDestinations.style.display = 'none';
-            });
+            if (closeEditDestinations) {
+                closeEditDestinations.addEventListener('click', function() {
+                    editDestinations.style.display = 'none';
+                });
+            }
             
             // Cancelar edición de banco
-            cancelEditBank.addEventListener('click', function() {
-                editBanks.style.display = 'none';
-            });
+            if (cancelEditBank) {
+                cancelEditBank.addEventListener('click', function() {
+                    editBanks.style.display = 'none';
+                });
+            }
             
             // Cancelar edición de destino
-            cancelEditDestination.addEventListener('click', function() {
-                editDestinations.style.display = 'none';
-            });
+            if (cancelEditDestination) {
+                cancelEditDestination.addEventListener('click', function() {
+                    editDestinations.style.display = 'none';
+                });
+            }
             
             // Delegación de eventos para editar bancos
-            document.getElementById('bank-table-body').addEventListener('click', function(e) {
-                if (e.target.closest('.edit-bank')) {
-                    const row = e.target.closest('tr');
-                    const bankId = row.dataset.id;
-                    const bankName = row.dataset.name;
-                    
-                    // Establecer datos en el formulario de edición
-                    document.getElementById('edit-bank-id').value = bankId;
-                    document.getElementById('edit-bank-name').value = bankName;
-                    
-                    // Mostrar modal de edición
-                    editBanks.style.display = 'block';
-                }
-            });
+            const bankTableBody = document.getElementById('bank-table-body');
+            if (bankTableBody) {
+                bankTableBody.addEventListener('click', function(e) {
+                    if (e.target.closest('.edit-bank')) {
+                        const row = e.target.closest('tr');
+                        const bankId = row.dataset.id;
+                        const bankName = row.dataset.name;
+                        
+                        // Establecer datos en el formulario de edición
+                        document.getElementById('edit-bank-id').value = bankId;
+                        document.getElementById('edit-bank-name').value = bankName;
+                        
+                        // Mostrar modal de edición
+                        editBanks.style.display = 'block';
+                    }
+                });
+            }
             
             // Delegación de eventos para editar destinos
-            document.getElementById('destination-table-body').addEventListener('click', function(e) {
-                if (e.target.closest('.edit-destination')) {
-                    const row = e.target.closest('tr');
-                    const destId = row.dataset.id;
-                    const destName = row.dataset.name;
-                    
-                    // Establecer datos en el formulario de edición
-                    document.getElementById('edit-destination-id').value = destId;
-                    document.getElementById('edit-destination-name').value = destName;
-                    
-                    // Mostrar modal de edición
-                    editDestinations.style.display = 'block';
-                }
-            });
+            const destinationTableBody = document.getElementById('destination-table-body');
+            if (destinationTableBody) {
+                destinationTableBody.addEventListener('click', function(e) {
+                    if (e.target.closest('.edit-destination')) {
+                        const row = e.target.closest('tr');
+                        const destId = row.dataset.id;
+                        const destName = row.dataset.name;
+                        
+                        // Establecer datos en el formulario de edición
+                        document.getElementById('edit-destination-id').value = destId;
+                        document.getElementById('edit-destination-name').value = destName;
+                        
+                        // Mostrar modal de edición
+                        editDestinations.style.display = 'block';
+                    }
+                });
+            }
             
             // Cerrar modales cuando se hace clic en el overlay
             document.addEventListener('click', function(e) {
                 if (e.target.classList.contains('modal-overlay')) {
-                    modalBanks.style.display = 'none';
-                    modalDestinations.style.display = 'none';
-                    editBanks.style.display = 'none';
-                    editDestinations.style.display = 'none';
+                    if (modalBanks) modalBanks.style.display = 'none';
+                    if (modalDestinations) modalDestinations.style.display = 'none';
+                    if (editBanks) editBanks.style.display = 'none';
+                    if (editDestinations) editDestinations.style.display = 'none';
                     removeOverlay();
                 }
             });
+            <?php endif; ?>
 
+            <?php if($permiso_info_factura): ?>
             // MODAL INFO FACT
-
-            // Referencias a elementos DOM
             const openModalBtn = document.querySelector('.manager-infoInvoice');
             const modalOverlay = document.getElementById('modal-overlay-infoInvoice');
             const closeModalBtn = document.getElementById('closeModalBtn-infoInvoice');
             const submitBtn = document.getElementById('submitBtn-infoInvoice');
             
-            // Función para abrir el modal
-            function openModal() {
-                modalOverlay.classList.add('modal-active-infoInvoice');
-            }
-            
-            // Función para cerrar el modal
-            function closeModal() {
-                modalOverlay.classList.remove('modal-active-infoInvoice');
-                
-                // Limpia los campos al cerrar
-                document.getElementById('texto1-infoInvoice').value = '';
-                document.getElementById('texto2-infoInvoice').value = '';
-                document.getElementById('texto3-infoInvoice').value = '';
-            }
-            
-            // Función para manejar el envío
-            function handleSubmit() {
-                // Capturar los valores de los campos
-                const texto1 = document.getElementById('texto1-infoInvoice').value;
-                const texto2 = document.getElementById('texto2-infoInvoice').value;
-                const texto3 = document.getElementById('texto3-infoInvoice').value;
-                
-                // Opcional: Cerrar el modal después de enviar
-                closeModal();
-                
-                // Funcion para procesar datos
-                updateInfoInvoice(texto1, texto2, texto3);
-
-            }
-            
-            // Event listeners
-            openModalBtn.addEventListener('click', openModal);
-            closeModalBtn.addEventListener('click', closeModal);
-            submitBtn.addEventListener('click', handleSubmit);
-            
-            // Cerrar el modal al hacer clic fuera de él
-            modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) {
-                    closeModal();
+            if (openModalBtn && modalOverlay && closeModalBtn && submitBtn) {
+                // Función para abrir el modal
+                function openModal() {
+                    modalOverlay.classList.add('modal-active-infoInvoice');
                 }
-            });
-            
-            // Cerrar con la tecla Escape
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && modalOverlay.classList.contains('modal-active-infoInvoice')) {
-                    closeModal();
+                
+                // Función para cerrar el modal
+                function closeModal() {
+                    modalOverlay.classList.remove('modal-active-infoInvoice');
                 }
-            });
-            
+                
+                // Función para manejar el envío
+                function handleSubmit() {
+                    // Capturar los valores de los campos
+                    const texto1 = document.getElementById('texto1-infoInvoice').value;
+                    const texto2 = document.getElementById('texto2-infoInvoice').value;
+                    const texto3 = document.getElementById('texto3-infoInvoice').value;
+                    
+                    // Opcional: Cerrar el modal después de enviar
+                    closeModal();
+                    
+                    // Funcion para procesar datos
+                    updateInfoInvoice(texto1, texto2, texto3);
+                }
+                
+                // Event listeners
+                openModalBtn.addEventListener('click', openModal);
+                closeModalBtn.addEventListener('click', closeModal);
+                submitBtn.addEventListener('click', handleSubmit);
+                
+                // Cerrar el modal al hacer clic fuera de él
+                modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalOverlay) {
+                        closeModal();
+                    }
+                });
+                
+                // Cerrar con la tecla Escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modalOverlay.classList.contains('modal-active-infoInvoice')) {
+                        closeModal();
+                    }
+                });
+            }
+            <?php endif; ?>
         });
     </script>
 
     <!-- Script para agregar bancos y destinos -->
     <script>
+        <?php if($permiso_bancos_destinos): ?>
         function addBank() {
             const bankNameInput = document.getElementById('bank-name');
             
@@ -2609,6 +2602,8 @@
                 });
             });
         }
+        
+        <?php endif; ?>
     </script>
     
 </body>

@@ -318,7 +318,7 @@
                     name="username" 
                     id="username" 
                     placeholder="Ingresa tu usuario" 
-                    autocomplete="username"
+                    autocomplete="off"
                     required>
             </div>
 
@@ -329,7 +329,7 @@
                     name="password" 
                     id="password" 
                     placeholder="Ingresa tu contraseña" 
-                    autocomplete="current-password"
+                    autocomplete="off"
                     required>
                 <button type="button" class="toggle-password" id="togglePassword">
                     <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -392,7 +392,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
+                    // showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
                     setTimeout(() => {
                         window.location.href = data.redirect || '../../index.php';
                     }, 1000);

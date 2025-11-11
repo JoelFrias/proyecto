@@ -258,27 +258,47 @@ function construirQueryFiltros($filtros) {
                         <h1>Lista de Clientes</h1>
                         
                         <div class="botones">
-                            
-                            <!-- Botón para imprimir reporte -->
-                            <a href="../../pdf/cliente/registro.php"
-                            class="btn btn-print" 
-                            target="_blank">
-                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M6 9V2h12v7"></path>
-                                    <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path>
-                                    <path d="M6 14h12v8H6z"></path>
-                                </svg>
-                                <span>Imprimir</span>
-                            </a>
 
-                            <!-- Botón para agregar un nuevo cliente -->
-                            <?php if ($_SESSION['idPuesto'] <= 2): ?>
+                            <?php
+
+                            // Validar permisos para imprimir reporte
+                            require_once '../../models/validar-permisos.php';
+                            $permiso_necesario = 'CLI002';
+                            $id_empleado = $_SESSION['idEmpleado'];
+                            if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                            ?>
+
+                                <!-- Botón para imprimir reporte -->
+                                <a href="../../pdf/cliente/registro.php"
+                                class="btn btn-print" 
+                                target="_blank">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9V2h12v7"></path>
+                                        <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path>
+                                        <path d="M6 14h12v8H6z"></path>
+                                    </svg>
+                                    <span>Imprimir</span>
+                                </a>
+
+                            <?php endif; ?>
+
+                            <?php
+
+                            // Validar permisos para nuevo cliente
+                            require_once '../../models/validar-permisos.php';
+                            $permiso_necesario = 'CLI001';
+                            $id_empleado = $_SESSION['idEmpleado'];
+                            if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                            ?>
                                 <a href="clientes-nuevo.php" class="btn btn-new">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 5v14m-7-7h14"></path>
                                     </svg>
                                     <span>Nuevo</span>
                                 </a>
+                            
                             <?php endif; ?>
 
                         </div>
@@ -300,7 +320,7 @@ function construirQueryFiltros($filtros) {
                                         id="search" 
                                         name="search" 
                                         value="<?php echo htmlspecialchars($search ?? ''); ?>" 
-                                        placeholder="Buscardor general..."
+                                        placeholder="Buscardor de clientes"
                                         autocomplete="off"
                                     >
                                 </div>
@@ -329,7 +349,21 @@ function construirQueryFiltros($filtros) {
                             <table class="client-table">
                                 <thead>
                                     <tr>
-                                        <th>Cuenta</th>
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI003';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
+                                            <th>Cuenta</th>
+
+                                        <?php endif; ?>
+
                                         <th>ID</th>
                                         <th>Nombre</th>
                                         <th>Empresa</th>
@@ -341,12 +375,20 @@ function construirQueryFiltros($filtros) {
                                         <th>Balance</th>
                                         <th>Dirección</th>
                                         <th>Estado</th>
-                                        <?php 
-                                            // Verificar si el usuario tiene permisos de administrador
-                                            if ($_SESSION['idPuesto'] <= 2) {
-                                                echo '<th>Acciones</th>';
-                                            }
+
+                                        <?php
+
+                                        // Validar permisos para acciones
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI002';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                         ?>
+
+                                            <th>Acciones</th>
+
+                                        <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -364,13 +406,26 @@ function construirQueryFiltros($filtros) {
                                     ?>
                                         
                                     <tr>
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI003';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
                                         
-                                        <td>
-                                            <a href="cuenta-avance.php?idCliente=<?php echo urlencode($row['id']); ?>" class="btn btn-update">
-                                                <i class="fa-regular fa-user"></i>
-                                                <span>Avance a Cuenta</span>
-                                            </a>
-                                        </td>
+                                            <td>
+                                                <a href="cuenta-avance.php?idCliente=<?php echo urlencode($row['id']); ?>" class="btn btn-update">
+                                                    <i class="fa-regular fa-user"></i>
+                                                    <span>Avance a Cuenta</span>
+                                                </a>
+                                            </td>
+                                            
+                                        <?php endif; ?>
+
                                         <td><?php echo htmlspecialchars($row['id']); ?></td>
                                         <td><?php echo htmlspecialchars($row['nombreCompleto']); ?></td>
                                         <td><?php echo htmlspecialchars($row['empresa']); ?></td>
@@ -387,21 +442,29 @@ function construirQueryFiltros($filtros) {
                                                 <?php echo $row['activo'] ? 'Activo' : 'Inactivo'; ?>
                                             </span>
                                         </td>
-                                        <?php 
-                                            // Verificar si el usuario tiene permisos de administrador
-                                            if ($_SESSION['idPuesto'] <= 2):
+
+                                        <?php
+
+                                        // Validar permisos para imprimir reporte
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI002';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                         ?>
-                                        <td>
-                                            <!-- Botón para actualizar el cliente -->
-                                            <a href="clientes-actualizar.php?id=<?php echo urlencode($row['id']); ?>" class="btn btn-update">
-                                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 2v6h-6M3 22v-6h6"></path>
-                                                    <path d="M21 8c0 9.941-8.059 18-18 18"></path>
-                                                    <path d="M3 16c0-9.941 8.059-18 18-18"></path>
-                                                </svg>
-                                                <span>Editar Datos</span>
-                                            </a>
-                                        </td>
+                                            
+                                            <td>
+                                                <!-- Botón para actualizar el cliente -->
+                                                <a href="clientes-actualizar.php?id=<?php echo urlencode($row['id']); ?>" class="btn btn-update">
+                                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M21 2v6h-6M3 22v-6h6"></path>
+                                                        <path d="M21 8c0 9.941-8.059 18-18 18"></path>
+                                                        <path d="M3 16c0-9.941 8.059-18 18-18"></path>
+                                                    </svg>
+                                                    <span>Editar Datos</span>
+                                                </a>
+                                            </td>
+
                                         <?php endif; ?>
                                     </tr>
                                     <?php endwhile; 

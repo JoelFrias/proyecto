@@ -64,6 +64,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
 
 ////////////////////////////////////////////////////////////////////
 
+// Validar permisos para realizar o vender cotizaciones
+$codigo_permiso = 'COT001';
+$permiso_cotizaciones = validarPermiso($conn, $codigo_permiso, $id_empleado);  // Ya se realizó el request del archivo
+
+// Consulta para obtener los productos del inventario del empleado
 $sql = "SELECT 
             p.id AS id, 
             p.descripcion AS descripcion, 
@@ -442,14 +447,22 @@ if ($result->num_rows > 0) {
 
                 <h2>Facturación</h2><br>
 
-                <button id="btn-cotizaciones" class="btn-cotizaciones">Abrir Lista Pre-Facturas</button><br><br>
+                <?php
 
-                <!-- Modal Pre-Facturas -->
+                if (!$permiso_cotizaciones) {
+                    echo '<p style="color: red; font-weight: bold;">No tienes permiso para gestionar cotizaciones.</p><br>';
+                } else {
+
+                ?>
+
+                <button id="btn-cotizaciones" class="btn-cotizaciones">Abrir Lista cotización</button><br><br>
+
+                <!-- Modal cotización -->
                 <div id="modal-overlay" class="modal-overlay">
                     <div class="modal-container">
                         <!-- Header -->
                         <div class="modal-header">
-                            <h3>Lista de Pre-Facturas</h3>
+                            <h3>Lista de cotización</h3>
                             <button class="btn-close" onclick="cerrarModal()">&times;</button>
                         </div>
 
@@ -492,6 +505,8 @@ if ($result->num_rows > 0) {
                         </div>
                     </div>
                 </div>
+
+                <?php } ?>
 
 
                 <h3>Seleccione los productos</h3><br>
@@ -570,7 +585,9 @@ if ($result->num_rows > 0) {
                     <button class="footer-button cliente" id="buscar-cliente">Buscar Cliente</button><br><br>
 
                     <div class="menu-footer">
-                        <button class="footer-button secundary" id="guardar-prefactura">Guardar como Pre-Factura</button>
+                        <?php if ($permiso_cotizaciones) : ?> <!-- Verificar permiso para cotizaciones -->
+                            <button class="footer-button secundary" id="guardar-prefactura">Guardar como cotización</button>
+                        <?php endif; ?>
                         <button class="footer-button primary" id="btn-generar">Procesar Factura</button>
                     </div>
 
@@ -699,9 +716,9 @@ if ($result->num_rows > 0) {
 
     <script src="../../assets/js/facturacion.js"></script>
     
-    <!-- Script para guardar como pre-factura -->
+    <!-- Script para guardar como cotización -->
     <script>
-        // Event listener para el botón de guardar pre-factura
+        // Event listener para el botón de guardar cotización
         document.getElementById('guardar-prefactura').addEventListener('click', function() {
             guardarPrefactura();
         });
@@ -733,7 +750,7 @@ if ($result->num_rows > 0) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Validación',
-                    text: 'Ningún producto ha sido agregado a la pre-factura.',
+                    text: 'Ningún producto ha sido agregado a la cotización.',
                     showConfirmButton: true,
                     confirmButtonText: 'Aceptar'
                 });
@@ -745,7 +762,7 @@ if ($result->num_rows > 0) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Error',
-                    text: 'El total de la pre-factura no es válido.',
+                    text: 'El total de la cotización no es válido.',
                     showConfirmButton: true,
                     confirmButtonText: 'Aceptar'
                 });
@@ -754,7 +771,7 @@ if ($result->num_rows > 0) {
 
             // Mensaje de confirmación con opción de agregar notas
             Swal.fire({
-                title: '¿Confirmar Pre-Factura?',
+                title: '¿Confirmar cotización?',
                 html: `
                     <div style="text-align: left; margin-bottom: 15px;">
                         <p style="margin: 5px 0;"><strong>Cliente:</strong> ${document.getElementById("nombre-cliente").value}</p>
@@ -790,7 +807,7 @@ if ($result->num_rows > 0) {
 
                     // Mostrar loading
                     Swal.fire({
-                        title: 'Guardando pre-factura...',
+                        title: 'Guardando cotización...',
                         html: 'Por favor espere un momento',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
@@ -812,7 +829,7 @@ if ($result->num_rows > 0) {
                             if (data.success) {
                                 Swal.fire({
                                     icon: 'success',
-                                    title: '¡Pre-Factura Guardada!',
+                                    title: '¡cotización Guardada!',
                                     html: `
                                         <div style="text-align: center; padding: 10px;">
                                             <p style="font-size: 16px; margin: 10px 0;">
@@ -847,7 +864,7 @@ if ($result->num_rows > 0) {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Error al Guardar',
-                                    text: data.error || 'Error desconocido al guardar la pre-factura',
+                                    text: data.error || 'Error desconocido al guardar la cotización',
                                     showConfirmButton: true,
                                     confirmButtonText: 'Aceptar',
                                     confirmButtonColor: '#dc2626'
@@ -888,7 +905,7 @@ if ($result->num_rows > 0) {
         }
     </script>
 
-    <!-- Script para el modal de pre-facturas -->
+    <!-- Script para el modal de cotización -->
     <script>
 
         let searchTimeout;  // Variable para debounce
@@ -968,7 +985,7 @@ if ($result->num_rows > 0) {
             });
         }
 
-        // Función que se llama al seleccionar una pre-factura
+        // Función que se llama al seleccionar una cotización
         function seleccionarprefactura(no) {
             if (!no || no.trim() === '' || isNaN(no) || parseInt(no) <= 0) {
                 Swal.fire({
@@ -1098,7 +1115,7 @@ if ($result->num_rows > 0) {
                 document.getElementById("buscar-cliente").style.backgroundColor = "#096849ff";
                 document.getElementById("buscar-cliente").classList.add("bloqueado");
 
-                // Desabilitar botón de guardar pre-factura
+                // Desabilitar botón de guardar cotización
                 document.getElementById('guardar-prefactura').disabled = true;
                 document.getElementById("guardar-prefactura").style.backgroundColor = "#6b7280";
                 document.getElementById("guardar-prefactura").style.color = "#8b929fff";

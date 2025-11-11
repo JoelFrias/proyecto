@@ -8,7 +8,7 @@ if (!isset($_SESSION['idEmpleado'])) {
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . "/proyecto"; // Eliminar ("/proyecto") en produccion
 
 //incluir el archivo para validar permisos
-require_once __DIR__ . '/../../models/validar-permisos.php';
+require_once $baseUrl . '/models/validar-permisos.php';
 
 // Obtener permisos del usuario
 $id_empleado = $_SESSION['idEmpleado'];
@@ -85,7 +85,7 @@ $permisoPanelAdmin = validarPermiso($conn, 'PADM001', $id_empleado);
     function logout() {
         Swal.fire({
             title: 'Cierre de Sesión',
-            text: 'Confirme el cierre de sesión',
+            text: '¿Desea cerrar la sesión?',
             showCancelButton: true,
             confirmButtonText: 'Cerrar sesión',
             cancelButtonText: 'Cancelar'

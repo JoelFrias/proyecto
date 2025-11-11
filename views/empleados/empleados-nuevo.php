@@ -324,7 +324,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         </label>
                         <label>
                             <input type="checkbox" name="permisos[estadisticas]" id="estadisticas">
-                            <span>Ver Estadísticas</span>
+                            <span>Ver Estadísticas del Negocio</span>
                         </label>
                         <label>
                             <input type="checkbox" name="permisos[bancos-destinos]" id="bancos-destinos">

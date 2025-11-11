@@ -912,14 +912,36 @@ if ($result->num_rows > 0) {
 
                                     <?php endif ?>
 
-                                    <?php if($factura['estado'] !== "Cancelada" && $_SESSION['idPuesto'] <= 2): ?>
+                                    <?php
+
+                                        // Validar permisos y estado de factura
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'FAC002';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado) || $factura['estado'] !== "Cancelada"):
+
+                                    ?>
+
                                         <button class="btn-secondary-cancel" id="cancel-btn">
                                             <spa class="printer-icon"><i class="fa-solid fa-ban">  </i></span>
                                             Cancelar Factura
                                         </button>
+
                                     <?php endif ?>
 
-                                    <button class="btn-primary" onclick="navigateTo('../../views/clientes/cuenta-avance.php?idCliente=<?php echo $facturaInfo['idCliente']; ?>')"><i class="fa-solid fa-money-check-dollar"></i> Avance a cuenta del cliente</button>
+                                    <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI003';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                    ?>
+
+                                        <button class="btn-primary" onclick="navigateTo('../../views/clientes/cuenta-avance.php?idCliente=<?php echo $facturaInfo['idCliente']; ?>')"><i class="fa-solid fa-money-check-dollar"></i> Avance a cuenta del cliente</button>
+
+                                    <?php endif; ?>
                                     
                                 </div>
 

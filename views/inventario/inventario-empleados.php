@@ -28,38 +28,11 @@ $_SESSION['last_activity'] = time();
 
 require "../../models/conexion.php";
 
-    ////////////////////////////////////////////////////////////////////
-    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
-    ////////////////////////////////////////////////////////////////////
-
-    require_once '../../models/validar-permisos.php';
-    $permiso_necesario = 'ALM003';
-    $id_empleado = $_SESSION['idEmpleado'];
-    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-        echo "
-            <html>
-                <head>
-                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-                </head>
-                <body>
-                    <script>
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'ACCESO DENEGADO',
-                            text: 'No tienes permiso para acceder a esta sección.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.history.back();
-                        });
-                    </script>
-                </body>
-            </html>";
-            
-        exit(); 
-    }
-
-    ////////////////////////////////////////////////////////////////////
+// Validar permisos
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'ALM003';
+$id_empleado = $_SESSION['idEmpleado'];
+$tiene_permiso = validarPermiso($conn, $permiso_necesario, $id_empleado);
 
 // Inicializar variables
 $result = false;
@@ -96,7 +69,8 @@ if (($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['seleccionar-empleado'
         $idEmpleado = intval($_GET['empleado']);
     }
 
-    if ($_SESSION['idPuesto'] > 2){
+    // Si NO tiene permiso, solo puede ver su propio inventario
+    if (!$tiene_permiso) {
         $idEmpleado = intval($_SESSION['idEmpleado']);
     }
     
@@ -184,19 +158,30 @@ if (($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['seleccionar-empleado'
     $stmtAgot->bind_param("i", $idEmpleado);
     $stmtAgot->execute();
     $casiAgotados = $stmtAgot->get_result()->fetch_assoc()['total'];
+} else {
+    // Si no tiene permiso y no ha seleccionado empleado, cargar automáticamente su inventario
+    if (!$tiene_permiso) {
+        $idEmpleado = intval($_SESSION['idEmpleado']);
+        // Redirigir para cargar el inventario del empleado actual
+        header("Location: ?empleado=" . $idEmpleado);
+        exit();
+    }
 }
 
 // Consulta para el dropdown de empleados
-if (isset($_SESSION['idPuesto']) && $_SESSION['idPuesto'] > 2) {
+if ($tiene_permiso) {
+    // Si tiene permiso, mostrar todos los empleados activos
+    $stmtEmp = $conn->prepare("SELECT id, CONCAT(id,' ',nombre,' ',apellido) AS nombre 
+                             FROM empleados WHERE activo = TRUE ORDER BY nombre, apellido");
+} else {
+    // Si NO tiene permiso, solo mostrar su propio usuario
     $stmtEmp = $conn->prepare("SELECT id, CONCAT(id,' ',nombre,' ',apellido) AS nombre 
                              FROM empleados WHERE activo = TRUE AND id = ?");
     $stmtEmp->bind_param("i", $_SESSION['idEmpleado']);
-} else {
-    $stmtEmp = $conn->prepare("SELECT id, CONCAT(id,' ',nombre,' ',apellido) AS nombre 
-                             FROM empleados WHERE activo = TRUE");
 }
 $stmtEmp->execute();
 $resultEmpleados = $stmtEmp->get_result();
+
 ?>
 
 <!DOCTYPE html>
@@ -330,6 +315,8 @@ $resultEmpleados = $stmtEmp->get_result();
             <div class="general-container">
                 <div class="header">
                     <h1>Inventario Personal de Productos</h1>
+                    <?php if ($tiene_permiso): ?>
+                    <!-- Mostrar selector solo si tiene permiso -->
                     <div class="header">
                         <form action="" method="post" class="employee-selector-form">
                             <span class="employee-selector-label">Selecciona el Empleado:</span>
@@ -353,6 +340,8 @@ $resultEmpleados = $stmtEmp->get_result();
                             </div>
                         </form>
                     </div>
+                    <?php endif; ?>
+                    
                     <?php if(isset($idEmpleado) && $idEmpleado !== null): ?>
                     <div class="search-container">
                         <form method="GET" action="" class="search-form">

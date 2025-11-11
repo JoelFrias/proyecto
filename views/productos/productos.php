@@ -253,25 +253,46 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
 
                         <div class="botones">
 
-                            <!-- Botón para imprimir reporte -->
-                            <a href="../../pdf/producto/registro.php"
-                                class="btn btn-print" 
-                                target="_blank">
-                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M6 9V2h12v7"></path>
-                                        <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path>
-                                        <path d="M6 14h12v8H6z"></path>
-                                    </svg>
-                                    <span>Imprimir</span>
-                                </a>
+                            <?php
 
-                            <?php if ($_SESSION['idPuesto'] <= 2): ?> 
-                            <button class="btn btn-new" id="btnNew" onclick="validation()">
+                            // Validar permisos para imprimir reporte
+                            require_once '../../models/validar-permisos.php';
+                            $permiso_necesario = 'PRO002';
+                            $id_empleado = $_SESSION['idEmpleado'];
+                            if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                            ?>
+
+                            <!-- Botón para imprimir reporte -->
+                            <a href="../../pdf/producto/registro.php" class="btn btn-print" target="_blank">
                                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14m-7-7h14"></path>
+                                    <path d="M6 9V2h12v7"></path>
+                                    <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path>
+                                    <path d="M6 14h12v8H6z"></path>
                                 </svg>
-                                <span>Nuevo</span>
-                            </button>
+                                <span>Imprimir</span>
+                            </a>
+
+                            <?php endif; ?>
+
+                            <?php
+
+                            // Validar permisos para nuevo producto
+                            require_once '../../models/validar-permisos.php';
+                            $permiso_necesario = 'PRO001';
+                            $id_empleado = $_SESSION['idEmpleado'];
+                            if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                            ?>
+
+                                <button class="btn btn-new" id="btnNew" onclick="window.location.href='productos-nuevo.php'">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14m-7-7h14"></path>
+                                    </svg>
+                                    <span>Nuevo</span>
+                                </button>
+
+
                             <?php endif; ?>
                         </div>
 
@@ -291,7 +312,7 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         id="search" 
                                         name="search" 
                                         value="<?php echo htmlspecialchars($search ?? ''); ?>" 
-                                        placeholder="Buscar por descripción..."
+                                        placeholder="Buscardor de productos"
                                         autocomplete="off"
                                     >
                                 </div>
@@ -616,21 +637,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
 
     <!-- Scripts -->
     <script>
-
-        // Funcion de validacion de usuario
-        function validation() {
-            idPuesto = <?php echo $_SESSION['idPuesto']; ?>;
-            if (idPuesto > 2) {
-                Swal.fire({
-                    title: 'Acceso bloqueado',
-                    text: 'No tienes permiso para realizar esta acción.',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar'
-                });
-            } else {
-                window.location.href = "productos-nuevo.php";
-            }
-        }
 
         function mostrarModal(button) {
             if (!button) return;  // Evita ejecutar si no hay un botón específico
