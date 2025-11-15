@@ -1,6 +1,6 @@
 <?php
 
-require_once '../../../models/conexion.php';
+require_once '../../../core/conexion.php';
 
 header('Content-Type: application/json');
 

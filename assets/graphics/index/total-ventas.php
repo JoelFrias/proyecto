@@ -2,7 +2,7 @@
 // Iniciar sesión para acceder a las variables de sesión
 session_start();
 
-require_once '../../../models/conexion.php';
+require_once '../../../core/conexion.php';
 
 header('Content-Type: application/json');
 

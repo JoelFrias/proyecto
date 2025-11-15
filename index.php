@@ -12,7 +12,7 @@ $inactivity_limit = 900; // 15 minutos en segundos
 if (!isset($_SESSION['username'])) {
     session_unset(); // Eliminar todas las variables de sesión
     session_destroy(); // Destruir la sesión
-    header('Location: views/auth/login.php'); // Redirigir al login
+    header('Location: frontend/auth/login.php'); // Redirigir al login
     exit(); // Detener la ejecución del script
 }
 
@@ -20,7 +20,7 @@ if (!isset($_SESSION['username'])) {
 if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
     session_unset(); // Eliminar todas las variables de sesión
     session_destroy(); // Destruir la sesión
-    header("Location: views/auth/login.php?session_expired=session_expired"); // Redirigir al login
+    header("Location: frontend/auth/login.php?session_expired=session_expired"); // Redirigir al login
     exit(); // Detener la ejecución del script
 }
 
@@ -29,7 +29,7 @@ $_SESSION['last_activity'] = time();
 
 /* Fin de verificacion de sesion */
 
-require_once 'models/conexion.php';
+require_once 'core/conexion.php';
 
 ?>
 
@@ -433,7 +433,7 @@ require_once 'models/conexion.php';
     <div class="navegator-nav">
 
         <!-- Menu-->
-        <?php include 'views/layouts/menu.php'; ?>
+        <?php include 'frontend/layouts/menu.php'; ?>
 
         <div class="page-content">
         <!-- TODO EL CONTENIDO DE LA PAGINA DEBE DE ESTAR DEBAJO DE ESTA LINEA -->
@@ -1083,7 +1083,7 @@ require_once 'models/conexion.php';
                 });
 
                 // Enviar datos mediante AJAX
-                fetch("controllers/gestion/update-profile.php", {
+                fetch("API/gestion/update-profile.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)

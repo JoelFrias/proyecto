@@ -1,7 +1,7 @@
 <?php 
 
-require_once 'models/validar-permisos.php';
-require_once 'models/conexion.php';
+require_once 'core/validar-permisos.php';
+require_once 'core/conexion.php';
 session_start();
 
 $id_empleado = $_SESSION['idEmpleado'];

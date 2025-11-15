@@ -93,7 +93,7 @@ document.getElementById("search-input-cliente").addEventListener("keyup", getDat
 function getDataClientes() {
     const input = document.getElementById('search-input-cliente').value;
     const content = document.getElementById('table-body-cliente');
-    const url = '../../controllers/facturacion/facturacion_buscadorClientes.php';
+    const url = '../../API/facturacion/facturacion_buscadorClientes.php';
     const formData = new FormData();
     formData.append('campo', input);
 
@@ -122,7 +122,7 @@ function selectCliente(id) {
         return;
     }
 
-    fetch("../../controllers/facturacion/facturacion_seleccionarCliente.php?id=" + id)
+    fetch("../../API/facturacion/facturacion_seleccionarCliente.php?id=" + id)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -465,7 +465,7 @@ function guardarFactura(print) {
     document.getElementById("guardar-factura").disabled = true;
     document.getElementById("guardar-imprimir-factura").disabled = true;
 
-    fetch("../../controllers/facturacion/facturacion_guardar.php", {
+    fetch("../../API/facturacion/facturacion_guardar.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos)
@@ -489,7 +489,7 @@ function guardarFactura(print) {
                     });
                 } else {
                     // Abrir el reporte en una nueva ventana y recargar la página actual
-                    const invoiceUrl = `../../pdf/factura/factura.php?factura=${data.numFactura}`;
+                    const invoiceUrl = `../../reports/factura/factura.php?factura=${data.numFactura}`;
                     window.open(invoiceUrl, '_blank');
                 }
 
