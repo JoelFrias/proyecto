@@ -593,7 +593,7 @@ $resultEmpleados = $stmtEmp->get_result();
 
             // console.log("Enviando datos:", datos);
 
-            fetch("../../API/inventario/inventario_revAlmacen.php", {
+            fetch("../../api/inventario/inventario_revAlmacen.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)

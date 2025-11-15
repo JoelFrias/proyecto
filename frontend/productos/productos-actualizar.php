@@ -13,7 +13,7 @@
         <div class="modal-actualizar-contenedor">
             <span class="cerrar-actualizar" onclick="cerrarModal()">&times;</span>
             <h3 class="form-title">Actualizar Producto</h3>
-            <form class="registration-form" action="../../API/productos/producto_actualizar.php" method="POST">
+            <form class="registration-form" action="../../api/productos/producto_actualizar.php" method="POST">
                 <fieldset>
                     <legend>Datos del Producto</legend>
                 

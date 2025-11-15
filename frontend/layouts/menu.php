@@ -45,7 +45,7 @@ $permisoPanelAdmin = validarPermiso($conn, 'PADM001', $id_empleado);
     $facturacionUrl = $baseUrl . '/frontend/factura/facturacion.php';
     $cajaUrl = $baseUrl . '/frontend/caja/caja.php';
     $panelUrl = $baseUrl . '/frontend/gestion/panel-administrativo.php';
-    $logoutUrl = $baseUrl . '/API/authcontroller/logout.php';
+    $logoutUrl = $baseUrl . '/api/authcontroller/logout.php';
     ?>
 
     <!-- Menú de navegación -->

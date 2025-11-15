@@ -388,7 +388,7 @@ if ($result->num_rows > 0) {
         function getDataClientes() {
             const input = document.getElementById('search-input-cliente').value;
             const content = document.getElementById('table-body-cliente');
-            const url = '../../API/inventario/inventario_buscadorEmpleados.php';
+            const url = '../../api/inventario/inventario_buscadorEmpleados.php';
             const formData = new FormData();
             formData.append('campo', input);
 
@@ -416,7 +416,7 @@ if ($result->num_rows > 0) {
                 return;
             }
 
-            fetch("../../API/inventario/inventario_seleccionarEmpleado.php?id=" + id)
+            fetch("../../api/inventario/inventario_seleccionarEmpleado.php?id=" + id)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -582,7 +582,7 @@ if ($result->num_rows > 0) {
 
             // console.log("Enviando datos:", datos);
 
-            fetch("../../API/inventario/inventario_guardarTransaccion.php", {
+            fetch("../../api/inventario/inventario_guardarTransaccion.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)

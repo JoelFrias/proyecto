@@ -736,7 +736,7 @@ while ($producto = $resultProductos->fetch_assoc()) {
                         noCotizacion: <?php echo $noCotizacion ?>
                     };
 
-                    fetch("../../API/facturacion/cotizacion-cancelar.php", {
+                    fetch("../../api/facturacion/cotizacion-cancelar.php", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(datos)

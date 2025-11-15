@@ -1057,7 +1057,7 @@ if ($result->num_rows > 0) {
                             cancelBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
                             
                             // Llamada fetch al backend
-                            return fetch('../../API/facturacion/cancelar-factura.php', {
+                            return fetch('../../api/facturacion/cancelar-factura.php', {
                                 method: 'POST',
                                 body: formData,
                                 credentials: 'same-origin'

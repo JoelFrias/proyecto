@@ -397,7 +397,7 @@ if (isset($_SESSION['username'])) {
             setFormLoading(true);
 
             try {
-                const response = await fetch('../../API/authcontroller/login.php', {
+                const response = await fetch('../../api/authcontroller/login.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

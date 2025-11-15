@@ -886,7 +886,7 @@
                 destino: destino || null
             };
 
-            fetch("../../API/clientes/cuentas_avance.php", {
+            fetch("../../api/clientes/cuentas_avance.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)
@@ -1049,7 +1049,7 @@
                     }
                     
                     // Realizar la petición al servidor
-                    fetch('../../API/clientes/cancelar-pagos.php', {
+                    fetch('../../api/clientes/cancelar-pagos.php', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

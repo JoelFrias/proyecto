@@ -271,7 +271,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 referencia: referencia
             };
 
-            const url = '../../API/clientes/nuevo-cliente.php';
+            const url = '../../api/clientes/nuevo-cliente.php';
 
             fetch(url, {
                 method: 'POST',

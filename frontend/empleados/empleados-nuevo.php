@@ -408,7 +408,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             });
 
             // Enviar datos al servidor
-            const url = '../../API/empleados/nuevo.php';
+            const url = '../../api/empleados/nuevo.php';
 
             fetch(url, {
                 method: 'POST',

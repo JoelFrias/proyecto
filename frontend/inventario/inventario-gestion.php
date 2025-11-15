@@ -618,7 +618,7 @@
                 tbodyBuscador.innerHTML = '<tr><td colspan="4" style="text-align: center;">Cargando...</td></tr>';
                 
                 // Realizar petición AJAX con fetch
-                fetch('../../API/inventario/buscar-productos.php', {
+                fetch('../../api/inventario/buscar-productos.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -723,7 +723,7 @@
                 };
                 
                 // Enviar datos al servidor
-                fetch('../../API/inventario/registrar-entrada.php', {
+                fetch('../../api/inventario/registrar-entrada.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -805,7 +805,7 @@
                 };
                 
                 // Enviar datos al servidor
-                fetch('../../API/inventario/registrar-salida.php', {
+                fetch('../../api/inventario/registrar-salida.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

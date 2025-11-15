@@ -813,7 +813,7 @@ if ($result->num_rows > 0) {
                     });
 
                     // Enviar datos al servidor
-                    fetch("../../API/facturacion/cotizacion-guardar.php", {
+                    fetch("../../api/facturacion/cotizacion-guardar.php", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(datos)
@@ -961,7 +961,7 @@ if ($result->num_rows > 0) {
             const formData = new FormData();
             formData.append('campo', campo);
 
-            fetch('../../API/facturacion/cotizacion-buscador.php', {
+            fetch('../../api/facturacion/cotizacion-buscador.php', {
                 method: 'POST',
                 body: formData
             })
@@ -1004,7 +1004,7 @@ if ($result->num_rows > 0) {
             });
 
             // Hacer fetch para obtener los datos de la cotización
-            fetch(`../../API/facturacion/cotizacion-detalle.php?no=${no}`)
+            fetch(`../../api/facturacion/cotizacion-detalle.php?no=${no}`)
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
@@ -1159,7 +1159,7 @@ if ($result->num_rows > 0) {
                 noCotizacion: noCotizacion
             };
 
-            fetch("../../API/facturacion/cotizacion-actualizarEstado.php", {
+            fetch("../../api/facturacion/cotizacion-actualizarEstado.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)

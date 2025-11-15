@@ -590,7 +590,7 @@ include_once '../../core/conexion.php';
             } else {
                 // enviar los datos al servidor usando fetch
 
-                const url = '../../API/productos/producto-nuevo.php';
+                const url = '../../api/productos/producto-nuevo.php';
 
                 fetch(url, {
                     method: 'POST',

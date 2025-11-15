@@ -541,7 +541,7 @@ foreach ($permisos_activos as $codigo) {
             });
 
             // Enviar datos al servidor
-            const url = '../../API/empleados/editar.php';
+            const url = '../../api/empleados/editar.php';
 
             fetch(url, {
                 method: 'PUT',

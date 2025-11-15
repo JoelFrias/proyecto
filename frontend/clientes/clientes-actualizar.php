@@ -316,7 +316,7 @@ if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
             };
 
             // Apuntar al archivo PHP de actualización
-            const url = '../../API/clientes/actualizar-cliente.php';
+            const url = '../../api/clientes/actualizar-cliente.php';
 
             fetch(url, {
                 method: 'POST',

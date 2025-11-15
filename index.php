@@ -1083,7 +1083,7 @@ require_once 'core/conexion.php';
                 });
 
                 // Enviar datos mediante AJAX
-                fetch("API/gestion/update-profile.php", {
+                fetch("api/gestion/update-profile.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)

@@ -1334,7 +1334,7 @@
                 // console.log("Enviando datos:", datos);
                 // return;
 
-                fetch("../../API/admin/admin-delete-bank.php", {
+                fetch("../../api/admin/admin-delete-bank.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)
@@ -1404,7 +1404,7 @@
                 // console.log("Enviando datos:", datos);
                 // return;
 
-                fetch("../../API/admin/admin-update-bank.php", {
+                fetch("../../api/admin/admin-update-bank.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)
@@ -1478,7 +1478,7 @@
                     idDestination: id
                 };
 
-                fetch("../../API/admin/admin-delete-destination.php", {
+                fetch("../../api/admin/admin-delete-destination.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)
@@ -1546,7 +1546,7 @@
                     nombre: nombreDestino
                 };
 
-                fetch("../../API/admin/admin-update-destination.php", {
+                fetch("../../api/admin/admin-update-destination.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)
@@ -1624,7 +1624,7 @@
                     text3: text3
                 };
 
-                fetch("../../API/admin/info-factura.php", {
+                fetch("../../api/admin/info-factura.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datos)
@@ -2406,7 +2406,7 @@
                 return;
             }
 
-            fetch("../../API/admin/admin-new-bank.php", {
+            fetch("../../api/admin/admin-new-bank.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)
@@ -2505,7 +2505,7 @@
                 return;
             }
 
-            fetch("../../API/admin/admin-new-destination.php", {
+            fetch("../../api/admin/admin-new-destination.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(datos)
