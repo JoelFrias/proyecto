@@ -1,0 +1,44 @@
+EasyPOS/
+	├── api/
+	│  	├── admin/
+	│  	├── authcontroller/
+	│  	├── clientes/
+	│  	├── empleados/
+	│  	├── facturacion/
+	│  	├── gestion/
+	│  	├── inventario/
+	│  	├── productos/
+	├── assets/
+	│  	├── css/
+	│  	├── graphics/
+	│  	│  	├── admin/
+	│  	│  	├── index/
+	│  	├── img/
+	│  	├── js/
+	│  	├── sql/
+	├── core/
+	├── docs/
+	├── frontend/
+	│  	├── auth/
+	│  	├── caja/
+	│  	├── clientes/
+	│  	├── empleados/
+	│  	├── errors/
+	│  	├── factura/
+	│  	├── gestion/
+	│  	├── inventario/
+	│  	├── layouts/
+	│  	├── productos/
+	│  	├── index.php
+	├── libs/
+	│  	├── fpdf/
+	├── reports/
+	│  	├── cliente/
+	│  	├── cuadre/
+	│  	├── factura/
+	│  	├── producto/
+	│  	├── transacciones/
+	├── tests/
+	├── index.php
+	├── LICENCE.md
+	├── README.md

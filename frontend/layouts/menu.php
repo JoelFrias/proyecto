@@ -5,7 +5,7 @@ if (!isset($_SESSION['idEmpleado'])) {
     exit();
 }
 
-$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . "/proyecto"; // Eliminar ("/proyecto") en produccion
+$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . "/EasyPOS"; // Eliminar ("/EasyPOS") en produccion
 
 //incluir el archivo para validar permisos
 require_once __DIR__ . '/../../core/validar-permisos.php';
