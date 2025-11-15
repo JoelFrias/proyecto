@@ -16,8 +16,8 @@ session_start();
 if (isset($_SESSION['username'])) {
     echo json_encode([
         'success' => false,
-        'error' => 'Ya existe una sesión activa',
-        'redirect' => '../../index.php'
+        'error' => 'Ya existe una sesión activa, por favor actualiza la pagina',
+        'redirect' => '../../'
     ]);
     exit();
 }
@@ -132,7 +132,7 @@ if ($stmt = $conn->prepare($query)) {
                     'idPuesto' => $row['idPuesto']
                 ],
                 'caja' => $datosCaja,
-                'redirect' => '../../index.php'
+                'redirect' => '../../'
             ]);
         } else {
             http_response_code(401);

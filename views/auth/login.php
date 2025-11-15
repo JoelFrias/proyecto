@@ -1,3 +1,15 @@
+<?php
+
+// Redirigir si ya existe una sesion
+session_start();
+
+if (isset($_SESSION['username'])) {
+    header('Location: ../../'); // Redirigir al login
+    exit(); // Detener la ejecución del script
+}
+
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -399,10 +411,8 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
-                    setTimeout(() => {
-                        window.location.href = data.redirect || '../../index.php';
-                    }, 1000);
+                    showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
+                    window.location.href = data.redirect || '../../';
                 } else {
                     // Si el empleado está deshabilitado, mostrar mensaje de advertencia
                     const messageType = data.disabled ? 'warning' : 'error';
