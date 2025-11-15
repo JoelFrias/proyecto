@@ -6,7 +6,7 @@ function validarPermiso($conn, $permiso_necesario, $id_empleado) {
     
     $sql = "SELECT COUNT(*) as tiene_permiso 
             FROM usuarios_permisos 
-            WHERE id_empleado = ? AND id_permiso = ?";
+            WHERE id_permiso = ? AND id_empleado = ?";
     
     $stmt = $conn->prepare($sql);
     
@@ -15,7 +15,7 @@ function validarPermiso($conn, $permiso_necesario, $id_empleado) {
         return false;
     }
     
-    $stmt->bind_param("is", $id_empleado, $permiso_necesario);
+    $stmt->bind_param("si", $permiso_necesario, $id_empleado);
     $stmt->execute();
     
     $result = $stmt->get_result();

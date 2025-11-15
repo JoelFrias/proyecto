@@ -989,24 +989,6 @@
 </head>
 <body>
 
-    <!-- Autenticacion de usuario -->
-    <?php
-        if ($_SESSION['idPuesto'] > 2) {
-            echo "<script>
-                    Swal.fire({
-                            icon: 'error',
-                            title: 'Acceso Prohibido',
-                            text: 'Usted no cuenta con permisos de administrador para entrar a esta pagina.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.location.href = '../../index.php';
-                        });
-                </script>";
-            exit();
-        }
-    ?>
-
     <div class="navegator-nav">
 
         <!-- Menu-->

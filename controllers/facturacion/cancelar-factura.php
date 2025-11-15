@@ -3,6 +3,20 @@
 session_start();
 require_once('../../models/conexion.php');
 
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'FAC002';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
+
 // Verificar si hay una sesión de usuario activa
 if (!isset($_SESSION['idEmpleado'])) {
     echo json_encode(['success' => false, 'message' => 'No hay sesión de usuario']);

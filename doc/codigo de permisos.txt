@@ -3,6 +3,7 @@
 •  Productos:               PRO001
 •  Reporte Productos:       PRO002
 •  Avance Cuenta:           CLI003
+•  Cancelar Pagos Avance:   CLI004
 •  Facturacion:             FAC001
 •  Cancelar Factura:        FAC002
 •  Almacen Principal:       ALM001

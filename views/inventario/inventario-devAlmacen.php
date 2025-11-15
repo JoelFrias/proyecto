@@ -99,15 +99,8 @@ if ($empleado) {
     }
 }
 
-// Consulta para el dropdown de empleados
-if (isset($_SESSION['idPuesto']) && $_SESSION['idPuesto'] > 2) {
-    $stmtEmp = $conn->prepare("SELECT id, CONCAT(id,' ',nombre,' ',apellido) AS nombre 
-                             FROM empleados WHERE activo = TRUE AND id = ?");
-    $stmtEmp->bind_param("i", $_SESSION['idEmpleado']);
-} else {
-    $stmtEmp = $conn->prepare("SELECT id, CONCAT(id,' ',nombre,' ',apellido) AS nombre 
-                             FROM empleados WHERE activo = TRUE");
-}
+// Obtener la lista de empleados activos para el selector
+$stmtEmp = $conn->prepare("SELECT id, CONCAT(id,' ',nombre,' ',apellido) AS nombre FROM empleados WHERE activo = TRUE");
 $stmtEmp->execute();
 $resultEmpleados = $stmtEmp->get_result();
 
@@ -362,25 +355,6 @@ $resultEmpleados = $stmtEmp->get_result();
     </style>
 </head>
 <body>
-
-    <?php
-
-    if ($_SESSION['idPuesto'] > 2) {
-        echo "<script>
-                Swal.fire({
-                        icon: 'error',
-                        title: 'Acceso Prohibido',
-                        text: 'Usted no cuenta con permisos de administrador para entrar a esta pagina.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.location.href = '../../index.php';
-                    });
-            </script>";
-        exit();
-    }
-
-    ?>
 
     <div class="navegator-nav">
 

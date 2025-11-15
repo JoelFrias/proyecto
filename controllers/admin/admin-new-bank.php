@@ -42,7 +42,22 @@ $_SESSION['last_activity'] = time();
 
 /* Fin de verificacion de sesion */
 
+// Incluir la conexión a la base de datos
 require_once '../../models/conexion.php';
+
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'PADM003';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
 
 // Validar metodo de entrada
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

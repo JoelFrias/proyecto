@@ -13,6 +13,20 @@ header('Access-Control-Allow-Headers: Content-Type');
 $response = ['success' => false, 'message' => ''];
 $errors = [];
 
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'EMP001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -114,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'productos' => 'PRO001',
         'productos-reporte' => 'PRO002',
         'avance-cuenta' => 'CLI003',
+        'cancel-avance' => 'CLI004',
         'cancel-facturas' => 'FAC002',
         'almacen' => 'ALM001',
         'inv-empleados' => 'ALM003',

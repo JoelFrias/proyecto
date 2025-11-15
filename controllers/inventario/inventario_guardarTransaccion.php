@@ -23,12 +23,6 @@ $_SESSION['last_activity'] = time();
 
 /* Fin de verificacion de sesion */
 
-/* Validacion de rango */
-
-if ($_SESSION['idPuesto'] > 2) {
-    die(json_encode(["success" => false, "error" => "Acceso no Autorizado"]));
-}
-
 require_once '../../models/conexion.php';
 
 // Funcion para guardar los logs de facturacion

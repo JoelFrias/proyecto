@@ -918,7 +918,7 @@ if ($result->num_rows > 0) {
                                         require_once '../../models/validar-permisos.php';
                                         $permiso_necesario = 'FAC002';
                                         $id_empleado = $_SESSION['idEmpleado'];
-                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado) || $factura['estado'] !== "Cancelada"):
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado) && $factura['estado'] !== "Cancelada"):
 
                                     ?>
 

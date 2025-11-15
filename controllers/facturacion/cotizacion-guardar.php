@@ -9,6 +9,20 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['idEmpleado'])) {
     exit();
 }
 
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'COT001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
+
 // Obtener datos del POST
 $data = json_decode(file_get_contents('php://input'), true);
 

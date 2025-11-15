@@ -295,6 +295,10 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                             <span>Avance de Cuenta</span>
                         </label>
                         <label>
+                            <input type="checkbox" name="permisos[cancel-avance]" id="cancel-avance">
+                            <span>Cancelar Avance a Cuenta</span>
+                        </label>
+                        <label>
                             <input type="checkbox" name="permisos[cancel-facturas]" id="cancel-facturas">
                             <span>Cancelar Facturas</span>
                         </label>
@@ -389,7 +393,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             const password = document.getElementById('password').value;
             const listPermisos = [
                                     'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
-                                    'avance-cuenta', 'cancel-facturas', 'almacen', 'inv-empleados',
+                                    'avance-cuenta', 'cancel-avance', 'cancel-facturas', 'almacen', 'inv-empleados',
                                     'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
                                     'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
                                     'cuadres', 'cot-registro', 'cot-cancelar', 'tran-inventario',

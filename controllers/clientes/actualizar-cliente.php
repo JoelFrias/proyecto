@@ -1,14 +1,27 @@
 <?php
 
 session_start();
-require_once '../../models/conexion.php'; // Asegúrate de que esta ruta sea correcta
-require_once '../../models/auditorias.php'; // Asegúrate de que esta ruta sea correcta
+require_once '../../models/conexion.php';
+require_once '../../models/auditorias.php';
 
 // 1. Configuración de la Respuesta
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // Ajustar esto en producción
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'CLI001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
 
 // Inicializar la respuesta
 $response = ['success' => false, 'message' => ''];

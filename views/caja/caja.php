@@ -1245,12 +1245,16 @@
                             </table>
                         </div>
                     </div>
-
-
-                    <?php if ($_SESSION['idPuesto'] <= 2) : ?>
                     
+                    <?php 
+
+                    // Cambiar a 1 == 1 para mostrar la seccion de ingresos y egresos manuales
+                    if(1 == 0): 
+
+                    ?>
+
                     <!-- Grid para ingresos y egresos -->
-                    <div class="grid" style="display: none;">
+                    <div class="grid">
                         <!-- Panel para registrar ingresos -->
                         <div class="panel">
                             <h2>Registrar Ingreso</h2>

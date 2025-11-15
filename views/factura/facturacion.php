@@ -675,14 +675,10 @@ if ($result->num_rows > 0) {
                             </select>
                         </div>
                         
-                        <?php // if ($_SESSION['idPuesto'] <= 2) : ?>
-
                         <div id="div-descuento">
                             <label for="input-descuento">Descuento:</label>
                             <input type="number" id="input-descuento" name="input-descuento" step="0.01" min="0" placeholder="Ingrese el descuento (Si aplica)">
                         </div>
-                        
-                        <?php // endif ?>
 
                         <div id="div-monto">
                             <label for="monto-pagado">Monto Pagado:</label>

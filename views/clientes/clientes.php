@@ -371,8 +371,22 @@ function construirQueryFiltros($filtros) {
                                         <th>Identificación</th>
                                         <th>Teléfono</th>
                                         <th>Notas</th>
+                                        
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI003';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
                                         <th>Límite Crédito</th>
                                         <th>Balance</th>
+
+                                        <?php endif; ?>
+
                                         <th>Dirección</th>
                                         <th>Estado</th>
 
@@ -433,8 +447,22 @@ function construirQueryFiltros($filtros) {
                                         <td><?php echo htmlspecialchars($row['identificacion']); ?></td>
                                         <td><?php echo htmlspecialchars($row['telefono']); ?></td>
                                         <td><?php echo htmlspecialchars($row['notas']); ?></td>
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI003';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
                                         <td><?php echo htmlspecialchars("RD$ " . $row['limite_credito']); ?></td>
                                         <td><?php echo htmlspecialchars("RD$ " . $row['balance']); ?></td>
+
+                                        <?php endif; ?>
+
                                         <td><?php echo htmlspecialchars($row['direccion']); ?></td>
                                         <td>
                                             <!-- Estado del cliente -->
@@ -525,6 +553,17 @@ function construirQueryFiltros($filtros) {
                                     <div class="mobile-label">Teléfono:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars($row['telefono']); ?></div>
                                 </div>
+
+                                <?php
+
+                                // Validar permisos
+                                require_once '../../models/validar-permisos.php';
+                                $permiso_necesario = 'CLI003';
+                                $id_empleado = $_SESSION['idEmpleado'];
+                                if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                ?>
+
                                 <div class="mobile-info-item">
                                     <div class="mobile-label">Límite Crédito:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars("RD$ " . $row['limite_credito']); ?></div>
@@ -533,6 +572,9 @@ function construirQueryFiltros($filtros) {
                                     <div class="mobile-label">Balance:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars("RD$ " . $row['balance']); ?></div>
                                 </div>
+                                
+                                <?php endif; ?> 
+
                                 <div class="mobile-info-item notes-field">
                                     <div class="mobile-label">Notas:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars($row['notas']); ?></div>
@@ -545,6 +587,16 @@ function construirQueryFiltros($filtros) {
                                 
 
                                 <div class="mobile-actions">
+
+                                    <?php
+
+                                    // Validar permisos
+                                    require_once '../../models/validar-permisos.php';
+                                    $permiso_necesario = 'CLI002';
+                                    $id_empleado = $_SESSION['idEmpleado'];
+                                    if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                    ?>
                                     
                                     <!-- Boton para avance a cuenta -->
                                     <a href="cuenta-avance.php?idCliente=<?php echo urlencode($row['id']); ?>" class="btn btn-update">
@@ -552,9 +604,14 @@ function construirQueryFiltros($filtros) {
                                         <span>Avance a Cuenta</span>
                                     </a>
 
-                                    <?php 
-                                        // Verificar si el usuario tiene permisos de administrador
-                                        if ($_SESSION['idPuesto'] <= 2):
+                                    <?php endif; 
+
+                                    // Validar permisos
+                                    require_once '../../models/validar-permisos.php';
+                                    $permiso_necesario = 'CLI001';
+                                    $id_empleado = $_SESSION['idEmpleado'];
+                                    if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                     ?>
                                     
                                     <!-- Botón para actualizar el cliente -->

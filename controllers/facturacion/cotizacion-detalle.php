@@ -3,6 +3,20 @@ session_start();
 
 require '../../models/conexion.php';
 
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'COT002';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
+
 // Verificar que se recibió el número de cotización
 if (!isset($_GET['no']) || empty($_GET['no'])) {
     echo json_encode(['error' => 'Número de cotización no proporcionado']);

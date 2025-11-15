@@ -39,6 +39,20 @@ $_SESSION['last_activity'] = time();
 
 require_once '../../models/conexion.php';
 
+// Validar permisos de usuario
+require_once '../../models/validar-permisos.php';
+$permiso_necesario = 'PADM003';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
+
 // Funcion para guardar los logs de depuracion
 function logDebug($message, $data = null) {
     $logMessage = date('Y-m-d H:i:s') . " - " . $message;

@@ -112,6 +112,7 @@ $mapeoPermisos = [
     'PRO001' => 'productos',
     'PRO002' => 'productos-reporte',
     'CLI003' => 'avance-cuenta',
+    'CLI004' => 'cancel-avance',
     'FAC002' => 'cancel-facturas',
     'ALM001' => 'almacen',
     'ALM003' => 'inv-empleados',
@@ -417,6 +418,10 @@ foreach ($permisos_activos as $codigo) {
                             <span>Avance de Cuenta</span>
                         </label>
                         <label>
+                            <input type="checkbox" name="permisos[cancel-avance]" id="cancel-avance" <?php echo isset($permisos_checked['cancel-avance']) ? 'checked' : ''; ?>>
+                            <span>Cancelar Avance a Cuenta</span>
+                        </label>
+                        <label>
                             <input type="checkbox" name="permisos[cancel-facturas]" id="cancel-facturas" <?php echo isset($permisos_checked['cancel-facturas']) ? 'checked' : ''; ?>>
                             <span>Cancelar Facturas</span>
                         </label>
@@ -522,11 +527,11 @@ foreach ($permisos_activos as $codigo) {
             
             const listPermisos = [
                 'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
-                'avance-cuenta', 'cancel-facturas', 'almacen', 'inv-empleados',
-                'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
-                'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
-                'cuadres', 'cot-registro', 'cot-cancelar', 'tran-inventario',
-                'admi-inventario'
+                'avance-cuenta', 'cancel-avance', 'cancel-facturas', 'almacen',
+                'inv-empleados', 'facturacion', 'cot-accion', 'caja', 'pan-adm', 
+                'estadisticas', 'bancos-destinos', 'usuarios', 'empleados', 
+                'inf-factura', 'cuadres', 'cot-registro', 'cot-cancelar',
+                'tran-inventario','admi-inventario'
             ];
 
             const permisos = {};

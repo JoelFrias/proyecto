@@ -31,22 +31,6 @@ require_once '../../models/conexion.php';
 
 /* Fin de verificacion de sesion */
 
-// Verificar si el usuario tiene permisos de administrador
-if ($_SESSION['idPuesto'] > 2) {
-    echo "<script>
-            Swal.fire({
-                    icon: 'error',
-                    title: 'Acceso Prohibido',
-                    text: 'Usted no cuenta con permisos de administrador para entrar a esta pagina.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
-                }).then(() => {
-                    window.location.href = '../../index.php';
-                });
-          </script>";
-    exit();
-}
-
 // Procesar la actualización si se envió el formulario
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = intval($_POST['id']);
@@ -616,25 +600,6 @@ if (isset($_GET['editar'])) {
     </style>
 </head>
 <body>
-
-    <?php
-
-        if ($_SESSION['idPuesto'] > 2) {
-            echo "<script>
-                    Swal.fire({
-                            icon: 'error',
-                            title: 'Acceso Prohibido',
-                            text: 'Usted no cuenta con permisos de administrador para entrar a esta pagina.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.location.href = '../../index.php';
-                        });
-                </script>";
-            exit();
-        }
-
-    ?>
 
     <div class="navegator-nav">
 

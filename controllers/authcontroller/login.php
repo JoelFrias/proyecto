@@ -60,20 +60,21 @@ if (empty($user) || empty($pass)) {
     exit();
 }
 
-// Consulta a la base de datos
+// Consulta a la base de datos (removemos el filtro de activo=1)
 $query = "SELECT
             u.id,
             e.id AS idEmpleado,
             u.username,
             u.password,
             CONCAT(e.nombre, ' ', e.apellido) AS nombre,
-            e.idPuesto
+            e.idPuesto,
+            e.activo
         FROM
             usuarios AS u
         INNER JOIN empleados AS e
         ON
             u.idEmpleado = e.id
-        WHERE u.username = ? AND e.activo = 1
+        WHERE u.username = ?
         LIMIT 1";
 
 if ($stmt = $conn->prepare($query)) {
@@ -84,6 +85,20 @@ if ($stmt = $conn->prepare($query)) {
     if ($row = $result->fetch_assoc()) {
         // Verificar contraseña
         if (password_verify($pass, $row['password'])) {
+            
+            // Verificar si el empleado está activo
+            if ($row['activo'] == 0 || $row['activo'] === false) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'El empleado vinculado a estas credenciales ha sido deshabilitado. Si esto es un error, póngase en contacto con el administrador.',
+                    'disabled' => true
+                ]);
+                $stmt->close();
+                $conn->close();
+                exit();
+            }
+            
             // Guardar datos en la sesión
             $_SESSION['id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
@@ -149,7 +164,6 @@ $conn->close();
 /**
  * Función para verificar si el empleado tiene una caja abierta
  */
-
 function verificarCajaAbierta($conn, $idEmpleado) {
     $sql_verificar = "SELECT
                         numCaja,

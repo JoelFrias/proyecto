@@ -616,9 +616,20 @@
                             <table class="payment-table">
                                 <thead>
                                     <tr>
-                                        <?php if ($_SESSION['idPuesto'] <= 2): ?>
-                                            <th>Acción</th>
+
+                                        <?php 
+
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'CLI004';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
+                                        <th>Acción</th>
+
                                         <?php endif; ?>
+
                                         <th>Fecha</th>
                                         <th>Método</th>
                                         <th>Monto</th>
@@ -632,9 +643,19 @@
                                 <tbody>
                                     <?php while($row = $result->fetch_assoc()): ?>
                                         <tr>
-                                            <?php if ($_SESSION['idPuesto'] <= 2): ?>
-                                                <td><button onclick="cancelpayment(<?= $row['id'] ?>)" class="btn-cancel">Cancelar Pago</button></td>
+                                            <?php 
+
+                                            require_once '../../models/validar-permisos.php';
+                                            $permiso_necesario = 'CLI004';
+                                            $id_empleado = $_SESSION['idEmpleado'];
+                                            if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                            ?>
+
+                                            <td><button onclick="cancelpayment(<?= $row['id'] ?>)" class="btn-cancel">Cancelar Pago</button></td>
+
                                             <?php endif; ?>
+                                            
                                             <td><?php echo htmlspecialchars($row['fechachp']); ?></td>
                                             <td><?php echo htmlspecialchars($row['metodochp']); ?></td>
                                             <td><?php echo htmlspecialchars($row['montochp']); ?></td>

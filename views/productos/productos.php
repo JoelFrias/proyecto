@@ -341,23 +341,66 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         <th>ID</th>
                                         <th>Descripción</th>
                                         <th>Tipo</th>
-                                        <th>Existencia</th>
-                                        <?php 
-                                            // Verificar si el usuario tiene permisos de administrador
-                                            if ($_SESSION['idPuesto'] <= 2) {
-                                                echo '<th>Precio Compra</th>';
-                                            }
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'ALM001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                         ?>
+
+                                        <th>Existencia</th>
+
+                                        <?php
+
+                                        endif;
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'PRO001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
+                                            <th>Precio Compra</th>
+
+                                        <?php endif; ?>
+
                                         <th>Precio Venta 1</th>
                                         <th>Precio Venta 2</th>
                                         <th>Reorden</th>
-                                        <th>Estado</th>
-                                        <?php 
-                                            // Verificar si el usuario tiene permisos de administrador
-                                            if ($_SESSION['idPuesto'] <= 2) {
-                                                echo '<th>Acciones</th>';
-                                            }
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'ALM001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                         ?>
+
+                                        <th>Estado</th>
+
+                                        <?php
+                                        
+                                        endif;
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'PRO001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
+                                            <th>Acciones</th>
+
+                                        <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -376,11 +419,29 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         <td><?php echo htmlspecialchars($row['idProducto']); ?></td>
                                         <td><?php echo htmlspecialchars($row['descripcion']); ?></td>
                                         <td><?php echo htmlspecialchars($row['tipo']); ?></td>
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'ALM001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
                                         <td><?php echo htmlspecialchars($row['existencia']); ?></td>
 
-                                        <?php 
-                                            // Verificar si el usuario tiene permisos de administrador
-                                            if ($_SESSION['idPuesto'] <= 2):
+                                        <?php
+
+                                        endif;
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'PRO001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                         ?>
 
                                         <td><?php echo htmlspecialchars("RD$ " . number_format($row['precioCompra'], 2)); ?></td>
@@ -389,16 +450,35 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         
                                         <td><?php echo htmlspecialchars("RD$ " . number_format($row['precioVenta1'], 2));?></td>
                                         <td><?php echo htmlspecialchars("RD$ " . number_format($row['precioVenta2'], 2)); ?></td>
+
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'ALM001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                        ?>
+
                                         <td><?php echo htmlspecialchars($row['reorden']); ?></td>
+
+                                        <?php endif; ?>
+
                                         <td>
                                             <span class="status <?php echo $row['activo'] ? 'status-active' : 'status-inactive'; ?>">
                                                 <?php echo $row['activo'] ? 'Activo' : 'Inactivo'; ?>
                                             </span>
                                         </td>
 
-                                        <?php 
-                                            // Verificar si el usuario tiene permisos de administrador
-                                            if ($_SESSION['idPuesto'] <= 2):
+                                        <?php
+
+                                        // Validar permisos
+                                        require_once '../../models/validar-permisos.php';
+                                        $permiso_necesario = 'PRO001';
+                                        $id_empleado = $_SESSION['idEmpleado'];
+                                        if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                         ?>
 
                                             <td>
@@ -428,7 +508,7 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                     
                                     } else {
 
-                                        echo '<td colspan="3">No se encontraron resultados</td>';
+                                        echo '<td colspan="10">No se encontraron resultados</td>';
 
                                     }
                                     
@@ -471,14 +551,32 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                     <div class="mobile-label">ID:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars($row['idProducto']); ?></div>
                                 </div>
+
+                                <?php
+
+                                // Validar permisos
+                                require_once '../../models/validar-permisos.php';
+                                $permiso_necesario = 'ALM001';
+                                $id_empleado = $_SESSION['idEmpleado'];
+                                if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                ?>
+
                                 <div class="mobile-info-item">
                                     <div class="mobile-label">Existencia:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars($row['existencia']); ?></div>
                                 </div>
 
-                                <?php 
-                                    // Verificar si el usuario tiene permisos de administrador
-                                    if ($_SESSION['idPuesto'] <= 2):
+                               <?php
+
+                                endif;
+
+                                // Validar permisos
+                                require_once '../../models/validar-permisos.php';
+                                $permiso_necesario = 'PRO001';
+                                $id_empleado = $_SESSION['idEmpleado'];
+                                if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                 ?>
 
                                 <div class="mobile-info-item">
@@ -496,14 +594,32 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                     <div class="mobile-label">Precio Venta 2:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars("RD$ " . number_format($row['precioVenta2'], 2)); ?></div>
                                 </div>
+
+                                <?php
+
+                                // Validar permisos
+                                require_once '../../models/validar-permisos.php';
+                                $permiso_necesario = 'ALM001';
+                                $id_empleado = $_SESSION['idEmpleado'];
+                                if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
+                                ?>
+                                
                                 <div class="mobile-info-item">
                                     <div class="mobile-label">Reorden:</div>
                                     <div class="mobile-value"><?php echo htmlspecialchars($row['reorden']); ?></div>
                                 </div>
 
-                                <?php 
-                                    // Verificar si el usuario tiene permisos de administrador
-                                    if ($_SESSION['idPuesto'] <= 2):
+                                <?php
+
+                                endif;
+
+                                // Validar permisos
+                                require_once '../../models/validar-permisos.php';
+                                $permiso_necesario = 'PRO001';
+                                $id_empleado = $_SESSION['idEmpleado'];
+                                if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
+
                                 ?>
                                 
                                 <div class="mobile-actions">

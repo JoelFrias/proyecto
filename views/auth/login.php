@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>EasyPOS - Iniciar Sesión</title>
+    <link rel="shortcut icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
     <style>
         * {
             margin: 0;
@@ -67,7 +68,8 @@
         }
 
         .error-message,
-        .success-message {
+        .success-message,
+        .warning-message {
             padding: 12px 16px;
             border-radius: 6px;
             margin-bottom: 20px;
@@ -88,6 +90,12 @@
             background-color: #d1fae5;
             color: #065f46;
             border-left: 4px solid #10b981;
+        }
+
+        .warning-message {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
         }
 
         @keyframes slideDown {
@@ -376,7 +384,6 @@
             // Deshabilitar el formulario
             setFormLoading(true);
 
-            // Código real para tu aplicación:
             try {
                 const response = await fetch('../../controllers/authcontroller/login.php', {
                     method: 'POST',
@@ -397,7 +404,9 @@
                         window.location.href = data.redirect || '../../index.php';
                     }, 1000);
                 } else {
-                    showMessage(data.error || 'Error al iniciar sesión.', 'error');
+                    // Si el empleado está deshabilitado, mostrar mensaje de advertencia
+                    const messageType = data.disabled ? 'warning' : 'error';
+                    showMessage(data.error || 'Error al iniciar sesión.', messageType);
                     setFormLoading(false);
                 }
             } catch (error) {
@@ -425,7 +434,14 @@
 
         // Función para mostrar mensajes
         function showMessage(message, type = 'error') {
-            const messageClass = type === 'error' ? 'error-message' : 'success-message';
+            let messageClass = 'error-message';
+            
+            if (type === 'success') {
+                messageClass = 'success-message';
+            } else if (type === 'warning') {
+                messageClass = 'warning-message';
+            }
+            
             const messageHTML = `
                 <div class="${messageClass}" id="message-alert">
                     <span>${message}</span>
@@ -434,11 +450,14 @@
             `;
             messageContainer.innerHTML = messageHTML;
 
+            /* ACTUALMENTE DESABILITADO
+
             // Auto-close after 5 seconds
             setTimeout(() => {
                 closeMessage();
-            }, 3000);
+            }, 5000);
 
+            */
         }
 
         // Función para cerrar el mensaje
