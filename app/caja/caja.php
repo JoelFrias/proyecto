@@ -1,458 +1,426 @@
 <?php
-    /* Verificacion de sesion */
-    session_start();
 
-    // Configurar el tiempo de caducidad de la sesión
-    $inactivity_limit = 900; // 15 minutos en segundos
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
-    // Verificar si el usuario ha iniciado sesión
-    if (!isset($_SESSION['username'])) {
-        session_unset();
-        session_destroy();
-        header('Location: ../../app/auth/login.php');
-        exit();
-    }
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'CAJ001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo "
+        <html>
+            <head>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            </head>
+            <body>
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ACCESO DENEGADO',
+                        text: 'No tienes permiso para acceder a esta sección.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.history.back();
+                    });
+                </script>
+            </body>
+        </html>";
+        
+    exit(); 
+}
 
-    // Verificar si la sesión ha expirado por inactividad
-    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-        session_unset();
-        session_destroy();
-        header("Location: ../../app/auth/login.php?session_expired=session_expired");
-        exit();
-    }
+// Configuración de la zona horaria
+date_default_timezone_set('America/Santo_Domingo');
 
-    // Actualizar el tiempo de la última actividad
-    $_SESSION['last_activity'] = time();
+// Variables
+$mensaje; // Mensaje para alertas
+$id_empleado = $_SESSION['idEmpleado'];
+$nombre_empleado = $_SESSION['nombre'];
 
-    /* Fin de verificacion de sesion */
+// Verificar si el empleado tiene una caja abierta 
+$sql_verificar = "SELECT
+                    numCaja,
+                    idEmpleado,
+                    fechaApertura AS fechaApertura,
+                    saldoApertura,
+                    registro
+                FROM
+                    cajasabiertas
+                WHERE
+                    idEmpleado = ?";
 
-    // Configuración de la zona horaria
-    date_default_timezone_set('America/Santo_Domingo');
+$stmt = $conn->prepare($sql_verificar);
+$stmt->bind_param("i", $id_empleado);
+$stmt->execute();
+$resultado = $stmt->get_result();
+$caja_abierta = false;
+$datos_caja = null;
 
-    // Conexión a la base de datos
-    require_once '../../core/conexion.php';
+if ($resultado->num_rows > 0) {
+    $caja_abierta = true;
+    $datos_caja = $resultado->fetch_assoc();
 
-    ////////////////////////////////////////////////////////////////////
-    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
-    ////////////////////////////////////////////////////////////////////
+    // Almacenar datos de la caja abierta - aseguramos que numCaja sea string
+    $_SESSION['numCaja'] = $datos_caja['numCaja'];
+    $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
+    $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
+    $_SESSION['registro'] = $datos_caja['registro'];
+}
+$stmt->close();
 
-    require_once '../../core/validar-permisos.php';
-    $permiso_necesario = 'CAJ001';
-    $id_empleado = $_SESSION['idEmpleado'];
-    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-        echo "
-            <html>
-                <head>
-                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-                </head>
-                <body>
-                    <script>
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'ACCESO DENEGADO',
-                            text: 'No tienes permiso para acceder a esta sección.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.history.back();
-                        });
-                    </script>
-                </body>
-            </html>";
-            
-        exit(); 
-    }
+// Consultar totales para caja actual (si está abierta)
+$total_ingresos = 0;
+$total_egresos = 0;
 
-    ////////////////////////////////////////////////////////////////////
+if ($caja_abierta) {
 
-
-    // Variables
-    $mensaje; // Mensaje para alertas
-    $id_empleado = $_SESSION['idEmpleado'];
-    $nombre_empleado = $_SESSION['nombre'];
-
-    // Verificar si el empleado tiene una caja abierta 
-    $sql_verificar = "SELECT
-                        numCaja,
-                        idEmpleado,
-                        fechaApertura AS fechaApertura,
-                        saldoApertura,
-                        registro
-                    FROM
-                        cajasabiertas
-                    WHERE
-                        idEmpleado = ?";
-
-    $stmt = $conn->prepare($sql_verificar);
-    $stmt->bind_param("i", $id_empleado);
+    $num_caja = $datos_caja['numCaja'];
+    
+    // Calcular total de ingresos
+    $sql_ingresos = "SELECT SUM(monto) as total FROM cajaingresos WHERE metodo = 'efectivo' AND numCaja = ?";
+    $stmt = $conn->prepare($sql_ingresos);
+    $stmt->bind_param("s", $num_caja);
     $stmt->execute();
-    $resultado = $stmt->get_result();
-    $caja_abierta = false;
-    $datos_caja = null;
-
-    if ($resultado->num_rows > 0) {
-        $caja_abierta = true;
-        $datos_caja = $resultado->fetch_assoc();
-
-        // Almacenar datos de la caja abierta - aseguramos que numCaja sea string
-        $_SESSION['numCaja'] = $datos_caja['numCaja'];
-        $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
-        $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
-        $_SESSION['registro'] = $datos_caja['registro'];
+    $result_ingresos = $stmt->get_result();
+    if ($result_ingresos->num_rows > 0) {
+        $row_ingresos = $result_ingresos->fetch_assoc();
+        $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
     }
     $stmt->close();
-
-    // Consultar totales para caja actual (si está abierta)
-    $total_ingresos = 0;
-    $total_egresos = 0;
-
-    if ($caja_abierta) {
-
-        $num_caja = $datos_caja['numCaja'];
-        
-        // Calcular total de ingresos
-        $sql_ingresos = "SELECT SUM(monto) as total FROM cajaingresos WHERE metodo = 'efectivo' AND numCaja = ?";
-        $stmt = $conn->prepare($sql_ingresos);
-        $stmt->bind_param("s", $num_caja);
-        $stmt->execute();
-        $result_ingresos = $stmt->get_result();
-        if ($result_ingresos->num_rows > 0) {
-            $row_ingresos = $result_ingresos->fetch_assoc();
-            $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
-        }
-        $stmt->close();
-        
-        // Calcular total de egresos
-        $sql_egresos = "SELECT SUM(monto) as total FROM cajaegresos WHERE metodo = 'efectivo' AND numCaja = ?";
-        $stmt = $conn->prepare($sql_egresos);
-        $stmt->bind_param("s", $num_caja);
-        $stmt->execute();
-        $result_egresos = $stmt->get_result();
-        if ($result_egresos->num_rows > 0) {
-            $row_egresos = $result_egresos->fetch_assoc();
-            $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
-        }
-        $stmt->close();
+    
+    // Calcular total de egresos
+    $sql_egresos = "SELECT SUM(monto) as total FROM cajaegresos WHERE metodo = 'efectivo' AND numCaja = ?";
+    $stmt = $conn->prepare($sql_egresos);
+    $stmt->bind_param("s", $num_caja);
+    $stmt->execute();
+    $result_egresos = $stmt->get_result();
+    if ($result_egresos->num_rows > 0) {
+        $row_egresos = $result_egresos->fetch_assoc();
+        $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
     }
+    $stmt->close();
+}
 
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        // Abrir caja con transacción
-        if (isset($_POST['abrir_caja']) && !$caja_abierta) {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Abrir caja con transacción
+    if (isset($_POST['abrir_caja']) && !$caja_abierta) {
 
-            $saldo_apertura = filter_input(INPUT_POST, 'saldo_apertura', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-            
-            if ($saldo_apertura === false || $saldo_apertura < 0) {
-                $mensaje = "Error: Saldo inicial no válido";
-            } else {
-                $conn->autocommit(FALSE); // Iniciar transacción
-                $error = false;
-                
-                try {
-                    // Obtener y bloquear el contador
-                    $sql_contador = "SELECT contador FROM cajacontador LIMIT 1 FOR UPDATE";
-                    $stmt = $conn->prepare($sql_contador);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al obtener número de caja");
-                    }
-                    
-                    $result_contador = $stmt->get_result();
-                    $contador_row = $result_contador->fetch_assoc();
-                    
-                    // Asegurar que el contador sea un entero
-                    $contador_num = intval($contador_row['contador']);
-                    
-                    // Formatear el contador con ceros a la izquierda (5 dígitos)
-                    $num_caja = str_pad($contador_num, 5, '0', STR_PAD_LEFT);
-                    
-                    // Incrementar contador para el próximo uso
-                    $nuevo_contador = $contador_num + 1;
-                    
-                    // Actualizar el contador
-                    $sql_update_contador = "UPDATE cajacontador SET contador = ?";
-                    $stmt = $conn->prepare($sql_update_contador);
-                    $stmt->bind_param("i", $nuevo_contador);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al actualizar contador");
-                    }
-                    
-                    // Insertar caja abierta - usar num_caja como string formateado
-                    $sql = "INSERT INTO cajasabiertas (numCaja, idEmpleado, fechaApertura, saldoApertura) 
-                            VALUES (?, ?, NOW(), ?)";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("sid", $num_caja, $id_empleado, $saldo_apertura);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al abrir caja en sistema");
-                    }
-
-                    /**
-                     *  2. Auditoria de acciones de usuario
-                     */
-
-                    require_once '../../core/auditorias.php';
-                    $usuario_id = $_SESSION['idEmpleado'];
-                    $accion = 'APERTURA_CAJA';
-                    $detalle = 'Caja abierta con saldo inicial: ' . $saldo_apertura . ' y número de caja: ' . $num_caja;
-                    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-                    
-                    $conn->commit();
-                    $mensaje = "Caja abierta exitosamente";
-                    $caja_abierta = true;
-                    
-                    // Refrescar datos
-                    $sql_verificar = "SELECT * FROM cajasabiertas WHERE idEmpleado = ?";
-                    $stmt = $conn->prepare($sql_verificar);
-                    $stmt->bind_param("i", $id_empleado);
-                    $stmt->execute();
-                    $resultado = $stmt->get_result();
-                    $datos_caja = $resultado->fetch_assoc();
-
-                    // Almacenar datos de la caja abierta
-                    $_SESSION['numCaja'] = $num_caja;
-                    $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
-                    $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
-                    $_SESSION['registro'] = $datos_caja['registro'];
-                    
-                    // Registrar auditoría
-                    registrarAuditoriaCaja($conn, $id_empleado, 'APERTURA_CAJA', 
-                        "Caja #$num_caja abierta con saldo inicial: $saldo_apertura");
-                    
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $mensaje = "Error en transacción: " . $e->getMessage();
-                    $error = true;
-                }
-                
-                $conn->autocommit(TRUE);
-                if ($error) {
-                    registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_APERTURA', 
-                        "Fallo al abrir caja: " . $mensaje);
-                }
-            }
-
-        }
+        $saldo_apertura = filter_input(INPUT_POST, 'saldo_apertura', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         
-        // Cerrar caja con transacción
-        if (isset($_POST['cerrar_caja']) && $caja_abierta) {
-            $saldo_final = filter_input(INPUT_POST, 'saldo_final', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-            $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
-            $registro = filter_input(INPUT_POST, 'registro', FILTER_SANITIZE_NUMBER_INT);
-            $fecha_apertura = filter_input(INPUT_POST, 'fecha_apertura', FILTER_SANITIZE_STRING);
-            $saldo_inicial = filter_input(INPUT_POST, 'saldo_inicial', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        if ($saldo_apertura === false || $saldo_apertura < 0) {
+            $mensaje = "Error: Saldo inicial no válido";
+        } else {
+            $conn->autocommit(FALSE); // Iniciar transacción
+            $error = false;
             
-            if ($saldo_final === false || $saldo_final < 0) {
-                $mensaje = "Error: Saldo final no válido";
-            } else {
-                $conn->autocommit(FALSE); // Iniciar transacción
-                $error = false;
-                
-                try {
-                    // Calcular diferencia
-                    $diferencia = $saldo_final - ($saldo_inicial + $total_ingresos - $total_egresos);
-                    
-                    // Insertar en cajas cerradas
-                    $sql = "INSERT INTO cajascerradas (numCaja, idEmpleado, fechaApertura, fechaCierre, saldoInicial, saldoFinal, diferencia) 
-                            VALUES (?, ?, ?, NOW(), ?, ?, ?)";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("sisddd", $num_caja, $id_empleado, $fecha_apertura, $saldo_inicial, $saldo_final, $diferencia);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al registrar cierre de caja");
-                    }
-                    
-                    // Eliminar de cajas abiertas
-                    $sql_delete = "DELETE FROM cajasabiertas WHERE registro = ?";
-                    $stmt = $conn->prepare($sql_delete);
-                    $stmt->bind_param("i", $registro);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al eliminar caja abierta");
-                    }
-
-                    /**
-                     *  2. Auditoria de acciones de usuario
-                     */
-
-                    require_once '../../core/auditorias.php';
-                    $usuario_id = $_SESSION['idEmpleado'];
-                    $accion = 'CIERRE_CAJA';
-                    $detalle = 'Caja cerrada con saldo final: ' . $saldo_final . ' y número de caja: ' . $num_caja;
-                    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-                    
-                    $conn->commit();
-                    $mensaje = "Caja cerrada exitosamente";
-                    $caja_abierta = false;
-
-                    // Registrar auditoría
-                    registrarAuditoriaCaja($conn, $id_empleado, 'CIERRE_CAJA', 
-                        "Caja #$num_caja cerrada. Saldo final: $saldo_final, Diferencia: $diferencia");
-                    
-                    // Limpiar variables de caja
-                    unset($_SESSION['numCaja']);
-                    unset($_SESSION['fechaApertura']);
-                    unset($_SESSION['saldoApertura']);
-                    unset($_SESSION['registro']);
-                    
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $mensaje = "Error en transacción de cierre: " . $e->getMessage();
-                    $error = true;
+            try {
+                // Obtener y bloquear el contador
+                $sql_contador = "SELECT contador FROM cajacontador LIMIT 1 FOR UPDATE";
+                $stmt = $conn->prepare($sql_contador);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al obtener número de caja");
                 }
                 
-                $conn->autocommit(TRUE);
-                if ($error) {
-                    registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_CIERRE', 
-                        "Fallo al cerrar caja #$num_caja: " . $mensaje);
-                }
-            }
-
-        }
-        
-        // Registrar ingreso con transacción
-        if (isset($_POST['registrar_ingreso']) && $caja_abierta) {
-            $monto = filter_input(INPUT_POST, 'monto_ingreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-            $metodo = $_POST['metodo_ingreso'];
-            $metodo = filter_var($metodo, FILTER_SANITIZE_STRING);
-            $razon = filter_input(INPUT_POST, 'razon_ingreso', FILTER_SANITIZE_STRING);
-            $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
-            
-            if ($monto === false || $monto <= 0) {
-                $mensaje = "Error: Monto no válido";
-            } elseif (empty($razon)) {
-                $mensaje = "Error: Razón no puede estar vacía";
-            } else {
-                $conn->autocommit(FALSE);
-                $error = false;
+                $result_contador = $stmt->get_result();
+                $contador_row = $result_contador->fetch_assoc();
                 
-                try {
-                    // Insertar ingreso
-                    $sql = "INSERT INTO cajaingresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
-                            VALUES (?, ?, ?, ?, ?, NOW())";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("sdiss", $metodo, $monto, $id_empleado, $num_caja, $razon);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al registrar ingreso");
-                    }
-                    
-                    // Actualizar total de ingresos
-                    $sql_ingresos = "SELECT SUM(monto) as total FROM cajaingresos WHERE numCaja = ?";
-                    $stmt = $conn->prepare($sql_ingresos);
-                    $stmt->bind_param("s", $num_caja);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al actualizar total de ingresos");
-                    }
-                    
-                    $result_ingresos = $stmt->get_result();
-                    if ($result_ingresos->num_rows > 0) {
-                        $row_ingresos = $result_ingresos->fetch_assoc();
-                        $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
-                    }
-
-                    /**
-                     *  2. Auditoria de acciones de usuario
-                     */
-
-                    require_once '../../core/auditorias.php';
-                    $usuario_id = $_SESSION['idEmpleado'];
-                    $accion = 'INGRESO_CAJA';
-                    $detalle = 'Ingreso registrado con monto: ' . $monto . ' y número de caja: ' . $num_caja . ' Razón: ' . $razon;
-                    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-                    
-                    $conn->commit();
-                    $mensaje = "Ingreso registrado exitosamente";
-                    
-                    // Registrar auditoría
-                    registrarAuditoriaCaja($conn, $id_empleado, 'INGRESO', 
-                        "Monto: $monto, Razón: $razon, Caja: $num_caja");
-                    
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $mensaje = "Error en transacción de ingreso: " . $e->getMessage();
-                    $error = true;
+                // Asegurar que el contador sea un entero
+                $contador_num = intval($contador_row['contador']);
+                
+                // Formatear el contador con ceros a la izquierda (5 dígitos)
+                $num_caja = str_pad($contador_num, 5, '0', STR_PAD_LEFT);
+                
+                // Incrementar contador para el próximo uso
+                $nuevo_contador = $contador_num + 1;
+                
+                // Actualizar el contador
+                $sql_update_contador = "UPDATE cajacontador SET contador = ?";
+                $stmt = $conn->prepare($sql_update_contador);
+                $stmt->bind_param("i", $nuevo_contador);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al actualizar contador");
                 }
                 
-                $conn->autocommit(TRUE);
-                if ($error) {
-                    registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_INGRESO', 
-                        "Fallo al registrar ingreso: " . $mensaje);
+                // Insertar caja abierta - usar num_caja como string formateado
+                $sql = "INSERT INTO cajasabiertas (numCaja, idEmpleado, fechaApertura, saldoApertura) 
+                        VALUES (?, ?, NOW(), ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sid", $num_caja, $id_empleado, $saldo_apertura);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al abrir caja en sistema");
                 }
-            }
 
+                /**
+                 *  2. Auditoria de acciones de usuario
+                 */
 
-        }
-        
-        // Registrar egreso con transacción
-        if (isset($_POST['registrar_egreso']) && $caja_abierta) {
-            $monto = filter_input(INPUT_POST, 'monto_egreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-            $metodo = $_POST['metodo_egreso'];
-            $razon = filter_input(INPUT_POST, 'razon_egreso', FILTER_SANITIZE_STRING);
-            $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
-            
-            if ($monto === false || $monto <= 0) {
-                $mensaje = "Error: Monto no válido";
-            } elseif (empty($razon)) {
-                $mensaje = "Error: Razón no puede estar vacía";
-            } else {
-                $conn->autocommit(FALSE);
-                $error = false;
+                require_once '../../core/auditorias.php';
+                $usuario_id = $_SESSION['idEmpleado'];
+                $accion = 'APERTURA_CAJA';
+                $detalle = 'Caja abierta con saldo inicial: ' . $saldo_apertura . ' y número de caja: ' . $num_caja;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
+                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
                 
-                try {
-                    // Insertar egreso
-                    $sql = "INSERT INTO cajaegresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
-                            VALUES (?, ?, ?, ?, ?, NOW())";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("sdiss", $metodo, $monto, $id_empleado, $num_caja, $razon);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al registrar egreso");
-                    }
-                    
-                    // Actualizar total de egresos
-                    $sql_egresos = "SELECT SUM(monto) as total FROM cajaegresos WHERE numCaja = ?";
-                    $stmt = $conn->prepare($sql_egresos);
-                    $stmt->bind_param("s", $num_caja);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Error al actualizar total de egresos");
-                    }
-                    
-                    $result_egresos = $stmt->get_result();
-                    if ($result_egresos->num_rows > 0) {
-                        $row_egresos = $result_egresos->fetch_assoc();
-                        $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
-                    }
-
-                    /**
-                     *  2. Auditoria de acciones de usuario
-                     */
-
-                    require_once '../../core/auditorias.php';
-                    $usuario_id = $_SESSION['idEmpleado'];
-                    $accion = 'EGRESO_CAJA';
-                    $detalle = 'Egreso registrado con monto: ' . $monto . ' y número de caja: ' . $num_caja . ' Razón: ' . $razon;
-                    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-                    
-                    // Registrar auditoría
-                    registrarAuditoriaCaja($conn, $id_empleado, 'EGRESO', 
-                        "Monto: $monto, Razón: $razon, Caja: $num_caja");
-
-                    $conn->commit();
-                    $mensaje = "Egreso registrado exitosamente";
-                    
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $mensaje = "Error en transacción de egreso: " . $e->getMessage();
-                    $error = true;
-                }
+                $conn->commit();
+                $mensaje = "Caja abierta exitosamente";
+                $caja_abierta = true;
                 
-                $conn->autocommit(TRUE);
-                if ($error) {
-                    registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_EGRESO', 
-                        "Fallo al registrar egreso: " . $mensaje);
-                }
+                // Refrescar datos
+                $sql_verificar = "SELECT * FROM cajasabiertas WHERE idEmpleado = ?";
+                $stmt = $conn->prepare($sql_verificar);
+                $stmt->bind_param("i", $id_empleado);
+                $stmt->execute();
+                $resultado = $stmt->get_result();
+                $datos_caja = $resultado->fetch_assoc();
+
+                // Almacenar datos de la caja abierta
+                $_SESSION['numCaja'] = $num_caja;
+                $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
+                $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
+                $_SESSION['registro'] = $datos_caja['registro'];
+                
+                // Registrar auditoría
+                registrarAuditoriaCaja($conn, $id_empleado, 'APERTURA_CAJA', 
+                    "Caja #$num_caja abierta con saldo inicial: $saldo_apertura");
+                
+            } catch (Exception $e) {
+                $conn->rollback();
+                $mensaje = "Error en transacción: " . $e->getMessage();
+                $error = true;
             }
             
+            $conn->autocommit(TRUE);
+            if ($error) {
+                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_APERTURA', 
+                    "Fallo al abrir caja: " . $mensaje);
+            }
         }
+
     }
+    
+    // Cerrar caja con transacción
+    if (isset($_POST['cerrar_caja']) && $caja_abierta) {
+        $saldo_final = filter_input(INPUT_POST, 'saldo_final', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
+        $registro = filter_input(INPUT_POST, 'registro', FILTER_SANITIZE_NUMBER_INT);
+        $fecha_apertura = filter_input(INPUT_POST, 'fecha_apertura', FILTER_SANITIZE_STRING);
+        $saldo_inicial = filter_input(INPUT_POST, 'saldo_inicial', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        
+        if ($saldo_final === false || $saldo_final < 0) {
+            $mensaje = "Error: Saldo final no válido";
+        } else {
+            $conn->autocommit(FALSE); // Iniciar transacción
+            $error = false;
+            
+            try {
+                // Calcular diferencia
+                $diferencia = $saldo_final - ($saldo_inicial + $total_ingresos - $total_egresos);
+                
+                // Insertar en cajas cerradas
+                $sql = "INSERT INTO cajascerradas (numCaja, idEmpleado, fechaApertura, fechaCierre, saldoInicial, saldoFinal, diferencia) 
+                        VALUES (?, ?, ?, NOW(), ?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sisddd", $num_caja, $id_empleado, $fecha_apertura, $saldo_inicial, $saldo_final, $diferencia);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al registrar cierre de caja");
+                }
+                
+                // Eliminar de cajas abiertas
+                $sql_delete = "DELETE FROM cajasabiertas WHERE registro = ?";
+                $stmt = $conn->prepare($sql_delete);
+                $stmt->bind_param("i", $registro);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al eliminar caja abierta");
+                }
+
+                /**
+                 *  2. Auditoria de acciones de usuario
+                 */
+
+                require_once '../../core/auditorias.php';
+                $usuario_id = $_SESSION['idEmpleado'];
+                $accion = 'CIERRE_CAJA';
+                $detalle = 'Caja cerrada con saldo final: ' . $saldo_final . ' y número de caja: ' . $num_caja;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
+                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
+                
+                $conn->commit();
+                $mensaje = "Caja cerrada exitosamente";
+                $caja_abierta = false;
+
+                // Registrar auditoría
+                registrarAuditoriaCaja($conn, $id_empleado, 'CIERRE_CAJA', 
+                    "Caja #$num_caja cerrada. Saldo final: $saldo_final, Diferencia: $diferencia");
+                
+                // Limpiar variables de caja
+                unset($_SESSION['numCaja']);
+                unset($_SESSION['fechaApertura']);
+                unset($_SESSION['saldoApertura']);
+                unset($_SESSION['registro']);
+                
+            } catch (Exception $e) {
+                $conn->rollback();
+                $mensaje = "Error en transacción de cierre: " . $e->getMessage();
+                $error = true;
+            }
+            
+            $conn->autocommit(TRUE);
+            if ($error) {
+                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_CIERRE', 
+                    "Fallo al cerrar caja #$num_caja: " . $mensaje);
+            }
+        }
+
+    }
+    
+    // Registrar ingreso con transacción
+    if (isset($_POST['registrar_ingreso']) && $caja_abierta) {
+        $monto = filter_input(INPUT_POST, 'monto_ingreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $metodo = $_POST['metodo_ingreso'];
+        $metodo = filter_var($metodo, FILTER_SANITIZE_STRING);
+        $razon = filter_input(INPUT_POST, 'razon_ingreso', FILTER_SANITIZE_STRING);
+        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
+        
+        if ($monto === false || $monto <= 0) {
+            $mensaje = "Error: Monto no válido";
+        } elseif (empty($razon)) {
+            $mensaje = "Error: Razón no puede estar vacía";
+        } else {
+            $conn->autocommit(FALSE);
+            $error = false;
+            
+            try {
+                // Insertar ingreso
+                $sql = "INSERT INTO cajaingresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
+                        VALUES (?, ?, ?, ?, ?, NOW())";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sdiss", $metodo, $monto, $id_empleado, $num_caja, $razon);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al registrar ingreso");
+                }
+                
+                // Actualizar total de ingresos
+                $sql_ingresos = "SELECT SUM(monto) as total FROM cajaingresos WHERE numCaja = ?";
+                $stmt = $conn->prepare($sql_ingresos);
+                $stmt->bind_param("s", $num_caja);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al actualizar total de ingresos");
+                }
+                
+                $result_ingresos = $stmt->get_result();
+                if ($result_ingresos->num_rows > 0) {
+                    $row_ingresos = $result_ingresos->fetch_assoc();
+                    $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
+                }
+
+                /**
+                 *  2. Auditoria de acciones de usuario
+                 */
+
+                require_once '../../core/auditorias.php';
+                $usuario_id = $_SESSION['idEmpleado'];
+                $accion = 'INGRESO_CAJA';
+                $detalle = 'Ingreso registrado con monto: ' . $monto . ' y número de caja: ' . $num_caja . ' Razón: ' . $razon;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
+                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
+                
+                $conn->commit();
+                $mensaje = "Ingreso registrado exitosamente";
+                
+                // Registrar auditoría
+                registrarAuditoriaCaja($conn, $id_empleado, 'INGRESO', 
+                    "Monto: $monto, Razón: $razon, Caja: $num_caja");
+                
+            } catch (Exception $e) {
+                $conn->rollback();
+                $mensaje = "Error en transacción de ingreso: " . $e->getMessage();
+                $error = true;
+            }
+            
+            $conn->autocommit(TRUE);
+            if ($error) {
+                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_INGRESO', 
+                    "Fallo al registrar ingreso: " . $mensaje);
+            }
+        }
+
+
+    }
+    
+    // Registrar egreso con transacción
+    if (isset($_POST['registrar_egreso']) && $caja_abierta) {
+        $monto = filter_input(INPUT_POST, 'monto_egreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $metodo = $_POST['metodo_egreso'];
+        $razon = filter_input(INPUT_POST, 'razon_egreso', FILTER_SANITIZE_STRING);
+        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
+        
+        if ($monto === false || $monto <= 0) {
+            $mensaje = "Error: Monto no válido";
+        } elseif (empty($razon)) {
+            $mensaje = "Error: Razón no puede estar vacía";
+        } else {
+            $conn->autocommit(FALSE);
+            $error = false;
+            
+            try {
+                // Insertar egreso
+                $sql = "INSERT INTO cajaegresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
+                        VALUES (?, ?, ?, ?, ?, NOW())";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sdiss", $metodo, $monto, $id_empleado, $num_caja, $razon);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al registrar egreso");
+                }
+                
+                // Actualizar total de egresos
+                $sql_egresos = "SELECT SUM(monto) as total FROM cajaegresos WHERE numCaja = ?";
+                $stmt = $conn->prepare($sql_egresos);
+                $stmt->bind_param("s", $num_caja);
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al actualizar total de egresos");
+                }
+                
+                $result_egresos = $stmt->get_result();
+                if ($result_egresos->num_rows > 0) {
+                    $row_egresos = $result_egresos->fetch_assoc();
+                    $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
+                }
+
+                /**
+                 *  2. Auditoria de acciones de usuario
+                 */
+
+                require_once '../../core/auditorias.php';
+                $usuario_id = $_SESSION['idEmpleado'];
+                $accion = 'EGRESO_CAJA';
+                $detalle = 'Egreso registrado con monto: ' . $monto . ' y número de caja: ' . $num_caja . ' Razón: ' . $razon;
+                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
+                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
+                
+                // Registrar auditoría
+                registrarAuditoriaCaja($conn, $id_empleado, 'EGRESO', 
+                    "Monto: $monto, Razón: $razon, Caja: $num_caja");
+
+                $conn->commit();
+                $mensaje = "Egreso registrado exitosamente";
+                
+            } catch (Exception $e) {
+                $conn->rollback();
+                $mensaje = "Error en transacción de egreso: " . $e->getMessage();
+                $error = true;
+            }
+            
+            $conn->autocommit(TRUE);
+            if ($error) {
+                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_EGRESO', 
+                    "Fallo al registrar egreso: " . $mensaje);
+            }
+        }
+        
+    }
+}
 ?>
 
 <!DOCTYPE html>

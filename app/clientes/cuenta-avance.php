@@ -1,141 +1,108 @@
 <?php
 
-    /* Verificacion de sesion */
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+include_once '../../core/conexion.php'; // Cargar Conexion
 
-    // Iniciar sesión
-    session_start();
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'CLI003';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo "
+        <html>
+            <head>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            </head>
+            <body>
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ACCESO DENEGADO',
+                        text: 'No tienes permiso para acceder a esta sección.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.history.back();
+                    });
+                </script>
+            </body>
+        </html>";
+        
+    exit(); 
+}
 
-    // Configurar el tiempo de caducidad de la sesión
-    $inactivity_limit = 9000; // 15 minutos en segundos
+// Variables
+$idCliente = $_GET["idCliente"];
 
-    // Verificar si el usuario ha iniciado sesión
-    if (!isset($_SESSION['username'])) {
-        session_unset(); // Eliminar todas las variables de sesión
-        session_destroy(); // Destruir la sesión
-        header('Location: ../../app/auth/login.php'); // Redirigir al login
-        exit(); // Detener la ejecución del script
-    }
+// Tabla Payment History
+$sqlph = "SELECT
+            DATE_FORMAT(chp.fecha, '%d/%m/%Y %l:%i %p') AS fechaph,
+            chp.metodo AS metodoph,
+            chp.monto AS montoph
+        FROM
+            clientes_historialpagos AS chp
+        WHERE
+            chp.idCliente = ?
+        ORDER BY
+            chp.fecha
+        DESC
+        LIMIT 5";
+$stmtph = $conn->prepare($sqlph);
+$stmtph->bind_param("i", $idCliente);
+$stmtph->execute();
+$resultsph = $stmtph->get_result();
 
-    // Verificar si la sesión ha expirado por inactividad
-    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-        session_unset(); // Eliminar todas las variables de sesión
-        session_destroy(); // Destruir la sesión
-        header("Location: ../../app/auth/login.php?session_expired=session_expired"); // Redirigir al login
-        exit(); // Detener la ejecución del script
-    }
+// Tabla Facturas Pendientes
+$sqlf = "SELECT
+            f.numFactura AS nf,
+            DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fechaf,
+            f.total_ajuste AS totalf,
+            f.balance AS balancef
+        FROM
+            facturas AS f
+        WHERE
+            f.balance > 0 AND f.idCliente = ?
+        ORDER BY
+            f.fecha
+        DESC";
+$stmtf = $conn->prepare($sqlf);
+$stmtf->bind_param("i", $idCliente);
+$stmtf->execute();
+$resultsf = $stmtf->get_result();
 
-    // Actualizar el tiempo de la última actividad
-    $_SESSION['last_activity'] = time();
 
-    /* Fin de verificacion de sesion */
+// Informacion del cliente
+$sqlc = "SELECT
+            c.id AS idc,
+            CONCAT(c.nombre, ' ', c.apellido) AS nombrec,
+            c.empresa AS empresac,
+            c.telefono AS telefonoc,
+            cc.limite_credito AS limitec,
+            cc.balance AS balancec,
+            COALESCE(SUM(f.balance),
+            0) AS adeudadoc
+        FROM
+            clientes AS c
+        LEFT JOIN clientes_cuenta AS cc
+        ON
+            cc.idCliente = c.id
+        LEFT JOIN facturas AS f
+        ON
+            f.idCliente = c.id
+        WHERE
+            c.id = ?";
+$stmtc = $conn->prepare($sqlc);
+$stmtc->bind_param("i", $idCliente);
+$stmtc->execute();
+$resultsc = $stmtc->get_result();
+$rowc = $resultsc->fetch_assoc();
 
-    include_once '../../core/conexion.php';
+$montodeuda = $rowc['adeudadoc']; // Variable almacenada para calculos
 
-    ////////////////////////////////////////////////////////////////////
-    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
-    ////////////////////////////////////////////////////////////////////
-
-    require_once '../../core/validar-permisos.php';
-    $permiso_necesario = 'CLI003';
-    $id_empleado = $_SESSION['idEmpleado'];
-    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-        echo "
-            <html>
-                <head>
-                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-                </head>
-                <body>
-                    <script>
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'ACCESO DENEGADO',
-                            text: 'No tienes permiso para acceder a esta sección.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.history.back();
-                        });
-                    </script>
-                </body>
-            </html>";
-            
-        exit(); 
-    }
-
-    ////////////////////////////////////////////////////////////////////
-
-    // Variables
-    $idCliente = $_GET["idCliente"];
-
-    // Tabla Payment History
-    $sqlph = "SELECT
-                DATE_FORMAT(chp.fecha, '%d/%m/%Y %l:%i %p') AS fechaph,
-                chp.metodo AS metodoph,
-                chp.monto AS montoph
-            FROM
-                clientes_historialpagos AS chp
-            WHERE
-                chp.idCliente = ?
-            ORDER BY
-                chp.fecha
-            DESC
-            LIMIT 5";
-    $stmtph = $conn->prepare($sqlph);
-    $stmtph->bind_param("i", $idCliente);
-    $stmtph->execute();
-    $resultsph = $stmtph->get_result();
-
-    // Tabla Facturas Pendientes
-    $sqlf = "SELECT
-                f.numFactura AS nf,
-                DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fechaf,
-                f.total_ajuste AS totalf,
-                f.balance AS balancef
-            FROM
-                facturas AS f
-            WHERE
-                f.balance > 0 AND f.idCliente = ?
-            ORDER BY
-                f.fecha
-            DESC";
-    $stmtf = $conn->prepare($sqlf);
-    $stmtf->bind_param("i", $idCliente);
-    $stmtf->execute();
-    $resultsf = $stmtf->get_result();
-
-    
-    // Informacion del cliente
-    $sqlc = "SELECT
-                c.id AS idc,
-                CONCAT(c.nombre, ' ', c.apellido) AS nombrec,
-                c.empresa AS empresac,
-                c.telefono AS telefonoc,
-                cc.limite_credito AS limitec,
-                cc.balance AS balancec,
-                COALESCE(SUM(f.balance),
-                0) AS adeudadoc
-            FROM
-                clientes AS c
-            LEFT JOIN clientes_cuenta AS cc
-            ON
-                cc.idCliente = c.id
-            LEFT JOIN facturas AS f
-            ON
-                f.idCliente = c.id
-            WHERE
-                c.id = ?";
-    $stmtc = $conn->prepare($sqlc);
-    $stmtc->bind_param("i", $idCliente);
-    $stmtc->execute();
-    $resultsc = $stmtc->get_result();
-    $rowc = $resultsc->fetch_assoc();
-
-    $montodeuda = $rowc['adeudadoc']; // Variable almacenada para calculos
-
-    // FORMATO DE MONEDA
-    $limitec = number_format($rowc['limitec'], 2, '.', ',');
-    $balancec = number_format($rowc['balancec'], 2, '.', ',');
-    $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
+// FORMATO DE MONEDA
+$limitec = number_format($rowc['limitec'], 2, '.', ',');
+$balancec = number_format($rowc['balancec'], 2, '.', ',');
+$adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
 
 
 ?>

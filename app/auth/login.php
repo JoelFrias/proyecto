@@ -1,11 +1,10 @@
 <?php
-
 // Redirigir si ya existe una sesion
 session_start();
 
 if (isset($_SESSION['username'])) {
-    header('Location: ../../'); // Redirigir al login
-    exit(); // Detener la ejecución del script
+    header('Location: ../');
+    exit();
 }
 
 ?>
@@ -212,6 +211,40 @@ if (isset($_SESSION['username'])) {
             display: none;
         }
 
+        .checkbox-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            accent-color: #2c3e50;
+        }
+
+        .checkbox-group label {
+            color: #374151;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+            margin: 0;
+        }
+
+        .checkbox-group input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .checkbox-group label.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
         .btn {
             width: 100%;
             padding: 12px;
@@ -330,7 +363,7 @@ if (isset($_SESSION['username'])) {
 
         <div id="messageContainer"></div>
 
-        <form id="loginForm">
+        <form id="loginForm" autocomplete="off">
             <div class="input-group">
                 <label for="username">Usuario</label>
                 <input 
@@ -363,6 +396,11 @@ if (isset($_SESSION['username'])) {
                 </button>
             </div>
 
+            <div class="checkbox-group">
+                <input type="checkbox" id="rememberMe" name="rememberMe">
+                <label for="rememberMe">Mantener la sesión abierta</label>
+            </div>
+
             <button type="submit" class="btn" id="submitBtn">
                 <span id="btnText">Ingresar</span>
                 <span class="spinner"></span>
@@ -371,12 +409,12 @@ if (isset($_SESSION['username'])) {
     </div>
     
     <script>
-
         const loginForm = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
         const togglePasswordBtn = document.getElementById('togglePassword');
         const messageContainer = document.getElementById('messageContainer');
 
@@ -386,6 +424,7 @@ if (isset($_SESSION['username'])) {
 
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
+            const rememberMe = rememberMeCheckbox.checked;
 
             // Validación básica
             if (!username || !password) {
@@ -397,14 +436,15 @@ if (isset($_SESSION['username'])) {
             setFormLoading(true);
 
             try {
-                const response = await fetch('../../api/authcontroller/login.php', {
+                const response = await fetch('../../api/auth/login.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         username: username,
-                        password: password
+                        password: password,
+                        remember_me: rememberMe
                     })
                 });
 
@@ -412,9 +452,10 @@ if (isset($_SESSION['username'])) {
 
                 if (data.success) {
                     showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
-                    window.location.href = data.redirect || '../../';
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '../../';
+                    }, 500);
                 } else {
-                    // Si el empleado está deshabilitado, mostrar mensaje de advertencia
                     const messageType = data.disabled ? 'warning' : 'error';
                     showMessage(data.error || 'Error al iniciar sesión.', messageType);
                     setFormLoading(false);
@@ -459,15 +500,6 @@ if (isset($_SESSION['username'])) {
                 </div>
             `;
             messageContainer.innerHTML = messageHTML;
-
-            /* ACTUALMENTE DESABILITADO
-
-            // Auto-close after 5 seconds
-            setTimeout(() => {
-                closeMessage();
-            }, 5000);
-
-            */
         }
 
         // Función para cerrar el mensaje
@@ -486,14 +518,18 @@ if (isset($_SESSION['username'])) {
             submitBtn.disabled = loading;
             usernameInput.disabled = loading;
             passwordInput.disabled = loading;
+            rememberMeCheckbox.disabled = loading;
             togglePasswordBtn.disabled = loading;
             
+            const checkboxLabel = document.querySelector('.checkbox-group label');
             if (loading) {
                 submitBtn.classList.add('loading');
                 btnText.textContent = 'Iniciando sesión...';
+                checkboxLabel.classList.add('disabled');
             } else {
                 submitBtn.classList.remove('loading');
                 btnText.textContent = 'Ingresar';
+                checkboxLabel.classList.remove('disabled');
             }
         }
     </script>

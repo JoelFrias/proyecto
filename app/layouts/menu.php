@@ -5,10 +5,15 @@ if (!isset($_SESSION['idEmpleado'])) {
     exit();
 }
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . "/EasyPOS"; // Eliminar ("/EasyPOS") en produccion
 
 //incluir el archivo para validar permisos
 require_once __DIR__ . '/../../core/validar-permisos.php';
+require_once __DIR__ . '/../../core/conexion.php';
 
 // Obtener permisos del usuario
 $id_empleado = $_SESSION['idEmpleado'];
@@ -45,7 +50,7 @@ $permisoPanelAdmin = validarPermiso($conn, 'PADM001', $id_empleado);
     $facturacionUrl = $baseUrl . '/app/factura/facturacion.php';
     $cajaUrl = $baseUrl . '/app/caja/caja.php';
     $panelUrl = $baseUrl . '/app/gestion/panel-administrativo.php';
-    $logoutUrl = $baseUrl . '/api/authcontroller/logout.php';
+    $logoutUrl = $baseUrl . '/api/auth/logout.php';
     ?>
 
     <!-- Menú de navegación -->

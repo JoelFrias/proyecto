@@ -1,34 +1,9 @@
 <?php
-/* Verificacion de sesion */
-session_start();
 
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset();
-    session_destroy();
-    header('Location: ../../app/auth/login.php');
-    exit();
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset();
-    session_destroy();
-    header("Location: ../../app/auth/login.php?session_expired=session_expired");
-    exit();
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require "../../core/conexion.php";
-
-// Validar permisos
+// Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'ALM003';
 $id_empleado = $_SESSION['idEmpleado'];

@@ -1,190 +1,159 @@
 <?php
 
-    /* Verificacion de sesion */
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
-    // Iniciar sesión
-    session_start();
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'CUA001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo "
+        <html>
+            <head>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            </head>
+            <body>
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ACCESO DENEGADO',
+                        text: 'No tienes permiso para acceder a esta sección.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.history.back();
+                    });
+                </script>
+            </body>
+        </html>";
+        
+    exit(); 
+}
 
-    // Configurar el tiempo de caducidad de la sesión
-    $inactivity_limit = 900; // 15 minutos en segundos
+////////////////////////////////////////////////////////////////////
 
-    // Verificar si el usuario ha iniciado sesión
-    if (!isset($_SESSION['username'])) {
-        session_unset(); // Eliminar todas las variables de sesión
-        session_destroy(); // Destruir la sesión
-        header('Location: ../../app/auth/login.php'); // Redirigir al login
-        exit(); // Detener la ejecución del script
-    }
+// Verifica si la conexión se estableció correctamente
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die("Error crítico: No se pudo establecer conexión con la base de datos");
+}
 
-    // Verificar si la sesión ha expirado por inactividad
-    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-        session_unset(); // Eliminar todas las variables de sesión
-        session_destroy(); // Destruir la sesión
-        header("Location: ../../app/auth/login.php?session_expired=session_expired"); // Redirigir al login
-        exit(); // Detener la ejecución del script
-    }
+// Configuración de paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? intval($_GET['pagina']) : 1;
+$inicio = ($pagina_actual - 1) * $registros_por_pagina;
 
-    // Actualizar el tiempo de la última actividad
-    $_SESSION['last_activity'] = time();
+// Procesar filtros si existen
+$where_clausulas = [];
+$params = [];
+$tipos = "";
 
-    /* Fin de verificacion de sesion */
-
-    require_once '../../core/conexion.php';
-
-    ////////////////////////////////////////////////////////////////////
-    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
-    ////////////////////////////////////////////////////////////////////
-
-    require_once '../../core/validar-permisos.php';
-    $permiso_necesario = 'CUA001';
-    $id_empleado = $_SESSION['idEmpleado'];
-    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-        echo "
-            <html>
-                <head>
-                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-                </head>
-                <body>
-                    <script>
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'ACCESO DENEGADO',
-                            text: 'No tienes permiso para acceder a esta sección.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.history.back();
-                        });
-                    </script>
-                </body>
-            </html>";
-            
-        exit(); 
-    }
-
-    ////////////////////////////////////////////////////////////////////
-
-    // Verifica si la conexión se estableció correctamente
-    if (!isset($conn) || !($conn instanceof mysqli)) {
-        die("Error crítico: No se pudo establecer conexión con la base de datos");
-    }
-
-    // Configuración de paginación
-    $registros_por_pagina = 10;
-    $pagina_actual = isset($_GET['pagina']) ? intval($_GET['pagina']) : 1;
-    $inicio = ($pagina_actual - 1) * $registros_por_pagina;
-
-    // Procesar filtros si existen
-    $where_clausulas = [];
-    $params = [];
-    $tipos = "";
-
-    // Busqueda general
-    if (isset($_GET['busqueda']) && !empty($_GET['busqueda'])) {
-        $busqueda = $_GET['busqueda'];
-        $where_clausulas[] = "(cc.registro LIKE ? OR 
-                              cc.fechaApertura LIKE ? OR 
-                              cc.saldoInicial LIKE ? OR 
-                              cc.fechaCierre LIKE ? OR 
-                              cc.saldoFinal LIKE ? OR 
-                              CONCAT(e.nombre, ' ', e.apellido) LIKE ? OR 
-                              cc.diferencia LIKE ? OR
-                              cc.numCaja LIKE ?)";
-        // Añadimos el mismo parámetro 8 veces para cada campo de búsqueda
-        for ($i = 0; $i < 8; $i++) {
-            $params[] = "%$busqueda%";
-            $tipos .= "s";
-        }
-    }
-
-    // Filtro de fecha inicio
-    if (isset($_GET['fecha_inicio']) && !empty($_GET['fecha_inicio'])) {
-        $where_clausulas[] = "cc.fechaApertura >= ?";
-        $params[] = $_GET['fecha_inicio'] . " 00:00:00";
+// Busqueda general
+if (isset($_GET['busqueda']) && !empty($_GET['busqueda'])) {
+    $busqueda = $_GET['busqueda'];
+    $where_clausulas[] = "(cc.registro LIKE ? OR 
+                            cc.fechaApertura LIKE ? OR 
+                            cc.saldoInicial LIKE ? OR 
+                            cc.fechaCierre LIKE ? OR 
+                            cc.saldoFinal LIKE ? OR 
+                            CONCAT(e.nombre, ' ', e.apellido) LIKE ? OR 
+                            cc.diferencia LIKE ? OR
+                            cc.numCaja LIKE ?)";
+    // Añadimos el mismo parámetro 8 veces para cada campo de búsqueda
+    for ($i = 0; $i < 8; $i++) {
+        $params[] = "%$busqueda%";
         $tipos .= "s";
     }
+}
 
-    // Filtro de fecha fin
-    if (isset($_GET['fecha_fin']) && !empty($_GET['fecha_fin'])) {
-        $where_clausulas[] = "cc.fechaApertura <= ?";
-        $params[] = $_GET['fecha_fin'] . " 23:59:59";
-        $tipos .= "s";
-    }
+// Filtro de fecha inicio
+if (isset($_GET['fecha_inicio']) && !empty($_GET['fecha_inicio'])) {
+    $where_clausulas[] = "cc.fechaApertura >= ?";
+    $params[] = $_GET['fecha_inicio'] . " 00:00:00";
+    $tipos .= "s";
+}
 
-    // Filtro de empleado
-    if (isset($_GET['empleado']) && !empty($_GET['empleado'])) {
-        $where_clausulas[] = "cc.idEmpleado = ?";
-        $params[] = $_GET['empleado'];
-        $tipos .= "i";
-    }
+// Filtro de fecha fin
+if (isset($_GET['fecha_fin']) && !empty($_GET['fecha_fin'])) {
+    $where_clausulas[] = "cc.fechaApertura <= ?";
+    $params[] = $_GET['fecha_fin'] . " 23:59:59";
+    $tipos .= "s";
+}
 
-    // Construir la cláusula WHERE
-    $where = "";
-    if (!empty($where_clausulas)) {
-        $where = "WHERE " . implode(" AND ", $where_clausulas);
-    }
+// Filtro de empleado
+if (isset($_GET['empleado']) && !empty($_GET['empleado'])) {
+    $where_clausulas[] = "cc.idEmpleado = ?";
+    $params[] = $_GET['empleado'];
+    $tipos .= "i";
+}
 
-    // Consulta para contar registros totales (para paginación)
-    $sql_count = "SELECT COUNT(*) as total FROM cajascerradas cc 
-                  LEFT JOIN empleados e ON cc.idEmpleado = e.id 
-                  $where";
-    
-    if (!empty($params)) {
-        $stmt_count = $conn->prepare($sql_count);
-        $stmt_count->bind_param($tipos, ...$params);
-        $stmt_count->execute();
-        $result_count = $stmt_count->get_result();
-        $row_count = $result_count->fetch_assoc();
-    } else {
-        $result_count = $conn->query($sql_count);
-        $row_count = $result_count->fetch_assoc();
-    }
-    
-    $total_registros = $row_count['total'];
-    $total_paginas = ceil($total_registros / $registros_por_pagina);
+// Construir la cláusula WHERE
+$where = "";
+if (!empty($where_clausulas)) {
+    $where = "WHERE " . implode(" AND ", $where_clausulas);
+}
 
-    // Consulta SQL principal con paginación
-    $sql = "SELECT 
-                cc.registro AS id,
-                DATE_FORMAT(cc.fechaApertura, '%d/%m/%Y %l:%i %p') AS fecha_inicio,
-                FORMAT(cc.saldoInicial, 2) AS monto_inicial,
-                IFNULL(DATE_FORMAT(cc.fechaCierre, '%d/%m/%Y %l:%i %p'), 'No cerrado') AS fecha_cierre,
-                IFNULL(FORMAT(cc.saldoFinal, 2), 'N/A') AS monto_cierre,
-                CONCAT(e.nombre, ' ', e.apellido) AS empleado_nombre,
-                IFNULL(FORMAT(cc.diferencia, 2), 'N/A') AS diferencia_formateada,
-                cc.diferencia AS diferencia_raw,
-                cc.numCaja
-            FROM cajascerradas cc
-            LEFT JOIN empleados e ON cc.idEmpleado = e.id
-            $where
-            ORDER BY cc.fechaApertura DESC
-            LIMIT ?, ?";
+// Consulta para contar registros totales (para paginación)
+$sql_count = "SELECT COUNT(*) as total FROM cajascerradas cc 
+                LEFT JOIN empleados e ON cc.idEmpleado = e.id 
+                $where";
 
-    // Preparar y ejecutar consulta principal
-    if (!empty($params)) {
-        $stmt = $conn->prepare($sql);
-        $tipos .= "ii"; // Añadir tipos para los parámetros de LIMIT
-        $params[] = $inicio;
-        $params[] = $registros_por_pagina;
-        $stmt->bind_param($tipos, ...$params);
-        $stmt->execute();
-        $resultado = $stmt->get_result();
-    } else {
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ii", $inicio, $registros_por_pagina);
-        $stmt->execute();
-        $resultado = $stmt->get_result();
-    }
+if (!empty($params)) {
+    $stmt_count = $conn->prepare($sql_count);
+    $stmt_count->bind_param($tipos, ...$params);
+    $stmt_count->execute();
+    $result_count = $stmt_count->get_result();
+    $row_count = $result_count->fetch_assoc();
+} else {
+    $result_count = $conn->query($sql_count);
+    $row_count = $result_count->fetch_assoc();
+}
 
-    // Obtener lista de empleados para filtros
-    $sql_empleados = "SELECT id, CONCAT(nombre, ' ', apellido) AS nombre_completo FROM empleados ORDER BY nombre";
-    $empleados = $conn->query($sql_empleados);
+$total_registros = $row_count['total'];
+$total_paginas = ceil($total_registros / $registros_por_pagina);
 
-    // Obtener valores de filtros actuales para mantenerlos entre páginas
-    $filtro_busqueda = isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : '';
-    $filtro_fecha_inicio = isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : '';
-    $filtro_fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '';
-    $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
+// Consulta SQL principal con paginación
+$sql = "SELECT 
+            cc.registro AS id,
+            DATE_FORMAT(cc.fechaApertura, '%d/%m/%Y %l:%i %p') AS fecha_inicio,
+            FORMAT(cc.saldoInicial, 2) AS monto_inicial,
+            IFNULL(DATE_FORMAT(cc.fechaCierre, '%d/%m/%Y %l:%i %p'), 'No cerrado') AS fecha_cierre,
+            IFNULL(FORMAT(cc.saldoFinal, 2), 'N/A') AS monto_cierre,
+            CONCAT(e.nombre, ' ', e.apellido) AS empleado_nombre,
+            IFNULL(FORMAT(cc.diferencia, 2), 'N/A') AS diferencia_formateada,
+            cc.diferencia AS diferencia_raw,
+            cc.numCaja
+        FROM cajascerradas cc
+        LEFT JOIN empleados e ON cc.idEmpleado = e.id
+        $where
+        ORDER BY cc.fechaApertura DESC
+        LIMIT ?, ?";
+
+// Preparar y ejecutar consulta principal
+if (!empty($params)) {
+    $stmt = $conn->prepare($sql);
+    $tipos .= "ii"; // Añadir tipos para los parámetros de LIMIT
+    $params[] = $inicio;
+    $params[] = $registros_por_pagina;
+    $stmt->bind_param($tipos, ...$params);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+} else {
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $inicio, $registros_por_pagina);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+}
+
+// Obtener lista de empleados para filtros
+$sql_empleados = "SELECT id, CONCAT(nombre, ' ', apellido) AS nombre_completo FROM empleados ORDER BY nombre";
+$empleados = $conn->query($sql_empleados);
+
+// Obtener valores de filtros actuales para mantenerlos entre páginas
+$filtro_busqueda = isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']) : '';
+$filtro_fecha_inicio = isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : '';
+$filtro_fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '';
+$filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
 ?>
 
 <!DOCTYPE html>

@@ -118,5 +118,5 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 }
 
-$conn->close();
+// $conn->close();
 ?>

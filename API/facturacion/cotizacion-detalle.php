@@ -93,5 +93,5 @@ echo json_encode($response, JSON_UNESCAPED_UNICODE);
 
 $stmtCliente->close();
 $stmtProductos->close();
-$conn->close();
+// $conn->close();
 ?>

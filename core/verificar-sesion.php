@@ -1,279 +1,464 @@
 <?php
-
 /**
- * Sistema de Verificación de Sesión Robusto
- * Incluye: timeouts, validación de IP/User-Agent, regeneración de ID, 
- * protección CSRF y manejo de sesiones concurrentes
+ * Verificar-sesion.php (Middleware de Autenticación — Versión resuelta)
+ *
+ * Uso: require_once __DIR__ . '/../../core/Verificar-sesion.php';
+ *
+ * Notas:
+ * - Diseñado para "A" (permitir funcionamiento en HTTP local / celular).
+ * - Ajusta paths si los tuyos son distintos.
  */
 
-// ========================================
-// PASO 1: CONFIGURACIÓN DE SESIÓN SEGURA
-// ========================================
-// Estas configuraciones se establecen ANTES de session_start()
-
-ini_set('session.cookie_httponly', 1);   // La cookie solo accesible por HTTP (no JavaScript)
-                                          // Previene ataques XSS que intenten robar cookies
-
-ini_set('session.cookie_secure', 0);     // Cookie solo se envía por HTTPS
-                                          // IMPORTANTE: Cambiar a 0 si usas HTTP en desarrollo
-
-ini_set('session.cookie_samesite', 'Strict'); // Cookie no se envía en peticiones cross-site
-                                               // Previene ataques CSRF
-
-ini_set('session.use_strict_mode', 1);   // PHP rechaza IDs de sesión no inicializados
-                                          // Previene ataques de session fixation
-
-session_start();
-
-// ========================================
-// PASO 2: CONFIGURACIÓN DE PARÁMETROS
-// ========================================
-// Array con todas las configuraciones del sistema de sesiones
-
-$config = [
-    'inactivity_limit' => 900,      // 15 minutos (900 segundos) sin actividad = logout
-    'absolute_timeout' => 3600,      // 1 hora (3600 segundos) máximo, incluso con actividad
-    'regenerate_interval' => 300,    // Cada 5 minutos cambia el ID de sesión por seguridad
-    'check_fingerprint' => true,     // Verifica que el navegador no cambie
-    'check_ip' => false,             // Verifica que la IP no cambie (OFF: problemas con VPN)
-    'login_url' => '../../app/auth/login.php'  // Página de login
-];
-
-// ========================================
-// PASO 3: FUNCIÓN DE HUELLA DIGITAL
-// ========================================
-/**
- * Crea un "hash" único del navegador del usuario
- * Combina: User-Agent + Idioma + Encoding
- * Si alguien roba la cookie pero usa otro navegador, el hash será diferente
- */
-function getClientFingerprint() {
-    // Obtiene información del navegador (puede ser vacío si no está disponible)
-    $fingerprint = $_SERVER['HTTP_USER_AGENT'] ?? '';      // Ej: "Mozilla/5.0..."
-    $fingerprint .= $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''; // Ej: "es-ES,es;q=0.9"
-    $fingerprint .= $_SERVER['HTTP_ACCEPT_ENCODING'] ?? ''; // Ej: "gzip, deflate"
-    
-    // Convierte todo a un hash SHA-256 (cadena de 64 caracteres)
-    // Ej: "a3f5b8c9d2e1..." - mismo navegador = mismo hash
-    return hash('sha256', $fingerprint);
+// Iniciar sesión de forma segura
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-// ========================================
-// PASO 4: FUNCIÓN PARA DESTRUIR SESIÓN
-// ========================================
-/**
- * Cierra la sesión de forma segura y redirige al login
- * $reason: motivo del cierre (se pasa por URL)
- */
-function destroySession($redirect_url, $reason = '') {
-    // 1. Vacía el array de sesión
-    $_SESSION = array();
-    
-    // 2. Si las cookies están habilitadas, elimina la cookie de sesión
-    if (ini_get("session.use_cookies")) {
-        $params = session_get_cookie_params();
-        // Establece la cookie con tiempo pasado para eliminarla del navegador
-        setcookie(session_name(), '', time() - 42000,
-            $params["path"], $params["domain"],
-            $params["secure"], $params["httponly"]
-        );
-    }
-    
-    // 3. Destruye el archivo de sesión en el servidor
-    session_destroy();
-    
-    // 4. Construye la URL de redirección con el motivo
-    $redirect = $redirect_url;
-    if ($reason) {
-        // Agrega el parámetro GET: login.php?reason=session_expired
-        $redirect .= (strpos($redirect, '?') === false ? '?' : '&') . "reason=$reason";
-    }
-    
-    // 5. Redirige y termina la ejecución
-    header("Location: $redirect");
-    exit();
-}
-
-// ========================================
-// VERIFICACIONES DE SEGURIDAD
-// ========================================
-
-// ========================================
-// VERIFICACIÓN 1: ¿Existe username?
-// ========================================
-// Si no hay username en la sesión, el usuario no está logueado
-if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
-    destroySession($config['login_url'], 'no_session');
-}
-
-// ========================================
-// VERIFICACIÓN 2: ¿Existe user_id?
-// ========================================
-// Capa adicional de seguridad: verifica que exista el ID del usuario
-if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    destroySession($config['login_url'], 'invalid_session');
-}
-
-// ========================================
-// VERIFICACIÓN 3: Inicializar timestamps
-// ========================================
-// Si es la primera vez que se ejecuta este código en la sesión,
-// inicializa los tiempos de creación y última actividad
-if (!isset($_SESSION['created_at'])) {
-    $_SESSION['created_at'] = time();  // Guarda el timestamp de cuándo inició sesión
-}
-
-if (!isset($_SESSION['last_activity'])) {
-    $_SESSION['last_activity'] = time();  // Guarda el timestamp de la última actividad
-}
-
-// ========================================
-// VERIFICACIÓN 4: Timeout absoluto
-// ========================================
-// Verifica si la sesión ha durado más del tiempo máximo permitido
-// Ejemplo: Si la sesión inició hace 1 hora y 5 minutos, cierra sesión
-// Esto previene sesiones eternas
-if (time() - $_SESSION['created_at'] > $config['absolute_timeout']) {
-    // time() = tiempo actual
-    // time() - created_at = cuántos segundos han pasado desde el login
-    // Si pasaron más de 3600 segundos (1 hora), cierra sesión
-    destroySession($config['login_url'], 'session_expired');
-}
-
-// ========================================
-// VERIFICACIÓN 5: Timeout de inactividad
-// ========================================
-// Verifica si el usuario ha estado inactivo más de 15 minutos
-// Ejemplo: Si hace 20 minutos que no hace nada, cierra sesión
-if (time() - $_SESSION['last_activity'] > $config['inactivity_limit']) {
-    // Si hace más de 900 segundos (15 minutos) que no hay actividad
-    destroySession($config['login_url'], 'inactive_timeout');
-}
-
-// ========================================
-// VERIFICACIÓN 6: Huella digital del navegador
-// ========================================
-// Previene "Session Hijacking" (robo de sesión)
-// Verifica que el navegador sea el mismo que inició sesión
-if ($config['check_fingerprint']) {
-    $current_fingerprint = getClientFingerprint();  // Hash del navegador actual
-    
-    if (!isset($_SESSION['client_fingerprint'])) {
-        // Primera vez: guarda el hash del navegador
-        $_SESSION['client_fingerprint'] = $current_fingerprint;
-    } elseif ($_SESSION['client_fingerprint'] !== $current_fingerprint) {
-        // El hash cambió = otro navegador está usando la cookie robada
-        error_log("Session hijacking attempt detected for user: " . $_SESSION['username']);
-        destroySession($config['login_url'], 'security_violation');
-    }
-}
-
-// ========================================
-// VERIFICACIÓN 7: Validación de IP
-// ========================================
-// Verifica que la IP no haya cambiado
-// NOTA: Puede causar problemas si el usuario usa VPN o proxy
-if ($config['check_ip']) {
-    $current_ip = $_SERVER['REMOTE_ADDR'] ?? '';  // IP actual del usuario
-    
-    if (!isset($_SESSION['client_ip'])) {
-        // Primera vez: guarda la IP
-        $_SESSION['client_ip'] = $current_ip;
-    } elseif ($_SESSION['client_ip'] !== $current_ip) {
-        // La IP cambió = posible ataque o cambio de red
-        error_log("IP change detected for user: " . $_SESSION['username']);
-        destroySession($config['login_url'], 'ip_changed');
-    }
-}
-
-// ========================================
-// VERIFICACIÓN 8: Regeneración de ID
-// ========================================
-// Cambia el ID de sesión cada 5 minutos por seguridad
-// Previene ataques de "Session Fixation"
-if (!isset($_SESSION['last_regeneration'])) {
-    $_SESSION['last_regeneration'] = time();  // Primera vez: marca el tiempo
-}
-
-if (time() - $_SESSION['last_regeneration'] > $config['regenerate_interval']) {
-    // Han pasado más de 5 minutos, regenera el ID
-    session_regenerate_id(true);  // true = elimina el archivo de sesión antiguo
-    $_SESSION['last_regeneration'] = time();
-}
-
-// ========================================
-// VERIFICACIÓN 9: Token CSRF
-// ========================================
-// Valida que los formularios POST tengan un token válido
-// Previene ataques Cross-Site Request Forgery
-if (isset($_POST) && !empty($_POST)) {
-    // Si hay datos POST (formulario enviado)
-    
-    if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token'])) {
-        // Falta el token CSRF = ataque o error de programación
-        error_log("CSRF token missing for user: " . $_SESSION['username']);
-        destroySession($config['login_url'], 'csrf_error');
-    }
-    
-    // hash_equals() compara de forma segura (previene timing attacks)
-    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        // El token no coincide = posible ataque CSRF
-        error_log("CSRF token mismatch for user: " . $_SESSION['username']);
-        destroySession($config['login_url'], 'csrf_error');
-    }
-}
-
-// ========================================
-// VERIFICACIÓN 10: Generar token CSRF
-// ========================================
-// Si no existe un token CSRF, lo crea
-// Este token se debe incluir en todos los formularios
-if (!isset($_SESSION['csrf_token'])) {
-    // random_bytes(32) = genera 32 bytes aleatorios
-    // bin2hex() = convierte a hexadecimal (64 caracteres)
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-// ========================================
-// VERIFICACIÓN 11: Actualizar actividad
-// ========================================
-// Actualiza el timestamp de última actividad
-// Esto reinicia el contador de inactividad
-$_SESSION['last_activity'] = time();
-
-// 12. Registrar actividad (opcional, para auditoría)
-if (!isset($_SESSION['page_views'])) {
-    $_SESSION['page_views'] = 0;
-}
-$_SESSION['page_views']++;
-$_SESSION['last_page'] = $_SERVER['REQUEST_URI'] ?? '';
+// Configuración
+define('INACTIVE_TIMEOUT', 7200); // 2 horas
+define('EMPLOYEE_CHECK_INTERVAL', 300); // 5 minutos
+define('ERROR_LOG_FILE', __DIR__ . '/../logs/auth_errors.log');
 
 /**
- * Función helper para obtener el token CSRF en formularios
- * Uso: <input type="hidden" name="csrf_token" value="<?php echo getCsrfToken(); ?>">
+ * Calcula la ruta dinámica al login desde cualquier ubicación
  */
-function getCsrfToken() {
-    return $_SESSION['csrf_token'] ?? '';
+function getLoginPath() {
+    $current_path = $_SERVER['PHP_SELF'] ?? '/';
+    $current_path = str_replace('//', '/', $current_path);
+
+    $appPos = strpos($current_path, '/app');
+    if ($appPos !== false) {
+        $from_app = substr($current_path, $appPos + 4);
+        $from_app = ltrim($from_app, '/');
+
+        if ($from_app === '' || $from_app === false) {
+            return 'auth/login.php';
+        }
+
+        $parts = explode('/', $from_app);
+        if (count($parts) > 0) {
+            array_pop($parts);
+        }
+        $depth = count($parts);
+
+        return str_repeat('../', $depth) . 'auth/login.php';
+    }
+
+    return '/app/auth/login.php';
 }
 
 /**
- * Función helper para obtener información de la sesión
+ * Registra errores en log personalizado
  */
-function getSessionInfo() {
+function logAuthError($message, $context = []) {
+    $log_dir = dirname(ERROR_LOG_FILE);
+    if (!is_dir($log_dir)) {
+        @mkdir($log_dir, 0755, true);
+    }
+
+    $timestamp = date('Y-m-d H:i:s');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $context_str = !empty($context) ? json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : '';
+
+    $log_message = sprintf("[%s] IP: %s | %s %s\n", $timestamp, $ip, $message, $context_str);
+    @error_log($log_message, 3, ERROR_LOG_FILE);
+}
+
+/**
+ * Maneja errores de base de datos de forma segura
+ */
+function handleDatabaseError($conn = null, $error_message = '', $redirect = true) {
+    logAuthError('Database Error: ' . $error_message, [
+        'user_id' => $_SESSION['id'] ?? 'guest',
+        'page' => $_SERVER['PHP_SELF'] ?? ''
+    ]);
+
+    if ($redirect) {
+        $login_path = getLoginPath();
+        header("Location: {$login_path}?error=system");
+        exit();
+    }
+
+    return false;
+}
+
+/**
+ * Devuelve opciones de cookie respetando si hay HTTPS.
+ * Para "A" (local), permitimos secure=false si no hay HTTPS.
+ */
+function getCookieOptions() {
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+    // PHP 7.3+ array options for setcookie
     return [
-        'username' => $_SESSION['username'] ?? '',
-        'user_id' => $_SESSION['user_id'] ?? '',
-        'time_remaining' => isset($_SESSION['last_activity']) 
-            ? ($GLOBALS['config']['inactivity_limit'] - (time() - $_SESSION['last_activity']))
-            : 0,
-        'session_age' => isset($_SESSION['created_at']) 
-            ? (time() - $_SESSION['created_at'])
-            : 0,
-        'page_views' => $_SESSION['page_views'] ?? 0
+        'expires'  => time() + (86400 * 30), // 30 días por defecto (al crear)
+        'path'     => '/',
+        'domain'   => '',    // dejar por defecto
+        'secure'   => $isHttps, // si hay HTTPS -> true, si no -> false (para local)
+        'httponly' => true,
+        'samesite' => 'Lax'
     ];
 }
 
-// La sesión ha sido validada exitosamente
-// El script continúa con normalidad
+/**
+ * Elimina cookie usando mismas opciones de cookie para concordancia
+ */
+function eliminarCookieRemember() {
+    $opts = getCookieOptions();
+    // Forzar expiración
+    $opts['expires'] = time() - 3600;
+    // Si la función de setcookie acepta array de opciones (PHP 7.3+)
+    if (PHP_VERSION_ID >= 70300) {
+        setcookie('remember_token', '', $opts);
+    } else {
+        // Fallback clásico
+        setcookie('remember_token', '', $opts['expires'], $opts['path'], $opts['domain'], $opts['secure'], $opts['httponly']);
+    }
+}
 
+/**
+ * Elimina un token de forma segura en BD y elimina cookie
+ */
+function eliminarToken($conn, $token_hash) {
+    try {
+        if ($conn) {
+            $stmt = $conn->prepare("DELETE FROM session_tokens WHERE token_hash = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $token_hash);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                logAuthError('Prepare failed in eliminarToken: ' . $conn->error);
+            }
+        }
+    } catch (Exception $e) {
+        logAuthError('Error eliminating token: ' . $e->getMessage());
+        if (isset($stmt) && $stmt) {
+            $stmt->close();
+        }
+    }
+
+    // Siempre eliminar cookie en cliente (usar la misma política de secure que al crearla)
+    eliminarCookieRemember();
+}
+
+/**
+ * Valida la sesión mediante cookie de "recordar"
+ */
+function validarSessionToken($conn) {
+    if (empty($_COOKIE['remember_token'])) {
+        return false;
+    }
+
+    if (!$conn) {
+        logAuthError('No DB connection in validarSessionToken');
+        return false;
+    }
+
+    try {
+        $token = $_COOKIE['remember_token'];
+        // Por si acaso viene con algún encoding
+        $token = rawurldecode($token);
+        $token_hash = hash('sha256', $token);
+
+        $sql = "
+            SELECT 
+                st.id_usuario,
+                st.expiry,
+                st.user_agent,
+                u.id,
+                e.id AS idEmpleado,
+                u.username,
+                CONCAT(e.nombre, ' ', e.apellido) AS nombre,
+                e.idPuesto,
+                e.activo
+            FROM 
+                session_tokens AS st
+            INNER JOIN usuarios AS u ON st.id_usuario = u.id
+            INNER JOIN empleados AS e ON u.idEmpleado = e.id
+            WHERE 
+                st.token_hash = ?
+                AND st.expiry > NOW()
+            LIMIT 1
+        ";
+
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $conn->error);
+        }
+
+        $stmt->bind_param("s", $token_hash);
+
+        if (!$stmt->execute()) {
+            throw new Exception("Execute failed: " . $stmt->error);
+        }
+
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            // USER-AGENT: comparar solo parte significativa
+            $storedUA = $row['user_agent'] ?? '';
+            $actualUA = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+            // Tomar primeros 40 caracteres (o menor si no hay), esto previene mismatches por pequeñas variaciones.
+            $storedPrefix = substr($storedUA, 0, 40);
+            $actualPrefix = substr($actualUA, 0, 40);
+
+            // Opcional: si storedUA tiene valores mínimos (ej: "Chrome", "Firefox"), comparar por contains.
+            $ua_matches = false;
+            if (!empty($storedUA)) {
+                // Si storedUA es corto y contiene una palabra clave, usar stripos
+                if (strlen($storedUA) < 50) {
+                    if (stripos($actualUA, $storedUA) !== false) {
+                        $ua_matches = true;
+                    }
+                }
+                // También aceptar si los prefijos coinciden
+                if ($storedPrefix === $actualPrefix) {
+                    $ua_matches = true;
+                }
+                // O si actual contiene el primer token del stored
+                $first_token = strtok($storedUA, " ");
+                if ($first_token && stripos($actualUA, $first_token) !== false) {
+                    $ua_matches = true;
+                }
+            } else {
+                // Si no hay ua almacenado, no forzar rechazo (compatibilidad)
+                $ua_matches = true;
+            }
+
+            if (!$ua_matches) {
+                logAuthError('Token security violation: User-Agent mismatch', [
+                    'user_id' => $row['id'],
+                    'expected_ua_prefix' => substr($storedUA, 0, 100),
+                    'actual_ua_prefix'   => substr($actualUA, 0, 100)
+                ]);
+                $stmt->close();
+                eliminarToken($conn, $token_hash);
+                return false;
+            }
+
+            // Verificar empleado activo
+            if ($row['activo'] == 0) {
+                logAuthError('Inactive employee login attempt', ['user_id' => $row['id']]);
+                $stmt->close();
+                eliminarToken($conn, $token_hash);
+                return false;
+            }
+
+            // Restaurar sesión
+            session_regenerate_id(true);
+            $_SESSION['id'] = $row['id'];
+            $_SESSION['username'] = $row['username'];
+            $_SESSION['idEmpleado'] = $row['idEmpleado'];
+            $_SESSION['nombre'] = $row['nombre'];
+            $_SESSION['idPuesto'] = $row['idPuesto'];
+            $_SESSION['last_activity'] = time();
+            $_SESSION['persistent_session'] = true;
+
+            // Verificar caja abierta (no crítico)
+            verificarCajaAbierta($conn, $row['idEmpleado']);
+
+            $stmt->close();
+            return true;
+        }
+
+        $stmt->close();
+        // Token no encontrado o expirado
+        eliminarToken($conn, $token_hash);
+        return false;
+
+    } catch (Exception $e) {
+        logAuthError('Exception in validarSessionToken: ' . $e->getMessage());
+        if (isset($stmt) && $stmt) {
+            $stmt->close();
+        }
+        return false;
+    }
+}
+
+/**
+ * Verifica caja abierta con manejo de errores
+ */
+function verificarCajaAbierta($conn, $idEmpleado) {
+    try {
+        if (!$conn) {
+            return;
+        }
+        $stmt = $conn->prepare("
+            SELECT
+                numCaja,
+                idEmpleado,
+                DATE_FORMAT(fechaApertura, '%d/%m/%Y %l:%i %p') AS fechaApertura,
+                saldoApertura,
+                registro
+            FROM
+                cajasabiertas
+            WHERE
+                idEmpleado = ?
+            LIMIT 1
+        ");
+
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $conn->error);
+        }
+
+        $stmt->bind_param("i", $idEmpleado);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        if ($resultado && $resultado->num_rows > 0) {
+            $datos_caja = $resultado->fetch_assoc();
+            $_SESSION['numCaja'] = strval($datos_caja['numCaja']);
+            $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
+            $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
+            $_SESSION['registro'] = $datos_caja['registro'];
+        }
+
+        $stmt->close();
+
+    } catch (Exception $e) {
+        logAuthError('Error checking open cash register: ' . $e->getMessage(), [
+            'employee_id' => $idEmpleado
+        ]);
+        if (isset($stmt) && $stmt) {
+            $stmt->close();
+        }
+    }
+}
+
+/**
+ * Cierra sesión limpiando todos los recursos
+ */
+function cerrarSesion($conn = null) {
+    try {
+        // Eliminar token de BD si existe
+        if (!empty($_COOKIE['remember_token']) && $conn) {
+            $token = rawurldecode($_COOKIE['remember_token']);
+            $token_hash = hash('sha256', $token);
+            eliminarToken($conn, $token_hash);
+        } else {
+            // Aun si no hay conn, eliminar la cookie localmente
+            eliminarCookieRemember();
+        }
+
+        // Destruir sesión
+        $_SESSION = array();
+
+        if (isset($_COOKIE[session_name()])) {
+            setcookie(session_name(), '', time() - 3600, '/');
+        }
+
+        session_destroy();
+
+    } catch (Exception $e) {
+        logAuthError('Error during logout: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Verifica si empleado sigue activo
+ */
+function verificarEmpleadoActivo($conn) {
+    try {
+        if (!isset($_SESSION['idEmpleado'])) {
+            return false;
+        }
+
+        $stmt = $conn->prepare("SELECT activo FROM empleados WHERE id = ? LIMIT 1");
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $conn->error);
+        }
+        $stmt->bind_param("i", $_SESSION['idEmpleado']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $is_active = ($row['activo'] == 1);
+            $stmt->close();
+            return $is_active;
+        }
+
+        $stmt->close();
+        return false;
+
+    } catch (Exception $e) {
+        logAuthError('Error checking employee status: ' . $e->getMessage());
+        if (isset($stmt) && $stmt) {
+            $stmt->close();
+        }
+        // En caso de error, asumir activo para no bloquear al usuario
+        return true;
+    }
+}
+
+// ====== LÓGICA PRINCIPAL DE VALIDACIÓN ======
+
+try {
+    // Si no hay sesión activa, intentar restaurar desde token
+    if (!isset($_SESSION['username'])) {
+        require_once __DIR__ . '/../core/conexion.php';
+
+        if (!isset($conn) || $conn->connect_error) {
+            handleDatabaseError($conn ?? null, 'Connection failed: ' . ($conn->connect_error ?? 'unknown'));
+        }
+
+        if (!validarSessionToken($conn)) {
+            $login_path = getLoginPath();
+            header("Location: {$login_path}");
+            exit();
+        }
+    }
+    // Si sí hay sesión activa
+    else {
+        // Controlar inactividad en sesiones NO persistentes
+        if (!isset($_SESSION['persistent_session']) || $_SESSION['persistent_session'] !== true) {
+            if (isset($_SESSION['last_activity'])) {
+                $elapsed_time = time() - $_SESSION['last_activity'];
+                if ($elapsed_time > INACTIVE_TIMEOUT) {
+                    require_once __DIR__ . '/../core/conexion.php';
+                    if (isset($conn) && !$conn->connect_error) {
+                        cerrarSesion($conn);
+                    } else {
+                        // Aun si no hay conn, cerrar localmente
+                        cerrarSesion(null);
+                    }
+                    $login_path = getLoginPath();
+                    header("Location: {$login_path}?timeout=1");
+                    exit();
+                }
+            }
+            $_SESSION['last_activity'] = time();
+        }
+
+        // Verificación periódica de empleado activo
+        if (!isset($_SESSION['last_employee_check']) ||
+            (time() - $_SESSION['last_employee_check']) > EMPLOYEE_CHECK_INTERVAL) {
+
+            require_once __DIR__ . '/../core/conexion.php';
+
+            if (!isset($conn) || $conn->connect_error) {
+                logAuthError('DB connection failed during employee check');
+            } else {
+                if (!verificarEmpleadoActivo($conn)) {
+                    cerrarSesion($conn);
+                    $login_path = getLoginPath();
+                    header("Location: {$login_path}?disabled=1");
+                    exit();
+                }
+                $_SESSION['last_employee_check'] = time();
+            }
+        }
+    }
+
+} catch (Exception $e) {
+    logAuthError('Critical error in auth middleware: ' . $e->getMessage());
+    $login_path = getLoginPath();
+    header("Location: {$login_path}?error=critical");
+    exit();
+}
+
+// Si se llegó hasta aquí, todo ok y se continúa con la página
+return;
 ?>

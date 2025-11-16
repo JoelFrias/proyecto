@@ -1,35 +1,7 @@
 <?php
 
-/* Verificacion de sesion */
-
-// Iniciar sesión
-session_start();
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    header('Location: ../../app/auth/login.php'); // Redirigir al login
-    exit(); // Detener la ejecución del script
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    header("Location: ../../app/auth/login.php?session_expired=session_expired"); // Redirigir al login
-    exit(); // Detener la ejecución del script
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require_once '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
 // Obtener el número de factura y el estado desde el formulario (si existen)
 $numFactura = isset($_GET['numFactura']) && !empty($_GET['numFactura']) ? intval($_GET['numFactura']) : null;

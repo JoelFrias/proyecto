@@ -1,104 +1,68 @@
 <?php
 
-    /* Verificacion de sesion */
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
-    // Iniciar sesión
-    session_start();
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'PADM001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo "
+        <html>
+            <head>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            </head>
+            <body>
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ACCESO DENEGADO',
+                        text: 'No tienes permiso para acceder a esta sección.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.history.back();
+                    });
+                </script>
+            </body>
+        </html>";
+        
+    exit(); 
+}
 
-    // Configurar el tiempo de caducidad de la sesión
-    $inactivity_limit = 9000; // 15 minutos en segundos
+// Validar permisos específicos para cada módulo
+$puede_ver_dashboard = validarPermiso($conn, 'PADM002', $id_empleado);
+$permiso_usuarios = validarPermiso($conn, 'USU001', $id_empleado);
+$permiso_empleados = validarPermiso($conn, 'EMP001', $id_empleado);
+$permiso_info_factura = validarPermiso($conn, 'FAC003', $id_empleado);
+$permiso_cuadres = validarPermiso($conn, 'CUA001', $id_empleado);
+$permiso_cotizaciones = validarPermiso($conn, 'COT002', $id_empleado);
+$permiso_transferencias = validarPermiso($conn, 'ALM002', $id_empleado);
+$permiso_inventario = validarPermiso($conn, 'ALM004', $id_empleado);
+$permiso_bancos_destinos = validarPermiso($conn, 'PADM003', $id_empleado);
 
-    // Verificar si el usuario ha iniciado sesión
-    if (!isset($_SESSION['username'])) {
-        session_unset(); // Eliminar todas las variables de sesión
-        session_destroy(); // Destruir la sesión
-        header('Location: ../../app/auth/login.php'); // Redirigir al login
-        exit(); // Detener la ejecución del script
-    }
+// Tabla Bancos
+if ($permiso_bancos_destinos) {
+    $stmtb = $conn->prepare("SELECT id AS idBank, nombreBanco AS namebanks FROM bancos WHERE id <> 1 AND enable = 1");
+    $stmtb->execute();
+    $resultsb = $stmtb->get_result();
+}
 
-    // Verificar si la sesión ha expirado por inactividad
-    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-        session_unset(); // Eliminar todas las variables de sesión
-        session_destroy(); // Destruir la sesión
-        header("Location: ../../app/auth/login.php?session_expired=session_expired"); // Redirigir al login
-        exit(); // Detener la ejecución del script
-    }
+// Tabla Destinos
+if ($permiso_bancos_destinos) {
+    $stmtd = $conn->prepare("SELECT id AS idDestination, descripcion AS namedestinations FROM destinocuentas WHERE id <> 1 AND enable = 1");
+    $stmtd->execute();
+    $resultsd = $stmtd->get_result();
+}
 
-    // Actualizar el tiempo de la última actividad
-    $_SESSION['last_activity'] = time();
-
-    /* Fin de verificacion de sesion */
-
-    require_once '../../core/conexion.php';
-
-    ////////////////////////////////////////////////////////////////////
-    ///////////////////// VALIDACION DE PERMISOS ///////////////////////
-    ////////////////////////////////////////////////////////////////////
-
-    require_once '../../core/validar-permisos.php';
-    $permiso_necesario = 'PADM001';
-    $id_empleado = $_SESSION['idEmpleado'];
-    if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-        echo "
-            <html>
-                <head>
-                    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-                </head>
-                <body>
-                    <script>
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'ACCESO DENEGADO',
-                            text: 'No tienes permiso para acceder a esta sección.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.history.back();
-                        });
-                    </script>
-                </body>
-            </html>";
-            
-        exit(); 
-    }
-
-    ////////////////////////////////////////////////////////////////////
-
-    // Validar permiso para ver el dashboard
-    $permiso_dashboard = 'PADM002';
-    $puede_ver_dashboard = validarPermiso($conn, $permiso_dashboard, $id_empleado);
-
-    // Validar permisos específicos para cada módulo
-    $permiso_usuarios = validarPermiso($conn, 'USU001', $id_empleado);
-    $permiso_empleados = validarPermiso($conn, 'EMP001', $id_empleado);
-    $permiso_info_factura = validarPermiso($conn, 'FAC003', $id_empleado);
-    $permiso_cuadres = validarPermiso($conn, 'CUA001', $id_empleado);
-    $permiso_cotizaciones = validarPermiso($conn, 'COT002', $id_empleado);
-    $permiso_transferencias = validarPermiso($conn, 'ALM002', $id_empleado);
-    $permiso_inventario = validarPermiso($conn, 'ALM004', $id_empleado);
-    $permiso_bancos_destinos = validarPermiso($conn, 'PADM003', $id_empleado);
-
-    // Tabla Bancos
-    if ($permiso_bancos_destinos) {
-        $stmtb = $conn->prepare("SELECT id AS idBank, nombreBanco AS namebanks FROM bancos WHERE id <> 1 AND enable = 1");
-        $stmtb->execute();
-        $resultsb = $stmtb->get_result();
-    }
-
-    // Tabla Destinos
-    if ($permiso_bancos_destinos) {
-        $stmtd = $conn->prepare("SELECT id AS idDestination, descripcion AS namedestinations FROM destinocuentas WHERE id <> 1 AND enable = 1");
-        $stmtd->execute();
-        $resultsd = $stmtd->get_result();
-    }
-
-    // info factura
-    if ($permiso_info_factura) {
-        $stmtif = $conn->prepare("SELECT * FROM infofactura");
-        $stmtif->execute();
-        $resultsif = $stmtif->get_result();
-        $rowif = $resultsif->fetch_assoc();
-    }
+// info factura
+if ($permiso_info_factura) {
+    $stmtif = $conn->prepare("SELECT * FROM infofactura");
+    $stmtif->execute();
+    $resultsif = $stmtif->get_result();
+    $rowif = $resultsif->fetch_assoc();
+}
 
 ?>
 
@@ -731,7 +695,6 @@
             }
             
             .filter-group {
-                flex-direction: column;
                 align-items: stretch;
             }
         }

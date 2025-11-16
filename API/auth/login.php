@@ -16,7 +16,7 @@ session_start();
 if (isset($_SESSION['username'])) {
     echo json_encode([
         'success' => false,
-        'error' => 'Ya existe una sesión activa, por favor actualiza la pagina',
+        'error' => 'Ya existe una sesión activa, por favor actualiza la página',
         'redirect' => '../../'
     ]);
     exit();
@@ -45,10 +45,11 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit();
 }
 
-require '../../core/conexion.php';
+require '../../core/conexion.php';  // Requerir archivo de conexion
 
 $user = isset($data['username']) ? trim($data['username']) : '';
 $pass = isset($data['password']) ? trim($data['password']) : '';
+$remember_me = isset($data['remember_me']) ? (bool)$data['remember_me'] : false;
 
 // Validar campos vacíos
 if (empty($user) || empty($pass)) {
@@ -60,7 +61,7 @@ if (empty($user) || empty($pass)) {
     exit();
 }
 
-// Consulta a la base de datos (removemos el filtro de activo=1)
+// Consulta a la base de datos
 $query = "SELECT
             u.id,
             e.id AS idEmpleado,
@@ -95,7 +96,7 @@ if ($stmt = $conn->prepare($query)) {
                     'disabled' => true
                 ]);
                 $stmt->close();
-                $conn->close();
+                // $conn->close();
                 exit();
             }
             
@@ -105,6 +106,42 @@ if ($stmt = $conn->prepare($query)) {
             $_SESSION['idEmpleado'] = $row['idEmpleado'];
             $_SESSION['nombre'] = $row['nombre'];
             $_SESSION['idPuesto'] = $row['idPuesto'];
+            $_SESSION['last_activity'] = time();
+
+            // Si el usuario marcó "Mantener sesión abierta"
+            if ($remember_me) {
+                // Generar token único y seguro
+                $token = bin2hex(random_bytes(32));
+                $token_hash = hash('sha256', $token);
+                $expiry = time() + (30 * 24 * 60 * 60); // 30 días
+                
+                // Guardar el token en la base de datos
+                $stmt_token = $conn->prepare("INSERT INTO session_tokens (id_usuario, token_hash, expiry, user_agent, ip_address) VALUES (?, ?, ?, ?, ?)");
+                $expiry_date = date('Y-m-d H:i:s', $expiry);
+                $user_agent = $_SERVER['HTTP_USER_AGENT'];
+                $ip_address = $_SERVER['REMOTE_ADDR'];
+                $stmt_token->bind_param("issss", $row['id'], $token_hash, $expiry_date, $user_agent, $ip_address);
+                
+                if ($stmt_token->execute()) {
+                    // Establecer cookie segura
+                    setcookie(
+                        'remember_token',
+                        $token,
+                        [
+                            'expires' => $expiry,
+                            'path' => '/',
+                            'domain' => '',
+                            'secure' => isset($_SERVER['HTTPS']), // Solo HTTPS en producción
+                            'httponly' => true,
+                            'samesite' => 'Strict'
+                        ]
+                    );
+                }
+                $stmt_token->close();
+            } else {
+                // Establecer tiempo de inactividad de 2 horas
+                ini_set('session.gc_maxlifetime', 7200); // 2 horas en segundos
+            }
 
             // Verificar si el empleado tiene una caja abierta
             $datosCaja = verificarCajaAbierta($conn, $row['idEmpleado']);
@@ -114,11 +151,10 @@ if ($stmt = $conn->prepare($query)) {
                 require_once '../../core/auditorias.php';
                 $usuario_id = $_SESSION['idEmpleado'];
                 $accion = 'Nueva sesión iniciada';
-                $detalle = 'El usuario ' . $_SESSION['username'] . ' ha iniciado sesión.';
+                $detalle = 'El usuario ' . $_SESSION['username'] . ' ha iniciado sesión.' . ($remember_me ? ' (Sesión persistente activada)' : '');
                 $ip = $_SERVER['REMOTE_ADDR'];
                 registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
             } catch (Exception $e) {
-                // Log del error pero no detener el login
                 error_log("Error en auditoría: " . $e->getMessage());
             }
 
@@ -132,7 +168,7 @@ if ($stmt = $conn->prepare($query)) {
                     'idPuesto' => $row['idPuesto']
                 ],
                 'caja' => $datosCaja,
-                'redirect' => '../../'
+                'redirect' => '../../app/'// <----------- AQUI ES LA DIRRECION QUE SE ABRE CUANDO SE INICIA SESION
             ]);
         } else {
             http_response_code(401);
@@ -159,11 +195,12 @@ if ($stmt = $conn->prepare($query)) {
     ]);
 }
 
-$conn->close();
+// $conn->close();
 
 /**
  * Función para verificar si el empleado tiene una caja abierta
  */
+
 function verificarCajaAbierta($conn, $idEmpleado) {
     $sql_verificar = "SELECT
                         numCaja,

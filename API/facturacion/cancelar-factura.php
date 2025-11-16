@@ -374,5 +374,5 @@ try {
 }
 
 // Cerrar conexión
-$conn->close();
+// $conn->close();
 ?>

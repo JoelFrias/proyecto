@@ -1,30 +1,7 @@
 <?php
 
-/* Verificacion de sesion */
-
-session_start();
-
-$inactivity_limit = 900; // 15 minutos
-
-if (!isset($_SESSION['username'])) {
-    session_unset();
-    session_destroy();
-    header('Location: ../../app/auth/login.php');
-    exit();
-}
-
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset();
-    session_destroy();
-    header("Location: ../../app/auth/login.php?session_expired=session_expired");
-    exit();
-}
-
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
 // Inicializar variables de búsqueda y filtros
 $search = isset($_GET['search']) ? trim($_GET['search']) : "";

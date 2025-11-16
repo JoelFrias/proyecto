@@ -613,7 +613,7 @@ try {
     ]);
 } finally {
     if ($conn) {
-        $conn->close();
+        // $conn->close();
     }
     exit;
 }

@@ -290,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         $response['message'] = $e->getMessage();
         http_response_code(500);
     } finally {
-        $conn->close();
+        // $conn->close();
     }
 } else {
     $response['message'] = 'Método de solicitud no permitido.';

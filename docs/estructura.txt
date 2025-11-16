@@ -1,23 +1,13 @@
 EasyPOS/
 	├── api/
 	│  	├── admin/
-	│  	├── authcontroller/
+	│  	├── auth/
 	│  	├── clientes/
 	│  	├── empleados/
 	│  	├── facturacion/
 	│  	├── gestion/
 	│  	├── inventario/
 	│  	├── productos/
-	├── assets/
-	│  	├── css/
-	│  	├── graphics/
-	│  	│  	├── admin/
-	│  	│  	├── index/
-	│  	├── img/
-	│  	├── js/
-	│  	├── sql/
-	├── core/
-	├── docs/
 	├── app/
 	│  	├── auth/
 	│  	├── caja/
@@ -30,6 +20,16 @@ EasyPOS/
 	│  	├── layouts/
 	│  	├── productos/
 	│  	├── index.php
+	├── assets/
+	│  	├── css/
+	│  	├── graphics/
+	│  	│  	├── admin/
+	│  	│  	├── index/
+	│  	├── img/
+	│  	├── js/
+	│  	├── sql/
+	├── core/
+	├── docs/
 	├── libs/
 	│  	├── fpdf/
 	├── reports/

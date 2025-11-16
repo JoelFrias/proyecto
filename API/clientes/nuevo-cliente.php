@@ -194,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($stmt_cliente)) $stmt_cliente->close();
         if (isset($stmt_cuenta)) $stmt_cuenta->close();
         if (isset($stmt_direccion)) $stmt_direccion->close();
-        $conn->close();
+        // $conn->close();
     }
 } else {
     // Si no es un POST

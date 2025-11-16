@@ -109,5 +109,5 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 }
 
-$conn->close();
+// $conn->close();
 ?>

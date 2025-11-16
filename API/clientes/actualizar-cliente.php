@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(500); // Internal Server Error
     } finally {
         // 11. Cerrar la conexión
-        $conn->close();
+        // $conn->close();
     }
 } else {
     // Si no es un POST

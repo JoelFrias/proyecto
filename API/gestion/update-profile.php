@@ -160,7 +160,7 @@ try {
     
 } finally {
     if (isset($conn) && $conn->ping()) {
-        $conn->close();
+        // $conn->close();
     }
 }
 ?>

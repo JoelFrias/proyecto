@@ -1,87 +1,34 @@
 <?php
 
-/* Verificacion de sesion */
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/conexion.php'; // Conexión a la base de datos
 
-// Iniciar sesión
-session_start();
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 9000; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    header('Location: ../../app/auth/login.php'); // Redirigir al login
-    exit(); // Detener la ejecución del script
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    header("Location: ../../app/auth/login.php?session_expired=session_expired"); // Redirigir al login
-    exit(); // Detener la ejecución del script
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-require_once '../../core/conexion.php';
-
-/* Fin de verificacion de sesion */
-
-// Procesar la actualización si se envió el formulario
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id = intval($_POST['id']);
-    $nombre = trim($_POST['nombre']);
-    $apellido = trim($_POST['apellido']);
-    $tipo_identificacion = trim($_POST['tipo_identificacion']);
-    $identificacion = trim($_POST['identificacion']);
-    $telefono = trim($_POST['telefono']);
-    $idPuesto = intval($_POST['idPuesto']);
-    $estado = trim($_POST['estado']);
-
-    if($estado == "activo"){
-        $estado = 1;  // Using 1 instead of TRUE
-    } else if ($estado == "inactivo"){
-        $estado = 0;  // Using 0 instead of FALSE
-    } else {
-        $_SESSION['error_message'] = "Estado invalido";
-        header('Location: ../../app/empleados/empleados.php');
-        exit();
-    }
-
-    // Actualizar el empleado en la base de datos
-    $sql_update = "UPDATE empleados SET
-                   nombre = ?,
-                   apellido = ?,
-                   tipo_identificacion = ?,
-                   identificacion = ?,
-                   telefono = ?,
-                   idPuesto = ?,
-                   activo = ?
-                   WHERE id = ?";
-    $stmt = $conn->prepare($sql_update);
-    $stmt->bind_param("sssssiii", $nombre, $apellido, $tipo_identificacion, $identificacion, $telefono, $idPuesto, $estado, $id);
-
-    if ($stmt->execute()) {
-        $_SESSION['success_message'] = 'Empleado actualizado con éxito.';
-    } else {
-        $_SESSION['error_message'] = 'Error al actualizar el empleado: ' . $stmt->error;
-    }
-
-    // Auditoria de Acciones de Usuario
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Actualizacion Empleado';
-    $detalle = 'IdEmpleado: ' . $id . ', Nombre: ' . $nombre . ', Apellido: ' . $apellido . ', tipo Identificacion: ' . $tipo_identificacion . ', identificacion: ' . $identificacion . ', telefono: ' . $telefono . ', id puesto: ' . $idPuesto . ', estado: ' . $estado;
-    $ip = $_SERVER['REMOTE_ADDR']; // Obtener la dirección IP del cliente
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-
-    // Redirigir para evitar reenvío del formulario
-    header('Location: ../../app/empleados/empleados.php');
-    exit();
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'EMP001';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo "
+        <html>
+            <head>
+                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+            </head>
+            <body>
+                <script>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ACCESO DENEGADO',
+                        text: 'No tienes permiso para acceder a esta sección.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.history.back();
+                    });
+                </script>
+            </body>
+        </html>";
+        
+    exit(); 
 }
 
 // Inicializar la variable de búsqueda
