@@ -36,7 +36,7 @@ $config = [
     'regenerate_interval' => 300,    // Cada 5 minutos cambia el ID de sesión por seguridad
     'check_fingerprint' => true,     // Verifica que el navegador no cambie
     'check_ip' => false,             // Verifica que la IP no cambie (OFF: problemas con VPN)
-    'login_url' => '../../frontend/auth/login.php'  // Página de login
+    'login_url' => '../../app/auth/login.php'  // Página de login
 ];
 
 // ========================================

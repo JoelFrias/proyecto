@@ -18,7 +18,7 @@ EasyPOS/
 	│  	├── sql/
 	├── core/
 	├── docs/
-	├── frontend/
+	├── app/
 	│  	├── auth/
 	│  	├── caja/
 	│  	├── clientes/

@@ -32,21 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validar que el ID del producto sea válido
     if ($idProducto <= 0) {
         $_SESSION['errors'][] = "ID de producto no válido.";
-        header("Location: ../../frontend/productos/productos.php");
+        header("Location: ../../app/productos/productos.php");
         exit;
     }
 
     // Validar que el tipo de producto sea válido
     if ($tipo <= 0) {
         $_SESSION['errors'][] = "Tipo de producto no válido.";
-        header("Location: ../../frontend/productos/productos.php");
+        header("Location: ../../app/productos/productos.php");
         exit;
     }
 
     // Validar que los campos obligatorios no estén vacíos
     if (empty($descripcion) || $precioCompra < 0 || $precioVenta1 < 0 || $precioVenta2 < 0 || $reorden < 0) {
         $_SESSION['errors'][] = "Por favor, complete todos los campos correctamente.";
-        header("Location: ../../frontend/productos/productos.php");
+        header("Location: ../../app/productos/productos.php");
         exit;
     }
 
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Almacenar mensaje de éxito en sesión y redirigir
         $_SESSION['status'] = 'success';
         $_SESSION['message'] = 'Producto actualizado correctamente.';
-        header("Location: ../../frontend/productos/productos.php");
+        header("Location: ../../app/productos/productos.php");
         exit;
 
     } catch (Exception $e) {
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->rollback();
         }
         $_SESSION['errors'][] = "Error al actualizar producto: " . $e->getMessage();
-        header("Location: ../../frontend/productos/productos.php");
+        header("Location: ../../app/productos/productos.php");
         exit;
     } finally {
         // Cerrar las declaraciones preparadas

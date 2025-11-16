@@ -16,7 +16,7 @@ registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 session_unset();
 session_destroy();
 
-header("Location: ../../frontend/auth/login.php");
+header("Location: ../../app/auth/login.php");
 exit();
 
 ?>
