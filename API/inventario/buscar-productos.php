@@ -1,7 +1,9 @@
 <?php
 
 // Iniciar sesión para verificación
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar que el usuario ha iniciado sesión
 if (!isset($_SESSION['username'])) {

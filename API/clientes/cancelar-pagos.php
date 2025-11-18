@@ -16,7 +16,9 @@ if (!isset($data['registro_pago']) || empty($data['registro_pago'])) {
     exit;
 }
 
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 // Verificar que el usuario esté autenticado
 if (!isset($_SESSION['idEmpleado'])) {
     echo json_encode([

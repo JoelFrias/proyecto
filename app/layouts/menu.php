@@ -6,7 +6,9 @@ if (!isset($_SESSION['idEmpleado'])) {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
 }
 
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]" . "/EasyPOS"; // Eliminar ("/EasyPOS") en produccion

@@ -1,6 +1,8 @@
 <?php
 // cancelar-factura.php - Procesa la cancelación de factura
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once('../../core/conexion.php');
 
 // Validar permisos de usuario

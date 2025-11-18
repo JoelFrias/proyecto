@@ -2,7 +2,9 @@
 
 require_once 'core/validar-permisos.php';
 require_once 'core/conexion.php';
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 $id_empleado = $_SESSION['idEmpleado'];
 $permiso = validarPermiso($conn, 'PADM001', $id_empleado);

@@ -3,7 +3,9 @@
 /* Verificacion de sesion */
 
 // Iniciar sesión
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Configurar el tiempo de caducidad de la sesión
 $inactivity_limit = 900; // 15 minutos en segundos

@@ -1,6 +1,8 @@
 <?php
 
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once '../../core/conexion.php';
 require_once '../../core/auditorias.php';
 

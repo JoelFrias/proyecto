@@ -8,25 +8,7 @@ require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'ALM002';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    echo "
-        <html>
-            <head>
-                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-            </head>
-            <body>
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ACCESO DENEGADO',
-                        text: 'No tienes permiso para acceder a esta sección.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.history.back();
-                    });
-                </script>
-            </body>
-        </html>";
+    header('location: ../errors/403.html');
         
     exit(); 
 }
@@ -359,7 +341,7 @@ $resultEmpleados = $stmtEmp->get_result();
                                     if ($resultEmpleados && $resultEmpleados->num_rows > 0) {
                                         while ($fila = $resultEmpleados->fetch_assoc()) {
                                             $selected = (($empleado == $fila['id']) ? " selected" : "");
-                                            echo "<option value='" . $fila['id'] . "'" . $selected . ">" . htmlspecialchars($fila['nombre'], ENT_QUOTES, 'UTF-8') . "</option>";
+                                            echo "<option value='" . $fila['id'] . "'" . $selected . ">" . htmlspecialchars($fila['nombre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</option>";
                                         }
                                     } else {
                                         echo "<option value='' disabled>No hay opciones</option>";

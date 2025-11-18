@@ -1,0 +1,17 @@
+[18-Nov-2025 03:08:27 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:28 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:28 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:28 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:28 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:28 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:30 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:31 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:08:31 America/Santo_Domingo] PHP Warning:  Undefined variable $permisos_checked in C:\xampp\htdocs\EasyPOS\app\empleados\empleados-nuevo.php on line 540
+[18-Nov-2025 03:09:52 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:09:52 America/Santo_Domingo] PHP Warning:  Undefined variable $permisos_checked in C:\xampp\htdocs\EasyPOS\app\empleados\empleados-nuevo.php on line 600
+[18-Nov-2025 03:10:44 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:10:44 America/Santo_Domingo] PHP Warning:  Undefined variable $permisos_checked in C:\xampp\htdocs\EasyPOS\app\empleados\empleados-nuevo.php on line 600
+[18-Nov-2025 03:15:47 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:16:14 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:16:16 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)
+[18-Nov-2025 03:16:18 America/Santo_Domingo] ✓ Conexión BD exitosa: easypos@localhost (intento 1)

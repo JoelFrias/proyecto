@@ -26,7 +26,7 @@ class CajaReporte extends FPDF {
         // Arial italic 8
         $this->SetFont('Arial', 'I', 8);
         // Page number
-        $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo() . '/{nb}', 0, 0, 'C');
+        $this->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'Página ') . $this->PageNo() . '/{nb}', 0, 0, 'C');
     }
 }
 
@@ -199,12 +199,12 @@ $pdf->Cell(0, 10, 'Caja: ' . $numCaja, 0, 1, 'R');
 // Current date and employee
 $pdf->SetFont('Arial', '', 10);
 $pdf->Cell(0, 6, 'Fecha Actual: ' . $fechaActual, 0, 1, 'R');
-$pdf->Cell(0, 6, 'Empleado: ' . utf8_decode($cajaInfo['nombreEmpleado']), 0, 1, 'R');
+$pdf->Cell(0, 6, 'Empleado: ' . iconv('UTF-8', 'ISO-8859-1', $cajaInfo['nombreEmpleado']), 0, 1, 'R');
 $pdf->Ln(5);
 
 // --------- Cash register information ---------
 $pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, utf8_decode('Información de Caja'), 0, 1, 'L');
+$pdf->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'Información de Caja'), 0, 1, 'L');
 
 $pdf->SetFont('Arial', '', 10);
 // Opening and closing dates
@@ -245,8 +245,8 @@ $pdf->Cell(0, 10, 'Ingresos (' . $numIngresos . ' registros)', 0, 1, 'L');
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->SetFillColor(230, 230, 230);
 $pdf->Cell(40, 8, 'Monto', 1, 0, 'C', true);
-$pdf->Cell(40, 8, utf8_decode('Método'), 1, 0, 'C', true);
-$pdf->Cell(60, 8, utf8_decode('Descripción'), 1, 0, 'C', true);
+$pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', 'Método'), 1, 0, 'C', true);
+$pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', 'Descripción'), 1, 0, 'C', true);
 $pdf->Cell(50, 8, 'Fecha', 1, 1, 'C', true);
 
 // Table data
@@ -254,8 +254,8 @@ $pdf->SetFont('Arial', '', 10);
 if ($numIngresos > 0) {
     foreach ($ingresos as $ingreso) {
         $pdf->Cell(40, 8, '$' . number_format($ingreso['monto'], 2), 1, 0, 'R');
-        $pdf->Cell(40, 8, utf8_decode($ingreso['metodo']), 1, 0, 'L');
-        $pdf->Cell(60, 8, utf8_decode($ingreso['descripcion']), 1, 0, 'L');
+        $pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', $ingreso['metodo']), 1, 0, 'L');
+        $pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', $ingreso['descripcion']), 1, 0, 'L');
         $pdf->Cell(50, 8, $ingreso['fecha'], 1, 1, 'L');
     }
 } else {
@@ -272,8 +272,8 @@ $pdf->Cell(0, 10, 'Egresos (' . $numEgresos . ' registros)', 0, 1, 'L');
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->SetFillColor(230, 230, 230);
 $pdf->Cell(40, 8, 'Monto', 1, 0, 'C', true);
-$pdf->Cell(40, 8, utf8_decode('Método'), 1, 0, 'C', true);
-$pdf->Cell(60, 8, utf8_decode('Descripción'), 1, 0, 'C', true);
+$pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', 'Método'), 1, 0, 'C', true);
+$pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', 'Descripción'), 1, 0, 'C', true);
 $pdf->Cell(50, 8, 'Fecha', 1, 1, 'C', true);
 
 // Table data
@@ -281,8 +281,8 @@ $pdf->SetFont('Arial', '', 10);
 if ($numEgresos > 0) {
     foreach ($egresos as $egreso) {
         $pdf->Cell(40, 8, '$' . number_format($egreso['monto'], 2), 1, 0, 'R');
-        $pdf->Cell(40, 8, utf8_decode($egreso['metodo']), 1, 0, 'L');
-        $pdf->Cell(60, 8, utf8_decode($egreso['descripcion']), 1, 0, 'L');
+        $pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', $egreso['metodo']), 1, 0, 'L');
+        $pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', $egreso['descripcion']), 1, 0, 'L');
         $pdf->Cell(50, 8, $egreso['fecha'], 1, 1, 'L');
     }
 } else {

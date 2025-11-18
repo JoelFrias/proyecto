@@ -203,7 +203,7 @@ body {
   height: 40px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   cursor: pointer;
-  z-index: 1000;
+  z-index: 999;
 }
 
 .order-menu {
@@ -444,7 +444,7 @@ padding: 8px;
   padding: 20px;
   box-shadow: -2px 0 5px rgba(0,0,0,0.1);
   transition: right 0.3s ease;
-  z-index: 999;
+  z-index: 998;
   overflow-y: auto;
 }
 
@@ -652,7 +652,7 @@ margin-left: 10px;
 .modal {
 display: none;
 position: fixed;
-z-index: 1000;
+z-index: 999;
 left: 0;
 top: 0;
 width: 100%;
@@ -789,7 +789,7 @@ background-color: #f8fafc;
 .modal {
   display: none;
   position: fixed;
-  z-index: 1000;
+  z-index: 999;
   left: 0;
   top: 0;
   width: 100%;

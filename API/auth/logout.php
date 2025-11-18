@@ -6,7 +6,9 @@
 
 // Iniciar sesión si no está activa
 if (session_status() === PHP_SESSION_NONE) {
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
 }
 
 // Variable para almacenar datos antes de limpiar sesión

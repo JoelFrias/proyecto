@@ -8,25 +8,7 @@ require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'EMP001';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    echo "
-        <html>
-            <head>
-                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-            </head>
-            <body>
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ACCESO DENEGADO',
-                        text: 'No tienes permiso para acceder a esta sección.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.history.back();
-                    });
-                </script>
-            </body>
-        </html>";
+    header('location: ../errors/403.html');
         
     exit(); 
 }
@@ -613,7 +595,7 @@ if (isset($_GET['editar'])) {
                                             <td><?php echo htmlspecialchars($var) ?></td>
 
                                             <td>
-                                                <a href="empleados-editar.php?id= <?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
+                                                <a href="empleados-editar.php?id=<?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
                                             </td>
                                         </tr>
                                     <?php endwhile; ?>
@@ -641,7 +623,7 @@ if (isset($_GET['editar'])) {
                                         <h3 class="emp_mobile-card-title"><?php echo htmlspecialchars($fila['nombre'] . ' ' . $fila['apellido']); ?></h3>
                                         <p class="emp_mobile-card-subtitle"><?php echo htmlspecialchars($fila['puesto']); ?></p>
                                     </div>
-                                    <a href="empleados-editar.php?id= <?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
+                                    <a href="empleados-editar.php?id=<?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
                                 </div>
                                 <div class="emp_mobile-card-content">
                                     <div class="emp_mobile-card-item">

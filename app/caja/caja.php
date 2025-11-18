@@ -8,25 +8,7 @@ require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'CAJ001';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    echo "
-        <html>
-            <head>
-                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-            </head>
-            <body>
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ACCESO DENEGADO',
-                        text: 'No tienes permiso para acceder a esta sección.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.history.back();
-                    });
-                </script>
-            </body>
-        </html>";
+    header('location: ../errors/403.html');
         
     exit(); 
 }
@@ -203,9 +185,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Cerrar caja con transacción
     if (isset($_POST['cerrar_caja']) && $caja_abierta) {
         $saldo_final = filter_input(INPUT_POST, 'saldo_final', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
+        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $registro = filter_input(INPUT_POST, 'registro', FILTER_SANITIZE_NUMBER_INT);
-        $fecha_apertura = filter_input(INPUT_POST, 'fecha_apertura', FILTER_SANITIZE_STRING);
+        $fecha_apertura = filter_input(INPUT_POST, 'fecha_apertura', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $saldo_inicial = filter_input(INPUT_POST, 'saldo_inicial', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         
         if ($saldo_final === false || $saldo_final < 0) {
@@ -279,9 +261,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['registrar_ingreso']) && $caja_abierta) {
         $monto = filter_input(INPUT_POST, 'monto_ingreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         $metodo = $_POST['metodo_ingreso'];
-        $metodo = filter_var($metodo, FILTER_SANITIZE_STRING);
-        $razon = filter_input(INPUT_POST, 'razon_ingreso', FILTER_SANITIZE_STRING);
-        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
+        $metodo = filter_var($metodo, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $razon = filter_input(INPUT_POST, 'razon_ingreso', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         
         if ($monto === false || $monto <= 0) {
             $mensaje = "Error: Monto no válido";
@@ -353,8 +335,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['registrar_egreso']) && $caja_abierta) {
         $monto = filter_input(INPUT_POST, 'monto_egreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         $metodo = $_POST['metodo_egreso'];
-        $razon = filter_input(INPUT_POST, 'razon_egreso', FILTER_SANITIZE_STRING);
-        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_STRING);
+        $razon = filter_input(INPUT_POST, 'razon_egreso', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         
         if ($monto === false || $monto <= 0) {
             $mensaje = "Error: Monto no válido";

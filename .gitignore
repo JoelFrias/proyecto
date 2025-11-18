@@ -1,0 +1,70 @@
+# ============================================
+# ARCHIVOS DE CONFIGURACIÓN SENSIBLES
+# ============================================
+.env
+.env.local
+.env.production
+.env.backup
+
+# ============================================
+# LOGS Y TEMPORALES
+# ============================================
+/logs/
+/test/
+/tests/
+/docs/
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# ============================================
+# DEPENDENCIAS
+# ============================================
+/vendor/
+/node_modules/
+composer.phar
+composer.lock
+package-lock.json
+
+# ============================================
+# ARCHIVOS DE USUARIO Y SUBIDAS
+# ============================================
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/reports/*.pdf
+!/reports/.gitkeep
+
+# ============================================
+# BASE DE DATOS
+# ============================================
+*.sql
+*.sqlite
+*.db
+/assets/sql/backup_*.sql
+
+# ============================================
+# IDEs Y EDITORES
+# ============================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# ============================================
+# SISTEMA OPERATIVO
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# ============================================
+# CACHE
+# ============================================
+/cache/*
+!/cache/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep

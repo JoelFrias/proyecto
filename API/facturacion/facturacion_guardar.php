@@ -1,24 +1,11 @@
 <?php
 
-/* Verificacion de sesion */
-
-// Iniciar sesión
-session_start();
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "No se ha encontrado una sesión activa",
-        "error_code" => "SESSION_NOT_FOUND",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
+// Iniciar la sesion
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
 }
+
+require_once '../../core/conexion.php'; // Conexion a la Base de Datos.
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -33,25 +20,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
     ]));
 }
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "La sesión ha expirado por inactividad",
-        "error_code" => "SESSION_EXPIRED",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require_once '../../core/conexion.php';
 
 // Funcion para guardar los logs de facturacion
 function logDebug($message, $data = null) {

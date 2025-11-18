@@ -4,7 +4,9 @@ require('../../libs/fpdf/fpdf.php');
 require('../../core/conexion.php');
 
 // Verificar y validar la existencia de la variable de sesión
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 $idPuesto = isset($_SESSION['idPuesto']) ? intval($_SESSION['idPuesto']) : 0;
 $ocultarIdentificacion = ($idPuesto > 2);
 
@@ -144,8 +146,8 @@ if ($result->num_rows > 0) {
         
         // Imprimir línea de datos principal
         $pdf->Cell(10, 6, $row['id'], 1, 0, 'C');
-        $pdf->Cell(40, 6, utf8_decode($row['nombreCompleto']), 1, 0, 'L');
-        $pdf->Cell(30, 6, utf8_decode($row['empresa']), 1, 0, 'L');
+        $pdf->Cell(40, 6, iconv('UTF-8', 'ISO-8859-1', $row['nombreCompleto']), 1, 0, 'L');
+        $pdf->Cell(30, 6, iconv('UTF-8', 'ISO-8859-1', $row['empresa']), 1, 0, 'L');
         $pdf->Cell(15, 6, $row['tipo_identificacion'], 1, 0, 'C');
         $pdf->Cell(22, 6, $identificacionFormateada, 1, 0, 'L');
         $pdf->Cell(20, 6, $row['telefono'], 1, 0, 'L');
@@ -158,13 +160,13 @@ if ($result->num_rows > 0) {
         $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(25, 5, 'Direccion:', 0, 0);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->MultiCell(0, 5, utf8_decode($row['direccion']));
+        $pdf->MultiCell(0, 5, iconv('UTF-8', 'ISO-8859-1', $row['direccion']));
         
         if (!empty($row['notas'])) {
             $pdf->SetFont('Arial', 'B', 8);
             $pdf->Cell(25, 5, 'Notas:', 0, 0);
             $pdf->SetFont('Arial', '', 8);
-            $pdf->MultiCell(0, 5, utf8_decode($row['notas']));
+            $pdf->MultiCell(0, 5, iconv('UTF-8', 'ISO-8859-1', $row['notas']));
         }
         
         // Línea separadora entre clientes

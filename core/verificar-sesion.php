@@ -1,17 +1,30 @@
 <?php
 /**
- * Verificar-sesion.php (Middleware de Autenticación — Versión resuelta)
+ * Verificar-sesion.php (Middleware de Autenticación — Versión mejorada para móviles)
  *
  * Uso: require_once __DIR__ . '/../../core/Verificar-sesion.php';
  *
- * Notas:
- * - Diseñado para "A" (permitir funcionamiento en HTTP local / celular).
- * - Ajusta paths si los tuyos son distintos.
+ * Mejoras:
+ * - Cookie de sesión persistente en móviles
+ * - Configuración optimizada para dispositivos móviles
  */
 
-// Iniciar sesión de forma segura
+// Configurar parámetros de sesión ANTES de iniciar sesión
 if (session_status() === PHP_SESSION_NONE) {
+    // Configuración especial para móviles
+    ini_set('session.cookie_lifetime', '0'); // Cookie de sesión (se mantiene mientras el navegador esté abierto)
+    ini_set('session.gc_maxlifetime', '2592000'); // 30 días de duración de sesión en servidor
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    
+    // Solo usar secure si hay HTTPS
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    ini_set('session.cookie_secure', $isHttps ? '1' : '0');
+    
+    if (session_status() == PHP_SESSION_NONE) {
     session_start();
+}
 }
 
 // Configuración
@@ -84,18 +97,16 @@ function handleDatabaseError($conn = null, $error_message = '', $redirect = true
 
 /**
  * Devuelve opciones de cookie respetando si hay HTTPS.
- * Para "A" (local), permitimos secure=false si no hay HTTPS.
  */
 function getCookieOptions() {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 
-    // PHP 7.3+ array options for setcookie
     return [
-        'expires'  => time() + (86400 * 30), // 30 días por defecto (al crear)
+        'expires'  => time() + (86400 * 30), // 30 días
         'path'     => '/',
-        'domain'   => '',    // dejar por defecto
-        'secure'   => $isHttps, // si hay HTTPS -> true, si no -> false (para local)
+        'domain'   => '',
+        'secure'   => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax'
     ];
@@ -106,13 +117,11 @@ function getCookieOptions() {
  */
 function eliminarCookieRemember() {
     $opts = getCookieOptions();
-    // Forzar expiración
     $opts['expires'] = time() - 3600;
-    // Si la función de setcookie acepta array de opciones (PHP 7.3+)
+    
     if (PHP_VERSION_ID >= 70300) {
         setcookie('remember_token', '', $opts);
     } else {
-        // Fallback clásico
         setcookie('remember_token', '', $opts['expires'], $opts['path'], $opts['domain'], $opts['secure'], $opts['httponly']);
     }
 }
@@ -139,7 +148,6 @@ function eliminarToken($conn, $token_hash) {
         }
     }
 
-    // Siempre eliminar cookie en cliente (usar la misma política de secure que al crearla)
     eliminarCookieRemember();
 }
 
@@ -158,7 +166,6 @@ function validarSessionToken($conn) {
 
     try {
         $token = $_COOKIE['remember_token'];
-        // Por si acaso viene con algún encoding
         $token = rawurldecode($token);
         $token_hash = hash('sha256', $token);
 
@@ -197,34 +204,30 @@ function validarSessionToken($conn) {
         $result = $stmt->get_result();
 
         if ($row = $result->fetch_assoc()) {
-            // USER-AGENT: comparar solo parte significativa
+            // USER-AGENT: validación flexible para móviles
             $storedUA = $row['user_agent'] ?? '';
             $actualUA = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-            // Tomar primeros 40 caracteres (o menor si no hay), esto previene mismatches por pequeñas variaciones.
-            $storedPrefix = substr($storedUA, 0, 40);
-            $actualPrefix = substr($actualUA, 0, 40);
-
-            // Opcional: si storedUA tiene valores mínimos (ej: "Chrome", "Firefox"), comparar por contains.
             $ua_matches = false;
             if (!empty($storedUA)) {
-                // Si storedUA es corto y contiene una palabra clave, usar stripos
+                $storedPrefix = substr($storedUA, 0, 40);
+                $actualPrefix = substr($actualUA, 0, 40);
+                
                 if (strlen($storedUA) < 50) {
                     if (stripos($actualUA, $storedUA) !== false) {
                         $ua_matches = true;
                     }
                 }
-                // También aceptar si los prefijos coinciden
+                
                 if ($storedPrefix === $actualPrefix) {
                     $ua_matches = true;
                 }
-                // O si actual contiene el primer token del stored
+                
                 $first_token = strtok($storedUA, " ");
                 if ($first_token && stripos($actualUA, $first_token) !== false) {
                     $ua_matches = true;
                 }
             } else {
-                // Si no hay ua almacenado, no forzar rechazo (compatibilidad)
                 $ua_matches = true;
             }
 
@@ -247,7 +250,7 @@ function validarSessionToken($conn) {
                 return false;
             }
 
-            // Restaurar sesión
+            // Restaurar sesión con regeneración de ID
             session_regenerate_id(true);
             $_SESSION['id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
@@ -256,8 +259,9 @@ function validarSessionToken($conn) {
             $_SESSION['idPuesto'] = $row['idPuesto'];
             $_SESSION['last_activity'] = time();
             $_SESSION['persistent_session'] = true;
+            $_SESSION['mobile_session'] = true; // Marcar como sesión móvil
 
-            // Verificar caja abierta (no crítico)
+            // Verificar caja abierta
             verificarCajaAbierta($conn, $row['idEmpleado']);
 
             $stmt->close();
@@ -265,7 +269,6 @@ function validarSessionToken($conn) {
         }
 
         $stmt->close();
-        // Token no encontrado o expirado
         eliminarToken($conn, $token_hash);
         return false;
 
@@ -333,17 +336,14 @@ function verificarCajaAbierta($conn, $idEmpleado) {
  */
 function cerrarSesion($conn = null) {
     try {
-        // Eliminar token de BD si existe
         if (!empty($_COOKIE['remember_token']) && $conn) {
             $token = rawurldecode($_COOKIE['remember_token']);
             $token_hash = hash('sha256', $token);
             eliminarToken($conn, $token_hash);
         } else {
-            // Aun si no hay conn, eliminar la cookie localmente
             eliminarCookieRemember();
         }
 
-        // Destruir sesión
         $_SESSION = array();
 
         if (isset($_COOKIE[session_name()])) {
@@ -388,7 +388,6 @@ function verificarEmpleadoActivo($conn) {
         if (isset($stmt) && $stmt) {
             $stmt->close();
         }
-        // En caso de error, asumir activo para no bloquear al usuario
         return true;
     }
 }
@@ -412,7 +411,7 @@ try {
     }
     // Si sí hay sesión activa
     else {
-        // Controlar inactividad en sesiones NO persistentes
+        // Solo controlar inactividad en sesiones NO persistentes
         if (!isset($_SESSION['persistent_session']) || $_SESSION['persistent_session'] !== true) {
             if (isset($_SESSION['last_activity'])) {
                 $elapsed_time = time() - $_SESSION['last_activity'];
@@ -429,6 +428,9 @@ try {
                     exit();
                 }
             }
+            $_SESSION['last_activity'] = time();
+        } else {
+            // En sesiones persistentes, actualizar last_activity pero sin timeout
             $_SESSION['last_activity'] = time();
         }
 
@@ -459,6 +461,5 @@ try {
     exit();
 }
 
-// Si se llegó hasta aquí, todo ok y se continúa con la página
 return;
 ?>

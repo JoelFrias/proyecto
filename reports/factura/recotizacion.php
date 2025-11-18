@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require('../../libs/fpdf/fpdf.php');
 require('../../core/conexion.php');
 
@@ -86,13 +88,13 @@ class PDF extends FPDF
         // Información de la empresa
         $this->SetFont('Arial', 'B', 16);
         $this->SetTextColor(33, 37, 41);
-        $this->Cell(0, 8, utf8_decode('EasyPOS'), 0, 1, 'R');
+        $this->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1', 'EasyPOS'), 0, 1, 'R');
         
         $this->SetFont('Arial', '', 9);
         $this->SetTextColor(108, 117, 125);
-        $this->Cell(0, 5, utf8_decode(''), 0, 1, 'R');
-        $this->Cell(0, 5, utf8_decode('Teléfono: (809) 727-6431'), 0, 1, 'R');
-        $this->Cell(0, 5, utf8_decode('Email: fjoelfrias@gmail.com'), 0, 1, 'R');
+        $this->Cell(0, 5, iconv('UTF-8', 'ISO-8859-1', ''), 0, 1, 'R');
+        $this->Cell(0, 5, iconv('UTF-8', 'ISO-8859-1', 'Teléfono: (809) 727-6431'), 0, 1, 'R');
+        $this->Cell(0, 5, iconv('UTF-8', 'ISO-8859-1', 'Email: fjoelfrias@gmail.com'), 0, 1, 'R');
         
         $this->Ln(5);
         
@@ -151,7 +153,7 @@ class PDF extends FPDF
         $this->SetY(-15);
         $this->SetFont('Arial', 'I', 8);
         $this->SetTextColor(150, 150, 150);
-        $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo() . ' de {nb}', 0, 0, 'C');
+        $this->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'Página ') . $this->PageNo() . ' de {nb}', 0, 0, 'C');
     }
     
     function TablaProductos($header, $data)
@@ -176,7 +178,7 @@ class PDF extends FPDF
         $fill = false;
         foreach($data as $row) {
             $this->Cell($w[0], 6, $row[0], 'LR', 0, 'C', $fill);
-            $this->Cell($w[1], 6, utf8_decode($row[1]), 'LR', 0, 'L', $fill);
+            $this->Cell($w[1], 6, iconv('UTF-8', 'ISO-8859-1', $row[1]), 'LR', 0, 'L', $fill);
             $this->Cell($w[2], 6, number_format($row[2], 2), 'LR', 0, 'C', $fill);
             $this->Cell($w[3], 6, 'RD$ ' . number_format($row[3], 2), 'LR', 0, 'R', $fill);
             $this->Cell($w[4], 6, 'RD$ ' . number_format($row[4], 2), 'LR', 0, 'R', $fill);
@@ -197,7 +199,7 @@ $pdf->SetAutoPageBreak(true, 20);
 // Título principal
 $pdf->SetFont('Arial', 'B', 20);
 $pdf->SetTextColor(37, 99, 235);
-$pdf->Cell(0, 10, utf8_decode('PRE-FACTURA / COTIZACIÓN'), 0, 1, 'C');
+$pdf->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'PRE-FACTURA / COTIZACIÓN'), 0, 1, 'C');
 $pdf->Ln(3);
 
 // Línea divisora
@@ -211,69 +213,69 @@ $pdf->SetFont('Arial', 'B', 11);
 $pdf->SetTextColor(33, 37, 41);
 
 $y_start = $pdf->GetY();
-$pdf->Cell(95, 6, utf8_decode('INFORMACIÓN DE COTIZACIÓN'), 0, 1);
+$pdf->Cell(95, 6, iconv('UTF-8', 'ISO-8859-1', 'INFORMACIÓN DE COTIZACIÓN'), 0, 1);
 $pdf->SetFont('Arial', '', 10);
 $pdf->SetTextColor(73, 80, 87);
 
-$pdf->Cell(35, 5, utf8_decode('Número:'), 0, 0);
+$pdf->Cell(35, 5, iconv('UTF-8', 'ISO-8859-1', 'Número:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(60, 5, $cotizacion['no'], 0, 1);
 
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(35, 5, utf8_decode('Fecha:'), 0, 0);
+$pdf->Cell(35, 5, iconv('UTF-8', 'ISO-8859-1', 'Fecha:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(60, 5, $cotizacion['fecha'] . ' - ' . $cotizacion['hora'], 0, 1);
 
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(35, 5, utf8_decode('Atendido por:'), 0, 0);
+$pdf->Cell(35, 5, iconv('UTF-8', 'ISO-8859-1', 'Atendido por:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 5, utf8_decode($cotizacion['nombreEmpleado']), 0, 1);
+$pdf->Cell(60, 5, iconv('UTF-8', 'ISO-8859-1', $cotizacion['nombreEmpleado']), 0, 1);
 
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(35, 5, utf8_decode('Estado:'), 0, 0);
+$pdf->Cell(35, 5, iconv('UTF-8', 'ISO-8859-1', 'Estado:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 5, utf8_decode($cotizacion['estado']), 0, 1);
+$pdf->Cell(60, 5, iconv('UTF-8', 'ISO-8859-1', $cotizacion['estado']), 0, 1);
 
 $pdf->SetY($y_start);
 $pdf->SetX(110);
 $pdf->SetFont('Arial', 'B', 11);
 $pdf->SetTextColor(33, 37, 41);
-$pdf->Cell(95, 6, utf8_decode('INFORMACIÓN DEL CLIENTE'), 0, 1);
+$pdf->Cell(95, 6, iconv('UTF-8', 'ISO-8859-1', 'INFORMACIÓN DEL CLIENTE'), 0, 1);
 
 $pdf->SetX(110);
 $pdf->SetFont('Arial', '', 10);
 $pdf->SetTextColor(73, 80, 87);
-$pdf->Cell(30, 5, utf8_decode('Cliente:'), 0, 0);
+$pdf->Cell(30, 5, iconv('UTF-8', 'ISO-8859-1', 'Cliente:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 5, utf8_decode($cotizacion['nombreCliente']), 0, 1);
+$pdf->Cell(60, 5, iconv('UTF-8', 'ISO-8859-1', $cotizacion['nombreCliente']), 0, 1);
 
 $pdf->SetX(110);
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(30, 5, utf8_decode('Empresa:'), 0, 0);
+$pdf->Cell(30, 5, iconv('UTF-8', 'ISO-8859-1', 'Empresa:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->Cell(60, 5, utf8_decode($cotizacion['empresaCliente']), 0, 1);
+$pdf->Cell(60, 5, iconv('UTF-8', 'ISO-8859-1', $cotizacion['empresaCliente']), 0, 1);
 
 $pdf->SetX(110);
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(30, 5, utf8_decode('Teléfono:'), 0, 0);
+$pdf->Cell(30, 5, iconv('UTF-8', 'ISO-8859-1', 'Teléfono:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(60, 5, $cotizacion['telefonoCliente'], 0, 1);
 
 $pdf->SetX(110);
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(30, 5, utf8_decode('Dirección:'), 0, 0);
+$pdf->Cell(30, 5, iconv('UTF-8', 'ISO-8859-1', 'Dirección:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 10);
-$pdf->MultiCell(60, 5, utf8_decode($cotizacion['direccionCliente']), 0, 'L');
+$pdf->MultiCell(60, 5, iconv('UTF-8', 'ISO-8859-1', $cotizacion['direccionCliente']), 0, 'L');
 
 $pdf->Ln(5);
 
 // Tabla de productos
 $pdf->SetFont('Arial', 'B', 11);
 $pdf->SetTextColor(33, 37, 41);
-$pdf->Cell(0, 6, utf8_decode('DETALLE DE PRODUCTOS'), 0, 1);
+$pdf->Cell(0, 6, iconv('UTF-8', 'ISO-8859-1', 'DETALLE DE PRODUCTOS'), 0, 1);
 $pdf->Ln(2);
 
-$header = array('#', utf8_decode('Descripción'), 'Cant.', 'Precio Unit.', 'Subtotal');
+$header = array('#', iconv('UTF-8', 'ISO-8859-1', 'Descripción'), 'Cant.', 'Precio Unit.', 'Subtotal');
 $data = array();
 $contador = 1;
 
@@ -322,14 +324,14 @@ if (!empty($cotizacion['notas'])) {
     $pdf->SetFont('Arial', '', 9);
     $pdf->SetTextColor(73, 80, 87);
     $pdf->SetFillColor(248, 249, 250);
-    $pdf->MultiCell(0, 5, utf8_decode($cotizacion['notas']), 1, 'L', true);
+    $pdf->MultiCell(0, 5, iconv('UTF-8', 'ISO-8859-1', $cotizacion['notas']), 1, 'L', true);
 }
 
 // Información adicional
 $pdf->Ln(10);
 $pdf->SetFont('Arial', 'I', 9);
 $pdf->SetTextColor(150, 150, 150);
-$pdf->MultiCell(0, 4, utf8_decode('Esta cotización tiene una validez de 30 días a partir de la fecha de emisión. Los precios están sujetos a cambios sin previo aviso. Para hacer efectiva esta cotización, favor contactar con nosotros.'), 0, 'C');
+$pdf->MultiCell(0, 4, iconv('UTF-8', 'ISO-8859-1', 'Esta cotización tiene una validez de 30 días a partir de la fecha de emisión. Los precios están sujetos a cambios sin previo aviso. Para hacer efectiva esta cotización, favor contactar con nosotros.'), 0, 'C');
 
 // Salida del PDF
 $pdf->Output('I', 'Cotizacion_' . $noCotizacion . '.pdf');

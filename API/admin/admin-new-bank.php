@@ -1,6 +1,8 @@
 <?php
 // Iniciar sesión al principio del archivo
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Configurar cabecera JSON antes de cualquier salida
 header('Content-Type: application/json; charset=utf-8');

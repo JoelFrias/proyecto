@@ -131,7 +131,7 @@ try {
         $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(33, 5, 'Cliente:', 0, 0);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->Cell(33, 5, utf8_decode(htmlspecialchars($datos['cliente'])), 0, 1);
+        $pdf->Cell(33, 5, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($datos['cliente'])), 0, 1);
         $pdf->Ln(2);
         
         // Línea separadora
@@ -164,12 +164,12 @@ try {
         $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(33, 5, 'Metodo de Pago:', 0, 0);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->Cell(33, 5, utf8_decode(htmlspecialchars($datos['metodo_pago'])), 0, 1);
+        $pdf->Cell(33, 5, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($datos['metodo_pago'])), 0, 1);
         
         $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(33, 5, 'Atendido por:', 0, 0);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->Cell(33, 5, utf8_decode(htmlspecialchars($datos['empleado'])), 0, 1);
+        $pdf->Cell(33, 5, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($datos['empleado'])), 0, 1);
         $pdf->Ln(2);
         
         // Mensaje de agradecimiento

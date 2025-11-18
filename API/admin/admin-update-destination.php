@@ -3,7 +3,9 @@
 /* Verificacion de sesion */
 
 // Iniciar sesión
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Configurar el tiempo de caducidad de la sesión
 $inactivity_limit = 900; // 15 minutos en segundos
@@ -110,7 +112,7 @@ try {
 
     // Sanitización y asignación de variables
     $idDestino = (int) $data['idDestino'];
-    $destino = htmlspecialchars($data['nombre'], ENT_QUOTES, 'UTF-8');
+    $destino = htmlspecialchars($data['nombre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
     // Verificar que el nombre del destino no esté vacío
     if (empty($destino)) {

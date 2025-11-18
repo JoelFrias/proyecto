@@ -175,10 +175,10 @@ try {
         $pdf->SetFont('Arial', 'B', 12);
         
         // Store name and info
-        $pdf->Cell(66, 6, '               ' . utf8_decode(htmlspecialchars($info['name'])), 0, 1, 'L');
+        $pdf->Cell(66, 6, '               ' . iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['name'])), 0, 1, 'L');
         $pdf->SetFont('Arial', '', 7);
-        $pdf->Cell(66, 4, utf8_decode(htmlspecialchars($info['text1'])), 0, 1, 'C');
-        $pdf->Cell(66, 4, utf8_decode(htmlspecialchars($info['text2'])), 0, 1, 'C');
+        $pdf->Cell(66, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['text1'])), 0, 1, 'C');
+        $pdf->Cell(66, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['text2'])), 0, 1, 'C');
         
         // Date and invoice number
         $pdf->Cell(66, 4, date('d/m/Y h:i A', strtotime($invoice['fecha'])), 0, 1, 'R');
@@ -186,13 +186,13 @@ try {
         
         // Customer info
         $pdf->Cell(33, 4, 'Nombre Cliente:', 0, 0);
-        $pdf->Cell(33, 4, utf8_decode(htmlspecialchars($invoice['nombrec'])), 0, 1);
+        $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['nombrec'])), 0, 1);
         $pdf->Cell(33, 4, 'Empresa:', 0, 0);
-        $pdf->Cell(33, 4, utf8_decode(htmlspecialchars($invoice['empresac'])), 0, 1);
+        $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['empresac'])), 0, 1);
         $pdf->Cell(33, 4, 'NCF:', 0, 0);
         $pdf->Cell(33, 4, '0', 0, 1);
         $pdf->Cell(33, 4, 'Tipo de Factura:', 0, 0);
-        $pdf->Cell(33, 4, utf8_decode(htmlspecialchars($invoice['tipof'])), 0, 1);
+        $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['tipof'])), 0, 1);
         $pdf->Ln(3);
     
         // Numero de Factura
@@ -201,12 +201,12 @@ try {
 
         // Reimpresion Alert
         $pdf->SetFont('Arial', 'B', 8);
-        $pdf->Cell(66, 3, utf8_decode('                               Reimpresión'), 0, 1, 'L');
+        $pdf->Cell(66, 3, iconv('UTF-8', 'ISO-8859-1', '                               Reimpresión'), 0, 1, 'L');
         $pdf->Ln(3);
         
         // Header for items
         $pdf->SetFont('Arial', 'B', 8);
-        $pdf->Cell(40, 4, utf8_decode('Productos Facturados:'), 0, 0);
+        $pdf->Cell(40, 4, iconv('UTF-8', 'ISO-8859-1', 'Productos Facturados:'), 0, 0);
         $pdf->Cell(13, 4, '', 0, 1, 'R');
         $pdf->Line(5, $pdf->GetY(), 71.2, $pdf->GetY());
         $pdf->Ln(1);
@@ -220,7 +220,7 @@ try {
             $result_items->data_seek(0);
             
             while($item = $result_items->fetch_assoc()) {
-                $pdf->Cell(40, 4, utf8_decode(htmlspecialchars($item['descripcionp'])), 0, 0);
+                $pdf->Cell(40, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($item['descripcionp'])), 0, 0);
                 $pdf->Ln(3);
                 $pdf->Cell(26, 4, $item['cantidadp'].' x '.number_format($item['precioVenta'], 2).' = '.number_format($item['importep'], 2), 0, 1, 'L');
                 
@@ -257,12 +257,12 @@ try {
  
          // Método de pago
          $pdf->SetFont('Arial', 'B', 8);
-         $pdf->Cell(66, 4, utf8_decode('MÉTODO DE PAGO'), 0, 1, 'C');
+         $pdf->Cell(66, 4, iconv('UTF-8', 'ISO-8859-1', 'MÉTODO DE PAGO'), 0, 1, 'C');
          $pdf->SetFont('Arial', '', 8);
  
          // Método
-         $pdf->Cell(33, 4, utf8_decode('Método:'), 0, 0, 'L');
-         $pdf->Cell(33, 4, utf8_decode(htmlspecialchars($invoice['metodof'])), 0, 1, 'R');
+         $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', 'Método:'), 0, 0, 'L');
+         $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['metodof'])), 0, 1, 'R');
  
          // Monto
          $pdf->Cell(33, 4, 'Monto:', 0, 0, 'L');
@@ -275,7 +275,7 @@ try {
         // Footer text
         $pdf->Ln(2);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->MultiCell(66, 3, utf8_decode(htmlspecialchars($info['text3'])), 0, 'C');
+        $pdf->MultiCell(66, 3, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['text3'])), 0, 'C');
         
         // Close statement
         $stmt_items->close();

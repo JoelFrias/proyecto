@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso Bloqueado</title>
+    <link rel="shortcut icon" href="../../assets/img/ic_block_128_28186.ico" type="image/x-icon">
     <style>
         * {
             margin: 0;
@@ -52,7 +53,7 @@
             color: #555;
             font-size: 16px;
             line-height: 1.6;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         
         .error-code {
@@ -64,6 +65,14 @@
             color: #777;
             margin-bottom: 24px;
         }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
         
         .button {
             background-color: #3498db;
@@ -72,6 +81,7 @@
             border-radius: 4px;
             padding: 12px 24px;
             font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s;
             text-decoration: none;
@@ -80,6 +90,14 @@
         
         .button:hover {
             background-color: #2980b9;
+        }
+
+        .button-secondary {
+            background-color: #95a5a6;
+        }
+
+        .button-secondary:hover {
+            background-color: #7f8c8d;
         }
         
         @media (max-width: 480px) {
@@ -99,10 +117,18 @@
                 width: 60px;
                 height: 60px;
             }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .button {
+                width: 100%;
+            }
         }
         
         .footer {
-            margin-top: 40px;
+            margin-top: 32px;
             font-size: 13px;
             color: #999;
         }
@@ -118,8 +144,16 @@
             </svg>
         </div>
         <h1>Acceso Bloqueado</h1>
-        <p>Lo sentimos, pero esta pagina ha sido limitada. El acceso ha sido restringido por razones de seguridad, políticas de la organización o deuda pendiente.</p>
-        <div class="error-code">Código de error: 403</div>
+        <p>Su cuenta no posee los permisos necesarios para visualizar esta sección del sistema. Si considera que debería tener acceso, contacte al administrador para solicitar los permisos correspondientes.</p>
+
+        <div class="error-code">Error code: 403</div>
+        
+        <!-- Botones -->
+        <div class="buttons">
+            <a href="../" class="button">Volver al Inicio</a>
+            <button onclick="window.history.back()" class="button button-secondary">Página Anterior</button>
+        </div>
+
         <div class="footer">
             Si crees que esto es un error, por favor contacta con el administrador del sistema.
         </div>

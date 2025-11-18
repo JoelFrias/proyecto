@@ -10,7 +10,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-session_start();
+// Configurar parámetros de sesión ANTES de iniciar sesión (para móviles)
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_lifetime', '0');
+    ini_set('session.gc_maxlifetime', '2592000'); // 30 días
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    ini_set('session.cookie_secure', $isHttps ? '1' : '0');
+}
+
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar si el usuario ya inició sesión
 if (isset($_SESSION['username'])) {
@@ -45,7 +59,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit();
 }
 
-require '../../core/conexion.php';  // Requerir archivo de conexion
+require '../../core/conexion.php';
 
 $user = isset($data['username']) ? trim($data['username']) : '';
 $pass = isset($data['password']) ? trim($data['password']) : '';
@@ -96,7 +110,6 @@ if ($stmt = $conn->prepare($query)) {
                     'disabled' => true
                 ]);
                 $stmt->close();
-                // $conn->close();
                 exit();
             }
             
@@ -110,6 +123,9 @@ if ($stmt = $conn->prepare($query)) {
 
             // Si el usuario marcó "Mantener sesión abierta"
             if ($remember_me) {
+                // Marcar como sesión persistente
+                $_SESSION['persistent_session'] = true;
+                
                 // Generar token único y seguro
                 $token = bin2hex(random_bytes(32));
                 $token_hash = hash('sha256', $token);
@@ -123,24 +139,40 @@ if ($stmt = $conn->prepare($query)) {
                 $stmt_token->bind_param("issss", $row['id'], $token_hash, $expiry_date, $user_agent, $ip_address);
                 
                 if ($stmt_token->execute()) {
-                    // Establecer cookie segura
-                    setcookie(
-                        'remember_token',
-                        $token,
-                        [
-                            'expires' => $expiry,
-                            'path' => '/',
-                            'domain' => '',
-                            'secure' => isset($_SERVER['HTTPS']), // Solo HTTPS en producción
-                            'httponly' => true,
-                            'samesite' => 'Strict'
-                        ]
-                    );
+                    // Detectar si es móvil
+                    $isMobile = preg_match('/(android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini)/i', $user_agent);
+                    
+                    // Configuración de cookie optimizada para móviles
+                    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+                    
+                    $cookieOptions = [
+                        'expires' => $expiry,
+                        'path' => '/',
+                        'domain' => '',
+                        'secure' => $isHttps,
+                        'httponly' => true,
+                        'samesite' => 'Lax' // Lax es mejor para móviles que Strict
+                    ];
+                    
+                    if (PHP_VERSION_ID >= 70300) {
+                        setcookie('remember_token', $token, $cookieOptions);
+                    } else {
+                        setcookie(
+                            'remember_token',
+                            $token,
+                            $cookieOptions['expires'],
+                            $cookieOptions['path'],
+                            $cookieOptions['domain'],
+                            $cookieOptions['secure'],
+                            $cookieOptions['httponly']
+                        );
+                    }
                 }
                 $stmt_token->close();
             } else {
-                // Establecer tiempo de inactividad de 2 horas
-                ini_set('session.gc_maxlifetime', 7200); // 2 horas en segundos
+                // No marcar como persistente si no se seleccionó "recordar"
+                $_SESSION['persistent_session'] = false;
             }
 
             // Verificar si el empleado tiene una caja abierta
@@ -168,7 +200,7 @@ if ($stmt = $conn->prepare($query)) {
                     'idPuesto' => $row['idPuesto']
                 ],
                 'caja' => $datosCaja,
-                'redirect' => '../../app/'// <----------- AQUI ES LA DIRRECION QUE SE ABRE CUANDO SE INICIA SESION
+                'redirect' => '../../app/'
             ]);
         } else {
             http_response_code(401);
@@ -195,12 +227,9 @@ if ($stmt = $conn->prepare($query)) {
     ]);
 }
 
-// $conn->close();
-
 /**
  * Función para verificar si el empleado tiene una caja abierta
  */
-
 function verificarCajaAbierta($conn, $idEmpleado) {
     $sql_verificar = "SELECT
                         numCaja,

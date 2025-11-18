@@ -303,7 +303,7 @@ $resultEmpleados = $stmtEmp->get_result();
                                         if ($resultEmpleados && $resultEmpleados->num_rows > 0) {
                                             while ($fila = $resultEmpleados->fetch_assoc()) {
                                                 $selected = (($idEmpleado == $fila['id']) ? " selected" : "");
-                                                echo "<option value='" . $fila['id'] . "'" . $selected . ">" . htmlspecialchars($fila['nombre'], ENT_QUOTES, 'UTF-8') . "</option>";
+                                                echo "<option value='" . $fila['id'] . "'" . $selected . ">" . htmlspecialchars($fila['nombre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</option>";
                                             }
                                         } else {
                                             echo "<option value='' disabled>No hay opciones</option>";
@@ -341,7 +341,7 @@ $resultEmpleados = $stmtEmp->get_result();
                         </div>
                         <div class="stat-info">
                             <p>Total Productos</p>
-                            <h2><?php echo htmlspecialchars($totalProductos, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($totalProductos, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                         <div class="stat-footer"></div>
                     </div>
@@ -354,7 +354,7 @@ $resultEmpleados = $stmtEmp->get_result();
                         </div>
                         <div class="stat-info">
                             <p>Total Categorías</p>
-                            <h2><?php echo htmlspecialchars($totalCategorias, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($totalCategorias, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                         <div class="stat-footer"></div>
                     </div>
@@ -368,7 +368,7 @@ $resultEmpleados = $stmtEmp->get_result();
                         </div>
                         <div class="stat-info">
                             <p>Casi Agotados</p>
-                            <h2><?php echo htmlspecialchars($casiAgotados, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($casiAgotados, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                     </div>
                 </div>
@@ -399,13 +399,13 @@ $resultEmpleados = $stmtEmp->get_result();
                             if ($result && $result->num_rows > 0) {
                                 while ($row = $result->fetch_assoc()) {
                                     echo "<tr>
-                                            <td>" . htmlspecialchars($row["id"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["producto"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["tipo_producto"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["existencia_inventario"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>$" . htmlspecialchars($row["precioVenta1"], ENT_QUOTES, 'UTF-8') . ", $" . 
-                                            htmlspecialchars($row["precioVenta2"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td><span class='status " . htmlspecialchars($row["disponiblidad_inventario"], ENT_QUOTES, 'UTF-8') . "'>" . htmlspecialchars($row["disponiblidad_inventario"], ENT_QUOTES, 'UTF-8') . "</span></td>
+                                            <td>" . htmlspecialchars($row["id"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["tipo_producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["existencia_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>$" . htmlspecialchars($row["precioVenta1"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . ", $" . 
+                                            htmlspecialchars($row["precioVenta2"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td><span class='status " . htmlspecialchars($row["disponiblidad_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "'>" . htmlspecialchars($row["disponiblidad_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</span></td>
                                         </tr>";
                                 }
                             } else {
@@ -421,9 +421,9 @@ $resultEmpleados = $stmtEmp->get_result();
                     <?php
                     if ($result_mobile && $result_mobile->num_rows > 0) {
                         while ($row = $result_mobile->fetch_assoc()) {
-                            $productName = htmlspecialchars($row["producto"], ENT_QUOTES, 'UTF-8');
-                            $productNameUpper = htmlspecialchars(strtoupper($row["producto"]), ENT_QUOTES, 'UTF-8');
-                            $statusClass = htmlspecialchars(str_replace(' ', '-', $row["disponiblidad_inventario"]), ENT_QUOTES, 'UTF-8');
+                            $productName = htmlspecialchars($row["producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                            $productNameUpper = htmlspecialchars(strtoupper($row["producto"]), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                            $statusClass = htmlspecialchars(str_replace(' ', '-', $row["disponiblidad_inventario"]), FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                             
                             echo <<<HTML
                             <div class="mobile-card" data-product="{$productNameUpper}">

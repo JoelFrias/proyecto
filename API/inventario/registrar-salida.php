@@ -2,7 +2,9 @@
 // registrar_salida.php - Archivo para registrar salidas de inventario
 
 // Iniciar sesión para verificación
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar que el usuario ha iniciado sesión
 if (!isset($_SESSION['username'])) {
@@ -65,8 +67,8 @@ try {
     // Limpiar y preparar los datos
     $id_producto = filter_var($data['id_producto'], FILTER_SANITIZE_NUMBER_INT);
     $cantidad = filter_var($data['cantidad'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-    $motivo = filter_var($data['motivo'], FILTER_SANITIZE_STRING);
-    $detalles = isset($data['detalles']) ? filter_var($data['detalles'], FILTER_SANITIZE_STRING) : '';
+    $motivo = filter_var($data['motivo'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $detalles = isset($data['detalles']) ? filter_var($data['detalles'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '';
 
     // 1. Verificar si hay suficiente existencia - CORREGIDO el método de obtener resultado
     $sqlVerificar = "SELECT existencia FROM inventario WHERE idProducto = ?";

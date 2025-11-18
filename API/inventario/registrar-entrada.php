@@ -2,7 +2,9 @@
 // registrar_entrada.php - Archivo para registrar entradas de inventario
 
 // Iniciar sesión para verificación
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar que el usuario ha iniciado sesión
 if (!isset($_SESSION['username'])) {
@@ -39,7 +41,7 @@ if (!isset($data['id_producto']) || !isset($data['cantidad']) || $data['cantidad
 // Limpiar y preparar los datos
 $id_producto = filter_var($data['id_producto'], FILTER_SANITIZE_NUMBER_INT);
 $cantidad = filter_var($data['cantidad'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-$descripcion = isset($data['descripcion']) ? filter_var($data['descripcion'], FILTER_SANITIZE_STRING) : null;
+$descripcion = isset($data['descripcion']) ? filter_var($data['descripcion'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : null;
 $precio_compra = isset($data['precio_compra']) ? filter_var($data['precio_compra'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;
 $precio_venta1 = isset($data['precio_venta1']) ? filter_var($data['precio_venta1'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;
 $precio_venta2 = isset($data['precio_venta2']) ? filter_var($data['precio_venta2'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;

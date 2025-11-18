@@ -8,25 +8,7 @@ require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'EMP001';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    echo "
-        <html>
-            <head>
-                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-            </head>
-            <body>
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ACCESO DENEGADO',
-                        text: 'No tienes permiso para acceder a esta sección.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.history.back();
-                    });
-                </script>
-            </body>
-        </html>";
+    header('location: ../errors/403.html');
         
     exit(); 
 }
@@ -35,7 +17,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
 $idEmpleado = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($idEmpleado === 0) {
-    header('Location: ../../app/empleados/lista_empleados.php');
+    header('Location: ../../app/empleados/empleados.php');
     exit();
 }
 
@@ -52,7 +34,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    header('Location: ../../app/empleados/lista_empleados.php');
+    header('Location: ../../app/empleados/empleados.php');
     exit();
 }
 
@@ -144,62 +126,6 @@ foreach ($permisos_activos as $codigo) {
             margin-bottom: 25px;
         }
 
-        .permisos-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        @media (min-width: 640px) {
-            .permisos-grid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .permisos-grid {
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            }
-        }
-
-        .permisos-grid label {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            gap: 10px;
-        }
-
-        .permisos-grid label:hover {
-            background: #e7f3ff;
-            border-color: #0066cc;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
-        }
-
-        .permisos-grid input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #0066cc;
-            flex-shrink: 0;
-        }
-
-        .permisos-grid input[type="checkbox"]:checked + span {
-            color: #0066cc;
-            font-weight: 500;
-        }
-
-        .permisos-grid label span {
-            flex: 1;
-            line-height: 1.4;
-        }
-
         .form-group-estado {
             margin: 20px 0;
             padding: 15px;
@@ -223,28 +149,110 @@ foreach ($permisos_activos as $codigo) {
             accent-color: #28a745;
         }
 
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .permisos-container {
+            margin-top: 15px;
+            margin-bottom: 25px;
         }
 
-        @media (max-width: 400px) {
+        .permisos-seccion {
+            margin-bottom: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .seccion-header {
+            background-color: #f8f9fa;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .seccion-header i {
+            color: #2c3e50;
+            font-size: 18px;
+        }
+
+        .seccion-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .seccion-body {
+            padding: 15px;
+            background-color: #ffffff;
+        }
+
+        .permisos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .permisos-grid label {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            gap: 10px;
+        }
+
+        .permisos-grid label:hover {
+            background: #e7f3ff;
+            border-color: #0066cc;
+            transform: translateX(3px);
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+        }
+
+        .permisos-grid input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #0066cc;
+            flex-shrink: 0;
+        }
+
+        .permisos-grid input[type="checkbox"]:checked + span {
+            color: #0066cc;
+            font-weight: 500;
+        }
+
+        .permisos-grid label span {
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
             .permisos-grid {
-                gap: 10px;
+                grid-template-columns: 1fr;
             }
 
+            .seccion-header {
+                padding: 10px 15px;
+            }
+
+            .seccion-body {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
             .permisos-grid label {
-                padding: 10px;
+                padding: 8px 10px;
                 font-size: 13px;
             }
 
-            .btn-group {
-                flex-direction: column;
-            }
-
-            .btn-volver, .btn-submit {
-                width: 100%;
+            .seccion-header h3 {
+                font-size: 14px;
             }
         }
 
@@ -363,100 +371,159 @@ foreach ($permisos_activos as $codigo) {
 
                 <legend>Permisos de Usuario</legend>
                 <div class="permisos-container">
-                    <div class="permisos-grid">
-                        <label>
-                            <input type="checkbox" name="permisos[clientes]" id="clientes" <?php echo isset($permisos_checked['clientes']) ? 'checked' : ''; ?>>
-                            <span>Crear/Editar Clientes</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[clientes-reporte]" id="clientes-reporte" <?php echo isset($permisos_checked['clientes-reporte']) ? 'checked' : ''; ?>>
-                            <span>Imprimir Reporte de Clientes</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[productos]" id="productos" <?php echo isset($permisos_checked['productos']) ? 'checked' : ''; ?>>
-                            <span>Crear/Editar Productos</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[productos-reporte]" id="productos-reporte" <?php echo isset($permisos_checked['productos-reporte']) ? 'checked' : ''; ?>>
-                            <span>Imprimir Reporte de Productos</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[avance-cuenta]" id="avance-cuenta" <?php echo isset($permisos_checked['avance-cuenta']) ? 'checked' : ''; ?>>
-                            <span>Avance de Cuenta</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[cancel-avance]" id="cancel-avance" <?php echo isset($permisos_checked['cancel-avance']) ? 'checked' : ''; ?>>
-                            <span>Cancelar Avance a Cuenta</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[cancel-facturas]" id="cancel-facturas" <?php echo isset($permisos_checked['cancel-facturas']) ? 'checked' : ''; ?>>
-                            <span>Cancelar Facturas</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[almacen]" id="almacen" <?php echo isset($permisos_checked['almacen']) ? 'checked' : ''; ?>>
-                            <span>Almacen Principal</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[inv-empleados]" id="inv-empleados" <?php echo isset($permisos_checked['inv-empleados']) ? 'checked' : ''; ?>>
-                            <span>Visualizar Inventario de Empleados</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[facturacion]" id="facturacion" <?php echo isset($permisos_checked['facturacion']) ? 'checked' : ''; ?>>
-                            <span>Facturación</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[cot-accion]" id="cot-accion" <?php echo isset($permisos_checked['cot-accion']) ? 'checked' : ''; ?>>
-                            <span>Crear/Vender Cotizaciones</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[caja]" id="caja" <?php echo isset($permisos_checked['caja']) ? 'checked' : ''; ?>>
-                            <span>Abrir/Cerrar Caja</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[pan-adm]" id="pan-adm" <?php echo isset($permisos_checked['pan-adm']) ? 'checked' : ''; ?>>
-                            <span>Panel Administrativo</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[estadisticas]" id="estadisticas" <?php echo isset($permisos_checked['estadisticas']) ? 'checked' : ''; ?>>
-                            <span>Ver Estadísticas del Negocio</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[bancos-destinos]" id="bancos-destinos" <?php echo isset($permisos_checked['bancos-destinos']) ? 'checked' : ''; ?>>
-                            <span>Administrar Bancos y Destinos</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[usuarios]" id="usuarios" <?php echo isset($permisos_checked['usuarios']) ? 'checked' : ''; ?>>
-                            <span>Administrar Usuarios</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[empleados]" id="empleados" <?php echo isset($permisos_checked['empleados']) ? 'checked' : ''; ?>>
-                            <span>Administrar Empleados</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[inf-factura]" id="inf-factura" <?php echo isset($permisos_checked['inf-factura']) ? 'checked' : ''; ?>>
-                            <span>Editar Información en Factura</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[cuadres]" id="cuadres" <?php echo isset($permisos_checked['cuadres']) ? 'checked' : ''; ?>>
-                            <span>Cuadres de Caja</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[cot-registro]" id="cot-registro" <?php echo isset($permisos_checked['cot-registro']) ? 'checked' : ''; ?>>
-                            <span>Ver Registro de Cotizaciones</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[cot-cancelar]" id="cot-cancelar" <?php echo isset($permisos_checked['cot-cancelar']) ? 'checked' : ''; ?>>
-                            <span>Cancelar Cotizaciones</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[tran-inventario]" id="tran-inventario" <?php echo isset($permisos_checked['tran-inventario']) ? 'checked' : ''; ?>>
-                            <span>Transferencias de Inventario</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="permisos[admi-inventario]" id="admi-inventario" <?php echo isset($permisos_checked['admi-inventario']) ? 'checked' : ''; ?>>
-                            <span>Administrar Inventario</span>
-                        </label>
+                    
+                    <!-- Sección: Clientes -->
+                    <div class="permisos-seccion">
+                        <div class="seccion-header">
+                            <i class="fas fa-users"></i>
+                            <h3>Gestión de Clientes</h3>
+                        </div>
+                        <div class="seccion-body">
+                            <div class="permisos-grid">
+                                <label>
+                                    <input type="checkbox" name="permisos[clientes]" id="clientes">
+                                    <span>Crear/Editar Clientes</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[clientes-reporte]" id="clientes-reporte">
+                                    <span>Imprimir Reporte de Clientes</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[avance-cuenta]" id="avance-cuenta">
+                                    <span>Avance de Cuenta</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cancel-avance]" id="cancel-avance">
+                                    <span>Cancelar Avance a Cuenta</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Sección: Productos e Inventario -->
+                    <div class="permisos-seccion">
+                        <div class="seccion-header">
+                            <i class="fas fa-boxes"></i>
+                            <h3>Productos e Inventario</h3>
+                        </div>
+                        <div class="seccion-body">
+                            <div class="permisos-grid">
+                                <label>
+                                    <input type="checkbox" name="permisos[productos]" id="productos">
+                                    <span>Crear/Editar Productos</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[productos-reporte]" id="productos-reporte">
+                                    <span>Imprimir Reporte de Productos</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[almacen]" id="almacen">
+                                    <span>Almacén Principal</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[inv-empleados]" id="inv-empleados">
+                                    <span>Visualizar Inventario de Empleados</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[tran-inventario]" id="tran-inventario">
+                                    <span>Transferencias de Inventario</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[admi-inventario]" id="admi-inventario">
+                                    <span>Administrar Inventario</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Facturación y Ventas -->
+                    <div class="permisos-seccion">
+                        <div class="seccion-header">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <h3>Facturación y Cotizaciones</h3>
+                        </div>
+                        <div class="seccion-body">
+                            <div class="permisos-grid">
+                                <label>
+                                    <input type="checkbox" name="permisos[facturacion]" id="facturacion">
+                                    <span>Facturación</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cancel-facturas]" id="cancel-facturas">
+                                    <span>Cancelar Facturas</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cot-accion]" id="cot-accion">
+                                    <span>Crear/Vender Cotizaciones</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cot-registro]" id="cot-registro">
+                                    <span>Ver Registro de Cotizaciones</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cot-cancelar]" id="cot-cancelar">
+                                    <span>Cancelar Cotizaciones</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Caja -->
+                    <div class="permisos-seccion">
+                        <div class="seccion-header">
+                            <i class="fas fa-cash-register"></i>
+                            <h3>Gestión de Caja</h3>
+                        </div>
+                        <div class="seccion-body">
+                            <div class="permisos-grid">
+                                <label>
+                                    <input type="checkbox" name="permisos[caja]" id="caja">
+                                    <span>Abrir/Cerrar Caja</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cuadres]" id="cuadres">
+                                    <span>Cuadres de Caja</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Administración -->
+                    <div class="permisos-seccion">
+                        <div class="seccion-header">
+                            <i class="fas fa-cog"></i>
+                            <h3>Administración del Sistema</h3>
+                        </div>
+                        <div class="seccion-body">
+                            <div class="permisos-grid">
+                                <label>
+                                    <input type="checkbox" name="permisos[pan-adm]" id="pan-adm">
+                                    <span>Panel Administrativo</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[estadisticas]" id="estadisticas">
+                                    <span>Ver Estadísticas del Negocio</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[bancos-destinos]" id="bancos-destinos">
+                                    <span>Administrar Bancos y Destinos</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[usuarios]" id="usuarios">
+                                    <span>Administrar Usuarios</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[empleados]" id="empleados">
+                                    <span>Administrar Empleados</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[inf-factura]" id="inf-factura">
+                                    <span>Editar Información en Factura</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="btn-group">
@@ -597,6 +664,155 @@ foreach ($permisos_activos as $codigo) {
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('loading');
             });
+        }
+    </script>
+
+    <script>
+        // Configuración de dependencias de permisos
+        const dependenciasPermisos = {
+            'avance-cuenta': ['cancel-avance'],
+            'facturacion': ['cot-accion'],
+            'cot-registro': ['cot-cancelar'],
+            'pan-adm': [
+                'estadisticas',
+                'bancos-destinos',
+                'usuarios',
+                'empleados',
+                'inf-factura',
+                'cot-registro',
+                'tran-inventario',
+                'admi-inventario',
+                'cuadres'
+            ]
+        };
+
+        // Permisos activos desde PHP
+        const permisosActivos = <?php echo json_encode($permisos_checked); ?>;
+
+        /**
+         * Deshabilita y desmarca los permisos dependientes
+         */
+        function deshabilitarDependientes(permisoPrincipal) {
+            const dependientes = dependenciasPermisos[permisoPrincipal];
+            
+            if (dependientes && dependientes.length > 0) {
+                dependientes.forEach(permisoId => {
+                    const checkbox = document.getElementById(permisoId);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                        checkbox.disabled = true;
+                        checkbox.parentElement.style.opacity = '0.5';
+                        checkbox.parentElement.style.cursor = 'not-allowed';
+                        
+                        // Si este permiso también tiene dependientes, deshabilitarlos recursivamente
+                        if (dependenciasPermisos[permisoId]) {
+                            deshabilitarDependientes(permisoId);
+                        }
+                    }
+                });
+            }
+        }
+
+        /**
+         * Habilita los permisos dependientes
+         */
+        function habilitarDependientes(permisoPrincipal) {
+            const dependientes = dependenciasPermisos[permisoPrincipal];
+            
+            if (dependientes && dependientes.length > 0) {
+                dependientes.forEach(permisoId => {
+                    const checkbox = document.getElementById(permisoId);
+                    if (checkbox) {
+                        checkbox.disabled = false;
+                        checkbox.parentElement.style.opacity = '1';
+                        checkbox.parentElement.style.cursor = 'pointer';
+                    }
+                });
+            }
+        }
+
+        /**
+         * Marca los checkboxes según los permisos activos del usuario
+         */
+        function cargarPermisosActivos() {
+            for (const [permiso, activo] of Object.entries(permisosActivos)) {
+                const checkbox = document.getElementById(permiso);
+                if (checkbox && activo) {
+                    checkbox.checked = true;
+                }
+            }
+        }
+
+        /**
+         * Inicializa los listeners de todos los checkboxes de permisos
+         */
+        function inicializarLogicaPermisos() {
+            // Primero cargar los permisos activos
+            cargarPermisosActivos();
+
+            // Agregar event listeners a todos los permisos principales
+            Object.keys(dependenciasPermisos).forEach(permisoId => {
+                const checkbox = document.getElementById(permisoId);
+                if (checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            habilitarDependientes(permisoId);
+                        } else {
+                            deshabilitarDependientes(permisoId);
+                        }
+                    });
+                }
+            });
+
+            // Verificar estado inicial después de cargar permisos
+            Object.keys(dependenciasPermisos).forEach(permisoId => {
+                const checkbox = document.getElementById(permisoId);
+                if (checkbox && !checkbox.checked) {
+                    deshabilitarDependientes(permisoId);
+                }
+            });
+        }
+
+        // Ejecutar cuando el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarLogicaPermisos();
+        });
+
+        /**
+         * Validar permisos antes de enviar el formulario
+         */
+        function validarPermisosAntesDeProcesar() {
+            let errores = [];
+
+            // Verificar cada dependencia
+            for (const [padre, dependientes] of Object.entries(dependenciasPermisos)) {
+                const checkboxPadre = document.getElementById(padre);
+                
+                if (checkboxPadre && !checkboxPadre.checked) {
+                    dependientes.forEach(permisoId => {
+                        const checkbox = document.getElementById(permisoId);
+                        if (checkbox && checkbox.checked) {
+                            // Obtener el texto del permiso
+                            const textoPermiso = checkbox.parentElement.querySelector('span').textContent;
+                            const textoPadre = checkboxPadre.parentElement.querySelector('span').textContent;
+                            errores.push(`"${textoPermiso}" requiere que "${textoPadre}" esté habilitado.`);
+                        }
+                    });
+                }
+            }
+
+            if (errores.length > 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Permisos Inconsistentes',
+                    html: 'Se detectaron las siguientes inconsistencias en los permisos:<br><ul style="text-align: left; margin-top: 10px;">' + 
+                        errores.map(err => `<li>${err}</li>`).join('') + '</ul>',
+                    confirmButtonText: 'Revisar Permisos'
+                });
+                return false;
+            }
+
+            return true;
         }
     </script>
 

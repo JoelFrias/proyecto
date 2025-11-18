@@ -57,7 +57,9 @@ class PDF extends FPDF {
 }
 
 // Verificar y validar la existencia de la variable de sesión
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 $idPuesto = isset($_SESSION['idPuesto']) ? intval($_SESSION['idPuesto']) : 0;
 $ocultarPrecioCompra = ($idPuesto > 2);
 
@@ -110,8 +112,8 @@ if ($result->num_rows > 0) {
         $pdf->SetFont('Arial', '', 8);
 
         $pdf->Cell(10, 6, $row['idProducto'], 1, 0, 'C');
-        $pdf->Cell(70, 6, utf8_decode($row['descripcion']), 1, 0, 'L');
-        $pdf->Cell(20, 6, utf8_decode($row['reorden']), 1, 0, 'C');
+        $pdf->Cell(70, 6, iconv('UTF-8', 'ISO-8859-1', $row['descripcion']), 1, 0, 'L');
+        $pdf->Cell(20, 6, iconv('UTF-8', 'ISO-8859-1', $row['reorden']), 1, 0, 'C');
         $pdf->Cell(15, 6, $existencia, 1, 0, 'C');
         $pdf->Cell(25, 6, $mostrarPrecioCompra, 1, 0, 'R');
         $pdf->Cell(25, 6, '$' . $precioVenta1, 1, 0, 'R');
@@ -123,7 +125,7 @@ if ($result->num_rows > 0) {
         $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(40, 5, 'Tipo de Producto:', 0, 0);
         $pdf->SetFont('Arial', '', 8);
-        $pdf->Cell(30, 5, utf8_decode($row['tipo']), 0, 0);
+        $pdf->Cell(30, 5, iconv('UTF-8', 'ISO-8859-1', $row['tipo']), 0, 0);
         
         // Indicador visual si el producto está por debajo del nivel de reorden
         if ($row['existencia'] < $row['reorden']) {
@@ -196,7 +198,7 @@ if ($result->num_rows > 0) {
     
     $pdf->Ln(10);
     $pdf->SetFont('Arial', 'B', 12);
-    $pdf->Cell(0, 10, utf8_decode('DISTRIBUCIÓN DE PRODUCTOS POR TIPO'), 0, 1, 'C');
+    $pdf->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'DISTRIBUCIÓN DE PRODUCTOS POR TIPO'), 0, 1, 'C');
     
     $pdf->SetFont('Arial', 'B', 10);
     $pdf->Cell(100, 8, 'Tipo de Producto', 1, 0, 'C');
@@ -204,7 +206,7 @@ if ($result->num_rows > 0) {
     
     $pdf->SetFont('Arial', '', 10);
     while($tipoRow = $tipoResult->fetch_assoc()) {
-        $pdf->Cell(100, 8, utf8_decode($tipoRow['tipo']), 1, 0, 'L');
+        $pdf->Cell(100, 8, iconv('UTF-8', 'ISO-8859-1', $tipoRow['tipo']), 1, 0, 'L');
         $pdf->Cell(80, 8, number_format($tipoRow['cantidad'], 0), 1, 1, 'C');
     }
     

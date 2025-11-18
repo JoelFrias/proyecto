@@ -8,25 +8,7 @@ require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'ALM001';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    echo "
-        <html>
-            <head>
-                <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-            </head>
-            <body>
-                <script>
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ACCESO DENEGADO',
-                        text: 'No tienes permiso para acceder a esta sección.',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    }).then(() => {
-                        window.history.back();
-                    });
-                </script>
-            </body>
-        </html>";
+    header('location: ../errors/403.html');
         
     exit(); 
 }
@@ -251,7 +233,7 @@ $noDisponibles = $conn->query("SELECT COUNT(*) as total FROM inventario JOIN pro
                         </div>
                         <div class="stat-info">
                             <p>Total Productos</p>
-                            <h2><?php echo htmlspecialchars($totalProductos, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($totalProductos, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                         <div class="stat-footer">
                         </div>
@@ -265,7 +247,7 @@ $noDisponibles = $conn->query("SELECT COUNT(*) as total FROM inventario JOIN pro
                         </div>
                         <div class="stat-info">
                             <p>Total Categorías</p>
-                            <h2><?php echo htmlspecialchars($totalCategorias, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($totalCategorias, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                         <div class="stat-footer">
                         </div>
@@ -280,7 +262,7 @@ $noDisponibles = $conn->query("SELECT COUNT(*) as total FROM inventario JOIN pro
                         </div>
                         <div class="stat-info">
                             <p>Casi Agotados</p>
-                            <h2><?php echo htmlspecialchars($casiAgotados, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($casiAgotados, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                         <!--
                         <div class="stat-footer">
@@ -298,7 +280,7 @@ $noDisponibles = $conn->query("SELECT COUNT(*) as total FROM inventario JOIN pro
                         </div>
                         <div class="stat-info">
                             <p>Agotados</p>
-                            <h2><?php echo htmlspecialchars($noDisponibles, ENT_QUOTES, 'UTF-8'); ?></h2>
+                            <h2><?php echo htmlspecialchars($noDisponibles, FILTER_SANITIZE_FULL_SPECIAL_CHARS); ?></h2>
                         </div>
                         <!--
                         <div class="stat-footer">
@@ -327,13 +309,13 @@ $noDisponibles = $conn->query("SELECT COUNT(*) as total FROM inventario JOIN pro
                             if ($result->num_rows > 0) {
                                 while ($row = $result->fetch_assoc()) {
                                     echo "<tr>
-                                            <td>" . htmlspecialchars($row["id"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["producto"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["tipo_producto"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["existencia"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["existencia_inventario"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td>" . htmlspecialchars($row["PreciosVentas"], ENT_QUOTES, 'UTF-8') . "</td>
-                                            <td><span class='status " . htmlspecialchars($row["disponiblidad_inventario"], ENT_QUOTES, 'UTF-8') . "'>" . htmlspecialchars($row["disponiblidad_inventario"], ENT_QUOTES, 'UTF-8') . "</span></td>
+                                            <td>" . htmlspecialchars($row["id"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["tipo_producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["existencia"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["existencia_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td>" . htmlspecialchars($row["PreciosVentas"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</td>
+                                            <td><span class='status " . htmlspecialchars($row["disponiblidad_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "'>" . htmlspecialchars($row["disponiblidad_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . "</span></td>
                                         </tr>";
                                 }
                             } else {
@@ -354,31 +336,31 @@ $noDisponibles = $conn->query("SELECT COUNT(*) as total FROM inventario JOIN pro
                             if($_SESSION['idPuesto'] <= 2){
                                 $hola = '<div class="mobile-card-item">
                                         <span class="mobile-card-label">Precio Compra:</span>
-                                        <span class="mobile-card-value">' . htmlspecialchars($row["Costo"], ENT_QUOTES, 'UTF-8') . '</span>
+                                        <span class="mobile-card-value">' . htmlspecialchars($row["Costo"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</span>
                                     </div>';
                             }
 
-                            echo '<div class="mobile-card" data-product="' . htmlspecialchars(strtoupper($row["producto"]), ENT_QUOTES, 'UTF-8') . '">
+                            echo '<div class="mobile-card" data-product="' . htmlspecialchars(strtoupper($row["producto"]), FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '">
                                 <div class="mobile-card-header">
                                     <div class="mobile-card-title-section">
-                                        <h3 class="mobile-card-title">' .htmlspecialchars($row["id"], ENT_QUOTES, 'UTF-8') .' '. htmlspecialchars($row["producto"], ENT_QUOTES, 'UTF-8') . '</h3>
-                                        <p class="mobile-card-subtitle">' . htmlspecialchars($row["tipo_producto"], ENT_QUOTES, 'UTF-8') . '</p>
+                                        <h3 class="mobile-card-title">' .htmlspecialchars($row["id"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) .' '. htmlspecialchars($row["producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</h3>
+                                        <p class="mobile-card-subtitle">' . htmlspecialchars($row["tipo_producto"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</p>
                                     </div>
-                                    <span class="status ' . htmlspecialchars($row["disponiblidad_inventario"], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($row["disponiblidad_inventario"], ENT_QUOTES, 'UTF-8') . '</span>
+                                    <span class="status ' . htmlspecialchars($row["disponiblidad_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '">' . htmlspecialchars($row["disponiblidad_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</span>
                                 </div>
                                 <div class="mobile-card-content">
                                     <div class="mobile-card-item">
                                         <span class="mobile-card-label">Existencia:</span>
-                                        <span class="mobile-card-value">' . htmlspecialchars($row["existencia"], ENT_QUOTES, 'UTF-8') . '</span>
+                                        <span class="mobile-card-value">' . htmlspecialchars($row["existencia"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</span>
                                     </div>
                                     <div class="mobile-card-item">
                                         <span class="mobile-card-label">Almacen:</span>
-                                        <span class="mobile-card-value">' . htmlspecialchars($row["existencia_inventario"], ENT_QUOTES, 'UTF-8') . '</span>
+                                        <span class="mobile-card-value">' . htmlspecialchars($row["existencia_inventario"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</span>
                                     </div> 
                                     '. $hola . '
                                     <div class="mobile-card-item">
                                         <span class="mobile-card-label">Precio Venta:</span>
-                                        <span class="mobile-card-value">' . htmlspecialchars($row["PreciosVentas"], ENT_QUOTES, 'UTF-8') . '</span>
+                                        <span class="mobile-card-value">' . htmlspecialchars($row["PreciosVentas"], FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '</span>
                                     </div>
                                 </div>
                             </div>';
