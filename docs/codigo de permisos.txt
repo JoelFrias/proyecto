@@ -17,6 +17,7 @@
 •  Empleados:               EMP001
 •  Info Factura:            FAC003
 •  Cuadres:                 CUA001
+•  Estado Cuadre:           CUA002
 •  Cotizaciones Registro:   COT002
 •  Cotizaciones Cancelar:   COT003
 •  Transferir inventario:   ALM002

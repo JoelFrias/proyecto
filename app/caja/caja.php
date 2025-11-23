@@ -2,6 +2,7 @@
 
 require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php'; // Conexión a la base de datos
+require_once '../../core/auditorias.php';  // Requerir auditoria
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -201,8 +202,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $diferencia = $saldo_final - ($saldo_inicial + $total_ingresos - $total_egresos);
                 
                 // Insertar en cajas cerradas
-                $sql = "INSERT INTO cajascerradas (numCaja, idEmpleado, fechaApertura, fechaCierre, saldoInicial, saldoFinal, diferencia) 
-                        VALUES (?, ?, ?, NOW(), ?, ?, ?)";
+                $sql = "INSERT INTO cajascerradas (numCaja, idEmpleado, fechaApertura, fechaCierre, saldoInicial, saldoFinal,
+                estado, diferencia) 
+                        VALUES (?, ?, ?, NOW(), ?, ?, 'pendiente', ?)";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("sisddd", $num_caja, $id_empleado, $fecha_apertura, $saldo_inicial, $saldo_final, $diferencia);
                 if (!$stmt->execute()) {
@@ -220,8 +222,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 /**
                  *  2. Auditoria de acciones de usuario
                  */
-
-                require_once '../../core/auditorias.php';
                 $usuario_id = $_SESSION['idEmpleado'];
                 $accion = 'CIERRE_CAJA';
                 $detalle = 'Caja cerrada con saldo final: ' . $saldo_final . ' y número de caja: ' . $num_caja;
@@ -323,7 +323,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             $conn->autocommit(TRUE);
             if ($error) {
-                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_INGRESO', 
+                registrarAuditoriaCaja($conn, $id_empleado, 'Error-cierre-caja', 
                     "Fallo al registrar ingreso: " . $mensaje);
             }
         }

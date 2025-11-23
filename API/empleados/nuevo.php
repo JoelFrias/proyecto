@@ -144,6 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'empleados' => 'EMP001',
         'inf-factura' => 'FAC003',
         'cuadres' => 'CUA001',
+        'cuadres-accion' => 'CUA002',
         'cot-registro' => 'COT002',
         'cot-cancelar' => 'COT003',
         'tran-inventario' => 'ALM002',

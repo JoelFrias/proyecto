@@ -428,6 +428,9 @@ require_once '../core/conexion.php'; // Cargar Conexion
                         <label for="password">Contraseña:</label>
                         <input type="password" id="password" name="password" required>
 
+                        <label for="password-rep">Repetir Contraseña</label>
+                        <input type="password" name="password-rep" id="password-rep" require>
+
                         <button type="submit">Guardar Cambios</button>
                     </form>
                 </div>
@@ -1007,6 +1010,7 @@ require_once '../core/conexion.php'; // Cargar Conexion
             // Validación básica
             const userInput = document.getElementById('user');
             const passwordInput = document.getElementById('password');
+            const passwordInput2 = document.getElementById('password-rep');
             let isValid = true;
             
             // Eliminar mensajes de error previos
@@ -1016,6 +1020,7 @@ require_once '../core/conexion.php'; // Cargar Conexion
             }
             userInput.classList.remove('error');
             passwordInput.classList.remove('error');
+            passwordInput2.classList.remove('error');
             
             // Validar usuario
             if (userInput.value.trim() === '') {
@@ -1027,14 +1032,16 @@ require_once '../core/conexion.php'; // Cargar Conexion
                 userInput.insertAdjacentElement('afterend', errorMsg);
             }
             
-            // Validar contraseña
-            if (passwordInput.value.trim() === '') {
+            // Validar coincidencia
+            if (passwordInput.value !== passwordInput2.value) {
                 isValid = false;
                 passwordInput.classList.add('error');
+                passwordInput2.classList.add('error'); 
+
                 const errorMsg = document.createElement('div');
                 errorMsg.className = 'error-message';
-                errorMsg.textContent = 'Por favor ingresa una contraseña';
-                passwordInput.insertAdjacentElement('afterend', errorMsg);
+                errorMsg.textContent = 'Las contraseñas no coinciden';
+                passwordInput2.insertAdjacentElement('afterend', errorMsg);
             }
             
             if (isValid) {

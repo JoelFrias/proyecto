@@ -75,6 +75,7 @@ $mapeoPermisos = [
     'EMP001' => 'empleados',
     'FAC003' => 'inf-factura',
     'CUA001' => 'cuadres',
+    'CUA002' => 'cuadres-accion',
     'COT002' => 'cot-registro',
     'COT003' => 'cot-cancelar',
     'ALM002' => 'tran-inventario',
@@ -484,6 +485,10 @@ foreach ($permisos_activos as $codigo) {
                                     <input type="checkbox" name="permisos[cuadres]" id="cuadres">
                                     <span>Cuadres de Caja</span>
                                 </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[cuadres-accion]" id="cuadres-accion">
+                                    <span>Cerrar/Cancelar Cuadres</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -564,7 +569,7 @@ foreach ($permisos_activos as $codigo) {
                 'avance-cuenta', 'cancel-avance', 'cancel-facturas', 'almacen',
                 'inv-empleados', 'facturacion', 'cot-accion', 'caja', 'pan-adm', 
                 'estadisticas', 'bancos-destinos', 'usuarios', 'empleados', 
-                'inf-factura', 'cuadres', 'cot-registro', 'cot-cancelar',
+                'inf-factura', 'cuadres', 'cuadres-accion', 'cot-registro', 'cot-cancelar',
                 'tran-inventario','admi-inventario'
             ];
 
@@ -683,7 +688,8 @@ foreach ($permisos_activos as $codigo) {
                 'tran-inventario',
                 'admi-inventario',
                 'cuadres'
-            ]
+            ],
+            'cuadres' : ['cuadres-accion']
         };
 
         // Permisos activos desde PHP

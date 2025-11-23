@@ -13,8 +13,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     exit(); 
 }
 
-////////////////////////////////////////////////////////////////////
-
 // Verifica si la conexión se estableció correctamente
 if (!isset($conn) || !($conn instanceof mysqli)) {
     die("Error crítico: No se pudo establecer conexión con la base de datos");
@@ -40,9 +38,10 @@ if (isset($_GET['busqueda']) && !empty($_GET['busqueda'])) {
                             cc.saldoFinal LIKE ? OR 
                             CONCAT(e.nombre, ' ', e.apellido) LIKE ? OR 
                             cc.diferencia LIKE ? OR
+                            cc.estado LIKE ? OR
                             cc.numCaja LIKE ?)";
-    // Añadimos el mismo parámetro 8 veces para cada campo de búsqueda
-    for ($i = 0; $i < 8; $i++) {
+    // Añadimos el parámetro 9 veces para cada campo de búsqueda
+    for ($i = 0; $i < 9; $i++) {
         $params[] = "%$busqueda%";
         $tipos .= "s";
     }
@@ -67,6 +66,13 @@ if (isset($_GET['empleado']) && !empty($_GET['empleado'])) {
     $where_clausulas[] = "cc.idEmpleado = ?";
     $params[] = $_GET['empleado'];
     $tipos .= "i";
+}
+
+// Filtro de estado
+if (isset($_GET['estado']) && !empty($_GET['estado'])) {
+    $where_clausulas[] = "cc.estado = ?";
+    $params[] = $_GET['estado'];
+    $tipos .= "s";
 }
 
 // Construir la cláusula WHERE
@@ -104,7 +110,8 @@ $sql = "SELECT
             CONCAT(e.nombre, ' ', e.apellido) AS empleado_nombre,
             IFNULL(FORMAT(cc.diferencia, 2), 'N/A') AS diferencia_formateada,
             cc.diferencia AS diferencia_raw,
-            cc.numCaja
+            cc.numCaja AS numCaja,
+            cc.estado AS estado
         FROM cajascerradas cc
         LEFT JOIN empleados e ON cc.idEmpleado = e.id
         $where
@@ -136,6 +143,7 @@ $filtro_busqueda = isset($_GET['busqueda']) ? htmlspecialchars($_GET['busqueda']
 $filtro_fecha_inicio = isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : '';
 $filtro_fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '';
 $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
+$filtro_estado = isset($_GET['estado']) ? $_GET['estado'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -155,6 +163,8 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
             --secondary: #34495e;
             --success: #27ae60;
             --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
             --border: #dfe6e9;
             --background: #f5f6fa;
             --text: #2d3436;
@@ -401,27 +411,44 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
             gap: 0.75rem;
         }
 
-        /* Status Badge */
+        /* Status Badge - ESTILOS ACTUALIZADOS */
         .badge {
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
+            padding: 0.35rem 0.85rem;
             border-radius: 1rem;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
             justify-content: center;
-            min-width: 80px;
+            min-width: 90px;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
-        .badge-success {
-            background: rgba(39, 174, 96, 0.1);
-            color: var(--success);
+        .badge-cerrada {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        .badge-danger {
-            background: rgba(231, 76, 60, 0.1);
-            color: var(--danger);
+        .badge-auditoria {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        .badge-pendiente {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .badge-negada,
+        .badge-cancelada {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         /* Action Buttons */
@@ -444,11 +471,13 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
             transition: all 0.2s ease;
             background: white;
         }
+        
         /*vista  */
         .view-btn {
             background: rgba(52, 152, 219, 0.1);
             color: #3498db;
         }
+        
         /* imprimir */
         .print-btn {
             background: rgba(108, 117, 125, 0.1);
@@ -718,8 +747,19 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                     </div>
 
                     <div class="filter-group">
+                        <label for="estado"><i class="fa-solid fa-bars-staggered"></i> Estado</label>
+                        <select id="estado" name="estado">
+                            <option value="">Todos los estados</option>
+                            <option value="cerrada" <?= ($filtro_estado == 'cerrada' ? 'selected' : '') ?>>Cerrada</option>
+                            <option value="pendiente" <?= ($filtro_estado == 'pendiente' ? 'selected' : '') ?>>Pendiente</option>
+                            <!-- <option value="auditoria" <?= ($filtro_estado == 'auditoria' ? 'selected' : '') ?>>Auditoría</option> -->
+                            <option value="cancelada" <?= ($filtro_estado == 'cancelada' ? 'selected' : '') ?>>Cancelada</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
                         <label for="global-search"><i class="fa-solid fa-earth-americas"></i> Buscador General</label>
-                        <input type="text" id="global-search" name="busqueda" placeholder="Buscardor" value="<?php echo $filtro_busqueda; ?>">
+                        <input type="text" id="global-search" name="busqueda" placeholder="Buscar..." value="<?php echo $filtro_busqueda; ?>">
                     </div>
                     
                     <div class="filter-buttons">
@@ -746,6 +786,7 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                                 <th>Monto Cierre</th>
                                 <th>Empleado</th>
                                 <th>Diferencia</th>
+                                <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -764,6 +805,10 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                                     $total_cierre += $monto_cierre;
                                     $total_diferencia += $row['diferencia_raw'] ?? 0;
                                     
+                                    // Determinar clase de badge según el estado
+                                    $estado_lower = strtolower($row['estado']);
+                                    $badge_class = 'badge-' . $estado_lower;
+                                    
                                     echo "<tr>
                                             <td>{$row['id']}</td>
                                             <td>{$row['numCaja']}</td>
@@ -775,8 +820,13 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                                             <td class='".($row['diferencia_raw'] >= 0 ? 'positive' : 'negative')."'>
                                                 {$row['diferencia_formateada']}
                                             </td>
+                                            <td>
+                                                <span class='badge {$badge_class}'>
+                                                    {$row['estado']}
+                                                </span>
+                                            </td>
                                             <td class='actions'>
-                                                <button class='action-btn print-btn' onclick=\"verDetalle('{$row['numCaja']}')\">
+                                                <button class='action-btn view-btn' onclick=\"verDetalle('{$row['numCaja']}')\">
                                                     <i class=\"fa-regular fa-eye\"></i>
                                                 </button>
                                                 <button class='action-btn print-btn' onclick=\"imprimirReporte('{$row['numCaja']}')\">
@@ -806,12 +856,17 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                     
                     if ($resultado->num_rows > 0) {
                         while($row = $resultado->fetch_assoc()) {
+                            // Determinar clase de badge según el estado
+                            $estado_lower = strtolower($row['estado']);
+                            $badge_class = 'badge-' . $estado_lower;
                             
                             echo "<div class='card'>
                                     <div class='card-header'>
                                         <div>
                                             <div class='card-title'>Caja N° {$row['numCaja']}</div>
-                                            <div class='card-subtitle'>Cuadre #{$row['id']}</div>
+                                            <span class='badge {$badge_class}'>
+                                                {$row['estado']}
+                                            </span>
                                         </div>
                                     </div>
                                     
@@ -846,7 +901,7 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                                     
                                     <div class='card-footer'>
                                         <div class='actions'>
-                                            <button class='action-btn print-btn' onclick=\"verDetalle('{$row['numCaja']}')\">
+                                            <button class='action-btn view-btn' onclick=\"verDetalle('{$row['numCaja']}')\">
                                                 <i class=\"fa-regular fa-eye\"></i>
                                             </button>
                                             <button class='action-btn print-btn' onclick=\"imprimirReporte('{$row['numCaja']}')\">
@@ -874,14 +929,14 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                 <div class="pagination">
                     <!-- Botón primera página -->
                     <li>
-                        <a href="?pagina=1<?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado); ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=1<?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado, $filtro_estado); ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-double-left"></i>
                         </a>
                     </li>
                     
                     <!-- Botón página anterior -->
                     <li>
-                        <a href="?pagina=<?php echo max(1, $pagina_actual - 1); ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado); ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=<?php echo max(1, $pagina_actual - 1); ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado, $filtro_estado); ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-left"></i>
                         </a>
                     </li>
@@ -894,7 +949,7 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                     for ($i = $start_page; $i <= $end_page; $i++): 
                     ?>
                         <li>
-                            <a href="?pagina=<?php echo $i; ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado); ?>" <?php echo ($i == $pagina_actual) ? 'class="active"' : ''; ?>>
+                            <a href="?pagina=<?php echo $i; ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado, $filtro_estado); ?>" <?php echo ($i == $pagina_actual) ? 'class="active"' : ''; ?>>
                                 <?php echo $i; ?>
                             </a>
                         </li>
@@ -902,14 +957,14 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
                     
                     <!-- Botón página siguiente -->
                     <li>
-                        <a href="?pagina=<?php echo min($total_paginas, $pagina_actual + 1); ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado); ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=<?php echo min($total_paginas, $pagina_actual + 1); ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado, $filtro_estado); ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-right"></i>
                         </a>
                     </li>
                     
                     <!-- Botón última página -->
                     <li>
-                        <a href="?pagina=<?php echo $total_paginas; ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado); ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=<?php echo $total_paginas; ?><?php echo construirQueryFiltros($filtro_busqueda, $filtro_fecha_inicio, $filtro_fecha_fin, $filtro_empleado, $filtro_estado); ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-double-right"></i>
                         </a>
                     </li>
@@ -952,7 +1007,7 @@ $filtro_empleado = isset($_GET['empleado']) ? $_GET['empleado'] : '';
 
 <?php
 // Función para construir la parte de query string con los filtros actuales
-function construirQueryFiltros($busqueda, $fecha_inicio, $fecha_fin, $empleado) {
+function construirQueryFiltros($busqueda, $fecha_inicio, $fecha_fin, $empleado, $estado) {
     $params = [];
     
     if (!empty($busqueda)) {
@@ -969,6 +1024,10 @@ function construirQueryFiltros($busqueda, $fecha_inicio, $fecha_fin, $empleado) 
     
     if (!empty($empleado)) {
         $params[] = "empleado=" . urlencode($empleado);
+    }
+    
+    if (!empty($estado)) {
+        $params[] = "estado=" . urlencode($estado);
     }
 
     return !empty($params) ? '&' . implode('&', $params) : '';
