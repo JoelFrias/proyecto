@@ -193,9 +193,16 @@ class PDF_Reimpresion extends FPDF
         $this->Cell(0, 8, 'REPORTE DE TRANSACCION DE INVENTARIO', 0, 1, 'C');
         
         // Fecha actual
-        setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'Spanish_Spain.1252');
-        $fecha_actual = strftime('%A %d de %B de %Y', time());
-        $fecha_actual = ucfirst($fecha_actual);
+        $dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        $dia_semana = $dias[date('w')];
+        $dia = date('d');
+        $mes = $meses[date('n')];
+        $anio = date('Y');
+
+        $fecha_actual = "$dia_semana $dia de $mes de $anio";
         
         $this->SetFont('Arial', 'I', 10);
         $this->SetTextColor(127, 140, 141);

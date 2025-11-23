@@ -47,7 +47,7 @@ if ($result->num_rows > 0) {
         $html .= "<td>" . $row["no"] . "</td>";
         $html .= "<td>" . $row["nombreCliente"] . "</td>";
         $html .= "<td>" . $row["fecha"] . "</td>";
-        $html .= "<td>" . $row["total"] . "</td>";
+        $html .= "<td> RD$" . $row["total"] . "</td>";
         $html .= "<td>" . $row["nombreEmpleado"] . "</td>";
         $html .= "<td>" . $row["notas"] . "</td>";
         $html .= "</tr>";

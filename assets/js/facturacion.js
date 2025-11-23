@@ -465,87 +465,93 @@ function guardarFactura(print) {
     document.getElementById("guardar-factura").disabled = true;
     document.getElementById("guardar-imprimir-factura").disabled = true;
 
-    fetch("../../api/facturacion/facturacion_guardar.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-    })
-    .then(response => response.text())
-    .then(text => {
-        try {
-            let data = JSON.parse(text);
-            if (data.success) {
-                // Cerrar el modal de procesar factura
-                document.getElementById("modal-procesar-factura").style.display = "none";
-                
-                if (!print) {
-                    // Solo mostrar mensaje de éxito si no se imprime
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Factura #' + data.numFactura,
-                        text: 'Factura Guardada Exitosamente',
-                        showConfirmButton: true,
-                        confirmButtonText: 'Aceptar'
-                    });
-                } else {
-                    // Abrir el reporte en una nueva ventana y recargar la página actual
-                    const invoiceUrl = `../../reports/factura/factura.php?factura=${data.numFactura}`;
-                    window.open(invoiceUrl, '_blank');
-                }
+    // Crear la ventana ANTES del fetch (dentro del contexto del clic del usuario)
+let invoiceWindow = null;
+if (print) {
+    invoiceWindow = window.open('about:blank', '_blank');
+}
 
-                // Eliminar cotización si aplica
-                if (cotizacionactiva) {
-                    actualizarCotizacion(noCotizacion);
-                }
+fetch("../../api/facturacion/facturacion_guardar.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos)
+})
+.then(response => response.text())
+.then(text => {
+    try {
+        let data = JSON.parse(text);
+        if (data.success) {
+            document.getElementById("modal-procesar-factura").style.display = "none";
+            
+            if (!print) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Factura #' + data.numFactura,
+                    text: 'Factura Guardada Exitosamente',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    location.reload();
+                });
 
-                // Pequeña demora antes de recargar para asegurar que la ventana se abra
+            } else {
+                // Redirigir la ventana ya abierta al reporte
+                const invoiceUrl = `../../reports/factura/factura.php?factura=${data.numFactura}`;
+                invoiceWindow.location.href = invoiceUrl;
+
                 setTimeout(() => {
                     location.reload();
                 }, 500);
-
-            } else {
-                // Rehabilitar botones en caso de error
-                document.getElementById("guardar-factura").disabled = false;
-                document.getElementById("guardar-imprimir-factura").disabled = false;
-                
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.error || 'Error al guardar la factura',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
-                });
-                console.log("Error al guardar la factura:", data.error);
             }
-        } catch (error) {
-            // Rehabilitar botones en caso de error
+
+            if (cotizacionactiva) {
+                actualizarCotizacion(noCotizacion);
+            }
+
+        } else {
+            // Cerrar la ventana si hubo error
+            if (invoiceWindow) invoiceWindow.close();
+            
             document.getElementById("guardar-factura").disabled = false;
             document.getElementById("guardar-imprimir-factura").disabled = false;
             
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Se produjo un error inesperado en el servidor.\nFactura no guardada.',
+                text: data.error || 'Error al guardar la factura',
                 showConfirmButton: true,
                 confirmButtonText: 'Aceptar'
             });
-            console.error("Error: Respuesta no es JSON válido:", text);
         }
-    })
-    .catch(error => {
-        // Rehabilitar botones en caso de error
+    } catch (error) {
+        if (invoiceWindow) invoiceWindow.close();
+        
         document.getElementById("guardar-factura").disabled = false;
         document.getElementById("guardar-imprimir-factura").disabled = false;
         
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Se produjo un error de red o en el servidor.\nPor favor, inténtelo de nuevo.',
+            text: 'Se produjo un error inesperado en el servidor.',
             showConfirmButton: true,
             confirmButtonText: 'Aceptar'
         });
-        console.error("Error de red o servidor:", error);
+    }
+})
+.catch(error => {
+    if (invoiceWindow) invoiceWindow.close();
+    
+    document.getElementById("guardar-factura").disabled = false;
+    document.getElementById("guardar-imprimir-factura").disabled = false;
+    
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Se produjo un error de red o en el servidor.',
+        showConfirmButton: true,
+        confirmButtonText: 'Aceptar'
     });
+});
 }
 
 document.addEventListener("DOMContentLoaded", function() {

@@ -164,7 +164,6 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
         }
 
         .contenedor {
-            padding: 0 1.5rem;
             max-width: 1280px;
             margin: 0 auto;
         }
