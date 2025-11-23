@@ -274,9 +274,10 @@ while ($producto = $resultProductos->fetch_assoc()) {
 
         .product-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; 
             align-items: center;
             margin-bottom: 1rem;
+            gap: 1rem; 
         }
 
         .product-name {
@@ -289,8 +290,9 @@ while ($producto = $resultProductos->fetch_assoc()) {
             color: #6b7280;
             font-size: 0.75rem;
             padding: 0.25rem 0.75rem;
-            background: #f3f4f6;
+            background: #e5e7eb;
             border-radius: 0.375rem;
+            white-space: nowrap;
         }
 
         .product-details {
@@ -511,7 +513,7 @@ while ($producto = $resultProductos->fetch_assoc()) {
 
             .product-header {
                 display: flex;
-                justify-content: space-between;
+                justify-content: flex-start;
                 align-items: center;
                 font-size: 14px;
                 font-weight: bold;
