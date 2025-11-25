@@ -233,28 +233,28 @@ if ($result->num_rows > 0) {
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Buscar productos...">
                 </div>
-                    <?php
-                    if ($result->num_rows > 0) {
-                        while ($row = $result->fetch_assoc()) {
-                            echo '<div class="products-grid" id="productsGrid">';
-                            echo '  <div class="product-card">';
-                            echo '       <div class="product-info">';
-                            echo '         <div>';
-                            echo '            <div class="product-name">' . $row["id"] .'   '. $row["descripcion"] . '</div>';
-                            echo '            <div class="product-quantity">Existencia General: ' . $row["existenciaGeneral"] . '</div>';
-                            echo '            <div class="product-quantity">Existencia en Almacén: ' . $row["existenciaInventario"] . '</div>';   
-                            echo '        </div>';
-                            echo '        <div class="product-total"></div>';
-                            echo '    </div>';
-                            echo '    <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
-                            echo '    <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["existenciaGeneral"] . ', ' . $row["existenciaInventario"] . ')">Agregar Producto</button>';
-                            echo '  </div>';
-                            echo '</div>';
+                    <div class="products-grid" id="productsGrid">
+                        <?php
+                        if ($result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                echo '  <div class="product-card">';
+                                echo '       <div class="product-info">';
+                                echo '         <div>';
+                                echo '            <div class="product-name">' . $row["id"] .'   '. $row["descripcion"] . '</div>';
+                                echo '            <div class="product-quantity">Existencia General: ' . $row["existenciaGeneral"] . '</div>';
+                                echo '            <div class="product-quantity">Existencia en Almacén: ' . $row["existenciaInventario"] . '</div>';   
+                                echo '        </div>';
+                                echo '        <div class="product-total"></div>';
+                                echo '    </div>';
+                                echo '    <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
+                                echo '    <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["existenciaGeneral"] . ', ' . $row["existenciaInventario"] . ')">Agregar Producto</button>';
+                                echo '  </div>';
+                            }
+                        } else {
+                            echo "No existe ningún producto disponible en el amacén principal";
                         }
-                    } else {
-                        echo "No existe ningún producto disponible en el amacén principal";
-                    }
-                    ?>
+                        ?>
+                    </div>
                 </div>
             </div>
 

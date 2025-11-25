@@ -150,7 +150,8 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
             max-width: 1200px;
             position: relative;
             animation: slideDown 0.4s;
-            overflow: hidden;
+            overflow-y: auto;
+            max-height: 85vh;
         }
 
         /* Botón de cerrar */
@@ -220,6 +221,7 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
             display: flex;
             justify-content: center;
             margin-top: 25px;
+            margin-bottom: 20px;
             gap: 8px;
         }
 
@@ -276,6 +278,7 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
         @media screen and (max-width: 768px) {
             .modal-content-history-payments {
                 padding: 12px;
+                padding-bottom: 80px;
                 margin: 0;
                 width: 100%;
                 height: 100%;
@@ -298,6 +301,11 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
             .btn-cancel {
                 padding: 5px 10px;
                 font-size: 12px;
+            }
+
+            .pagination {
+                margin-bottom: 40px;
+                flex-wrap: wrap;
             }
             
             .pagination a, .pagination span {

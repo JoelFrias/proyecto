@@ -875,380 +875,384 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     <?php
 
+                    if (1==0): // Cambiar a 1=1 o 0=0 para habilitar el resumen de caja en la vista final
+
                     // Obtener total de ingresos y egresos
-                    $sql_ingresos = "WITH
-                                        fm AS (
-                                            SELECT metodo, monto FROM facturas_metodopago JOIN facturas ON facturas.numFactura = facturas_metodopago.numFactura WHERE facturas_metodopago.noCaja = ? AND facturas.estado != 'Cancelada'
-                                        ),
-                                        ch AS (
-                                            SELECT metodo, monto FROM clientes_historialpagos WHERE numCaja = ?
-                                        )
-                                        SELECT
-                                            COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'efectivo'), 0) AS Fefectivo,
-                                            COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'transferencia'), 0) AS Ftransferencia,
-                                            COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'tarjeta'), 0) AS Ftarjeta,
+                        $sql_ingresos = "WITH
+                                            fm AS (
+                                                SELECT metodo, monto FROM facturas_metodopago JOIN facturas ON facturas.numFactura = facturas_metodopago.numFactura WHERE facturas_metodopago.noCaja = ? AND facturas.estado != 'Cancelada'
+                                            ),
+                                            ch AS (
+                                                SELECT metodo, monto FROM clientes_historialpagos WHERE numCaja = ?
+                                            )
+                                            SELECT
+                                                COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'efectivo'), 0) AS Fefectivo,
+                                                COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'transferencia'), 0) AS Ftransferencia,
+                                                COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'tarjeta'), 0) AS Ftarjeta,
 
-                                            COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'efectivo'), 0) AS CPefectivo,
-                                            COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'transferencia'), 0) AS CPtransferencia,
-                                            COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'tarjeta'), 0) AS CPtarjeta;";
-                    $stmt = $conn->prepare($sql_ingresos);
-                    $stmt->bind_param("ss", $_SESSION['numCaja'], $_SESSION['numCaja']);
-                    $stmt->execute();
-                    $result_ingresos = $stmt->get_result();
-                    $row = $result_ingresos->fetch_assoc();
+                                                COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'efectivo'), 0) AS CPefectivo,
+                                                COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'transferencia'), 0) AS CPtransferencia,
+                                                COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'tarjeta'), 0) AS CPtarjeta;";
+                        $stmt = $conn->prepare($sql_ingresos);
+                        $stmt->bind_param("ss", $_SESSION['numCaja'], $_SESSION['numCaja']);
+                        $stmt->execute();
+                        $result_ingresos = $stmt->get_result();
+                        $row = $result_ingresos->fetch_assoc();
 
-                    // Obtener total de ingresos
-                    $ItotalE = $row['Fefectivo'] + $row['CPefectivo'];
-                    $ItotalT = $row['Ftransferencia'] + $row['CPtransferencia'];
-                    $ItotalC = $row['Ftarjeta'] + $row['CPtarjeta'];
+                        // Obtener total de ingresos
+                        $ItotalE = $row['Fefectivo'] + $row['CPefectivo'];
+                        $ItotalT = $row['Ftransferencia'] + $row['CPtransferencia'];
+                        $ItotalC = $row['Ftarjeta'] + $row['CPtarjeta'];
 
-                    $sql_FacturasContado = "SELECT
-                                                f.numFactura AS noFac,
-                                                DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
-                                                CONCAT(c.nombre,' ',c.apellido) AS nombrec,
-                                                fm.metodo,
-                                                fm.monto
-                                            FROM
-                                                facturas f
-                                            JOIN clientes c
-                                            ON 
-                                                c.id = f.idCliente
-                                            JOIN facturas_metodopago fm
-                                            ON
-                                                fm.numFactura = f.numFactura AND fm.noCaja = ?
-                                            WHERE
-                                                f.tipoFactura = 'contado'
-                                            AND f.estado != 'Cancelada';";
-                    $stmt = $conn->prepare($sql_FacturasContado);
-                    $stmt->bind_param("s", $_SESSION['numCaja']);
-                    $stmt->execute();
-                    $result_FacturasContado = $stmt->get_result();
+                        $sql_FacturasContado = "SELECT
+                                                    f.numFactura AS noFac,
+                                                    DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                                                    CONCAT(c.nombre,' ',c.apellido) AS nombrec,
+                                                    fm.metodo,
+                                                    fm.monto
+                                                FROM
+                                                    facturas f
+                                                JOIN clientes c
+                                                ON 
+                                                    c.id = f.idCliente
+                                                JOIN facturas_metodopago fm
+                                                ON
+                                                    fm.numFactura = f.numFactura AND fm.noCaja = ?
+                                                WHERE
+                                                    f.tipoFactura = 'contado'
+                                                AND f.estado != 'Cancelada';";
+                        $stmt = $conn->prepare($sql_FacturasContado);
+                        $stmt->bind_param("s", $_SESSION['numCaja']);
+                        $stmt->execute();
+                        $result_FacturasContado = $stmt->get_result();
 
-                    // Obtener total de facturas a contado
-                    $sql_FacturasCredito = "SELECT
-                                                f.numFactura AS noFac,
-                                                DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
-                                                CONCAT(c.nombre,' ',c.apellido) AS nombrec,
-                                                fm.metodo,
-                                                fm.monto
-                                            FROM
-                                                facturas f
-                                            JOIN clientes c
-                                            ON 
-                                                c.id = f.idCliente
-                                            JOIN facturas_metodopago fm
-                                            ON
-                                                fm.numFactura = f.numFactura AND fm.noCaja = ?
-                                            WHERE
-                                                f.tipoFactura = 'credito'
-                                            AND f.estado != 'Cancelada';";
-                    $stmt = $conn->prepare($sql_FacturasCredito);
-                    $stmt->bind_param("s", $_SESSION['numCaja']);
-                    $stmt->execute();
-                    $result_FacturasCredito = $stmt->get_result();
+                        // Obtener total de facturas a contado
+                        $sql_FacturasCredito = "SELECT
+                                                    f.numFactura AS noFac,
+                                                    DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                                                    CONCAT(c.nombre,' ',c.apellido) AS nombrec,
+                                                    fm.metodo,
+                                                    fm.monto
+                                                FROM
+                                                    facturas f
+                                                JOIN clientes c
+                                                ON 
+                                                    c.id = f.idCliente
+                                                JOIN facturas_metodopago fm
+                                                ON
+                                                    fm.numFactura = f.numFactura AND fm.noCaja = ?
+                                                WHERE
+                                                    f.tipoFactura = 'credito'
+                                                AND f.estado != 'Cancelada';";
+                        $stmt = $conn->prepare($sql_FacturasCredito);
+                        $stmt->bind_param("s", $_SESSION['numCaja']);
+                        $stmt->execute();
+                        $result_FacturasCredito = $stmt->get_result();
 
-                    // Variables para totales de facturas a contado
-                    $totalEfectivo = 0;
-                    $totalTransferencia = 0;
-                    $totalTarjeta = 0;
+                        // Variables para totales de facturas a contado
+                        $totalEfectivo = 0;
+                        $totalTransferencia = 0;
+                        $totalTarjeta = 0;
 
-                    // Variables para totales de facturas a credito
-                    $totalEfectivoCredito = 0;
-                    $totalTransferenciaCredito = 0;
-                    $totalTarjetaCredito = 0;
+                        // Variables para totales de facturas a credito
+                        $totalEfectivoCredito = 0;
+                        $totalTransferenciaCredito = 0;
+                        $totalTarjetaCredito = 0;
 
-                    // Obtener pagos de clientes
-                    $sql_pagos = "SELECT
-                                    ch.registro AS id, 
-                                    DATE_FORMAT(ch.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
-                                    CONCAT(c.nombre,' ',c.apellido) AS nombre,
-                                    ch.metodo AS metodo,
-                                    ch.monto AS monto
-                                FROM
-                                    clientes_historialpagos ch
-                                JOIN clientes c
-                                ON
-                                    c.id = ch.idCliente
-                                WHERE
-                                    ch.numCaja = ?;";
-                    $stmt = $conn->prepare($sql_pagos);
-                    $stmt->bind_param("s", $_SESSION['numCaja']);
-                    $stmt->execute();
-                    $result_pagos = $stmt->get_result();
-                    
-                    // Variables para totales de pagos
-                    $totalEfectivoPagos = 0;
-                    $totalTransferenciaPagos = 0;
-                    $totalTarjetaPagos = 0;
+                        // Obtener pagos de clientes
+                        $sql_pagos = "SELECT
+                                        ch.registro AS id, 
+                                        DATE_FORMAT(ch.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                                        CONCAT(c.nombre,' ',c.apellido) AS nombre,
+                                        ch.metodo AS metodo,
+                                        ch.monto AS monto
+                                    FROM
+                                        clientes_historialpagos ch
+                                    JOIN clientes c
+                                    ON
+                                        c.id = ch.idCliente
+                                    WHERE
+                                        ch.numCaja = ?;";
+                        $stmt = $conn->prepare($sql_pagos);
+                        $stmt->bind_param("s", $_SESSION['numCaja']);
+                        $stmt->execute();
+                        $result_pagos = $stmt->get_result();
+                        
+                        // Variables para totales de pagos
+                        $totalEfectivoPagos = 0;
+                        $totalTransferenciaPagos = 0;
+                        $totalTarjetaPagos = 0;
 
-                    ?>
+                        ?>
 
-                    <!-- tablas de resumen -->
-                    <div class="tables-summary">
-                        <div class="table-summary">
-                            <h2>Resumen de ingresos</h2>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th>Efectivo</th>
-                                        <th>Transferencia</th>
-                                        <th>Tarjeta</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Facturas</strong></td>
-                                        <td>$<?= number_format($row['Fefectivo']) ?></td>
-                                        <td>$<?= number_format($row['Ftransferencia']) ?></td>
-                                        <td>$<?= number_format($row['Ftarjeta']) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Pagos de Clientes</strong></td>
-                                        <td>$<?= number_format($row['CPefectivo']) ?></td>
-                                        <td>$<?= number_format($row['CPtransferencia']) ?></td>
-                                        <td>$<?= number_format($row['CPtarjeta']) ?></td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td>$<?= number_format($ItotalE) ?></td>
-                                        <td>$<?= number_format($ItotalT) ?></td>
-                                        <td>$<?= number_format($ItotalC) ?></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                        <!-- tablas de resumen -->
+                        <div class="tables-summary">
+                            <div class="table-summary">
+                                <h2>Resumen de ingresos</h2>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th>Efectivo</th>
+                                            <th>Transferencia</th>
+                                            <th>Tarjeta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Facturas</strong></td>
+                                            <td>$<?= number_format($row['Fefectivo']) ?></td>
+                                            <td>$<?= number_format($row['Ftransferencia']) ?></td>
+                                            <td>$<?= number_format($row['Ftarjeta']) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pagos de Clientes</strong></td>
+                                            <td>$<?= number_format($row['CPefectivo']) ?></td>
+                                            <td>$<?= number_format($row['CPtransferencia']) ?></td>
+                                            <td>$<?= number_format($row['CPtarjeta']) ?></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td>Total</td>
+                                            <td>$<?= number_format($ItotalE) ?></td>
+                                            <td>$<?= number_format($ItotalT) ?></td>
+                                            <td>$<?= number_format($ItotalC) ?></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
 
-                        <div class="table-contado">
-                            <h2>Facturas a Contado</h2>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Método</th>
-                                        <th>Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $totalEfectivo = 0;
-                                    $totalTransferencia = 0;
-                                    $totalTarjeta = 0;
-                                    
-                                    if ($result_FacturasContado->num_rows > 0) {
-                                        while ($row = $result_FacturasContado->fetch_assoc()) {
-                                            echo "<tr>
-                                                <td>{$row['noFac']}</td>
-                                                <td>{$row['fecha']}</td>
-                                                <td>{$row['nombrec']}</td>
-                                                <td>{$row['metodo']}</td>
-                                                <td>$" . number_format($row['monto']) . "</td>
-                                            </tr>";
+                            <div class="table-contado">
+                                <h2>Facturas a Contado</h2>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $totalEfectivo = 0;
+                                        $totalTransferencia = 0;
+                                        $totalTarjeta = 0;
+                                        
+                                        if ($result_FacturasContado->num_rows > 0) {
+                                            while ($row = $result_FacturasContado->fetch_assoc()) {
+                                                echo "<tr>
+                                                    <td>{$row['noFac']}</td>
+                                                    <td>{$row['fecha']}</td>
+                                                    <td>{$row['nombrec']}</td>
+                                                    <td>{$row['metodo']}</td>
+                                                    <td>$" . number_format($row['monto']) . "</td>
+                                                </tr>";
 
-                                            if($row['metodo'] == 'efectivo') {
-                                                $totalEfectivo += $row['monto'];
-                                            } elseif($row['metodo'] == 'transferencia') {
-                                                $totalTransferencia += $row['monto'];
-                                            } elseif($row['metodo'] == 'tarjeta') {
-                                                $totalTarjeta += $row['monto'];
+                                                if($row['metodo'] == 'efectivo') {
+                                                    $totalEfectivo += $row['monto'];
+                                                } elseif($row['metodo'] == 'transferencia') {
+                                                    $totalTransferencia += $row['monto'];
+                                                } elseif($row['metodo'] == 'tarjeta') {
+                                                    $totalTarjeta += $row['monto'];
+                                                }
                                             }
+                                        } else {
+                                            echo "<tr><td colspan='5'>No hay facturas a contado</td></tr>";
                                         }
-                                    } else {
-                                        echo "<tr><td colspan='5'>No hay facturas a contado</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                                <tfoot>  
-                                    <tr>
-                                        <td colspan="4">Total Efectivo</td>
-                                        <td>$<?= number_format($totalEfectivo) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">Total Transferencia</td>
-                                        <td>$<?= number_format($totalTransferencia) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">Total Tarjeta</td>
-                                        <td>$<?= number_format($totalTarjeta) ?></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                        ?>
+                                    </tbody>
+                                    <tfoot>  
+                                        <tr>
+                                            <td colspan="4">Total Efectivo</td>
+                                            <td>$<?= number_format($totalEfectivo) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Transferencia</td>
+                                            <td>$<?= number_format($totalTransferencia) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Tarjeta</td>
+                                            <td>$<?= number_format($totalTarjeta) ?></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
 
-                        <div class="table-credito">
-                            <h2>Facturas a Crédito</h2>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Método</th>
-                                        <th>Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $totalEfectivoCredito = 0;
-                                    $totalTransferenciaCredito = 0;
-                                    $totalTarjetaCredito = 0;
-                                    
-                                    if ($result_FacturasCredito->num_rows > 0) {
-                                        while ($row = $result_FacturasCredito->fetch_assoc()) {
-                                            echo "<tr>
-                                                <td>{$row['noFac']}</td>
-                                                <td>{$row['fecha']}</td>
-                                                <td>{$row['nombrec']}</td>
-                                                <td>{$row['metodo']}</td>
-                                                <td>$" . number_format($row['monto']) . "</td>
-                                            </tr>";
+                            <div class="table-credito">
+                                <h2>Facturas a Crédito</h2>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $totalEfectivoCredito = 0;
+                                        $totalTransferenciaCredito = 0;
+                                        $totalTarjetaCredito = 0;
+                                        
+                                        if ($result_FacturasCredito->num_rows > 0) {
+                                            while ($row = $result_FacturasCredito->fetch_assoc()) {
+                                                echo "<tr>
+                                                    <td>{$row['noFac']}</td>
+                                                    <td>{$row['fecha']}</td>
+                                                    <td>{$row['nombrec']}</td>
+                                                    <td>{$row['metodo']}</td>
+                                                    <td>$" . number_format($row['monto']) . "</td>
+                                                </tr>";
 
-                                            if($row['metodo'] == 'efectivo') {
-                                                $totalEfectivoCredito += $row['monto'];
-                                            } elseif ($row['metodo'] == 'transferencia') {
-                                                $totalTransferenciaCredito += $row['monto'];
-                                            } elseif ($row['metodo'] == 'tarjeta') {
-                                                $totalTarjetaCredito += $row['monto'];
+                                                if($row['metodo'] == 'efectivo') {
+                                                    $totalEfectivoCredito += $row['monto'];
+                                                } elseif ($row['metodo'] == 'transferencia') {
+                                                    $totalTransferenciaCredito += $row['monto'];
+                                                } elseif ($row['metodo'] == 'tarjeta') {
+                                                    $totalTarjetaCredito += $row['monto'];
+                                                }
                                             }
+                                        } else {
+                                            echo "<tr><td colspan='5'>No hay facturas a crédito</td></tr>";
                                         }
-                                    } else {
-                                        echo "<tr><td colspan='5'>No hay facturas a crédito</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="4">Total Efectivo</td>
-                                        <td>$<?= number_format($totalEfectivoCredito) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">Total Transferencia</td>
-                                        <td>$<?= number_format($totalTransferenciaCredito) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">Total Tarjeta</td>
-                                        <td>$<?= number_format($totalTarjetaCredito) ?></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                        ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4">Total Efectivo</td>
+                                            <td>$<?= number_format($totalEfectivoCredito) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Transferencia</td>
+                                            <td>$<?= number_format($totalTransferenciaCredito) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Tarjeta</td>
+                                            <td>$<?= number_format($totalTarjetaCredito) ?></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
 
-                        <div class="table-pagos">
-                            <h2>Pagos de Clientes</h2>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>No.</th>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Método</th>
-                                        <th>Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $totalEfectivoPagos = 0;
-                                    $totalTransferenciaPagos = 0;
-                                    $totalTarjetaPagos = 0;
-                                    
-                                    if ($result_pagos->num_rows > 0) {
-                                        while ($row = $result_pagos->fetch_assoc()) {
-                                            echo "<tr>
-                                                <td>{$row['id']}</td>
-                                                <td>{$row['fecha']}</td>
-                                                <td>{$row['nombre']}</td>
-                                                <td>{$row['metodo']}</td>
-                                                <td>$" . number_format($row['monto']) . "</td>
-                                            </tr>";
+                            <div class="table-pagos">
+                                <h2>Pagos de Clientes</h2>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $totalEfectivoPagos = 0;
+                                        $totalTransferenciaPagos = 0;
+                                        $totalTarjetaPagos = 0;
+                                        
+                                        if ($result_pagos->num_rows > 0) {
+                                            while ($row = $result_pagos->fetch_assoc()) {
+                                                echo "<tr>
+                                                    <td>{$row['id']}</td>
+                                                    <td>{$row['fecha']}</td>
+                                                    <td>{$row['nombre']}</td>
+                                                    <td>{$row['metodo']}</td>
+                                                    <td>$" . number_format($row['monto']) . "</td>
+                                                </tr>";
 
-                                            if($row['metodo'] == 'efectivo') {
-                                                $totalEfectivoPagos += $row['monto'];
-                                            } elseif ($row['metodo'] == 'transferencia') {
-                                                $totalTransferenciaPagos += $row['monto'];
-                                            } elseif ($row['metodo'] == 'tarjeta') {
-                                                $totalTarjetaPagos += $row['monto'];
+                                                if($row['metodo'] == 'efectivo') {
+                                                    $totalEfectivoPagos += $row['monto'];
+                                                } elseif ($row['metodo'] == 'transferencia') {
+                                                    $totalTransferenciaPagos += $row['monto'];
+                                                } elseif ($row['metodo'] == 'tarjeta') {
+                                                    $totalTarjetaPagos += $row['monto'];
+                                                }
                                             }
+                                        } else {
+                                            echo "<tr><td colspan='5'>No hay pagos de clientes</td></tr>";
                                         }
-                                    } else {
-                                        echo "<tr><td colspan='5'>No hay pagos de clientes</td></tr>";
-                                    }
-                                    ?>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="4">Total Efectivo</td>
-                                        <td>$<?= number_format($totalEfectivoPagos) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">Total Transferencia</td>
-                                        <td>$<?= number_format($totalTransferenciaPagos) ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">Total Tarjeta</td>
-                                        <td>$<?= number_format($totalTarjetaPagos) ?></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <?php 
-
-                    // Cambiar a 1 == 1 para mostrar la seccion de ingresos y egresos manuales
-                    if(1 == 0): 
-
-                    ?>
-
-                    <!-- Grid para ingresos y egresos -->
-                    <div class="grid">
-                        <!-- Panel para registrar ingresos -->
-                        <div class="panel">
-                            <h2>Registrar Ingreso</h2>
-                            <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-                                <label for="monto_ingreso">Monto:</label>
-                                <input type="number" id="monto_ingreso" name="monto_ingreso" step="0.01" min="1" required>
-                                
-                                <label for="metodo_ingreso">Método de pago:</label>
-                                <select id="metodo_ingreso" name="metodo_ingreso" required>
-                                    <option value="efectivo">Efectivo</option>
-                                    <option value="tarjeta">Tarjeta</option>
-                                    <option value="transferencia">Transferencia</option>
-                                </select>
-
-                                <label for="razon_ingreso">Razón:</label>
-                                <input type="text" id="razon_ingreso" name="razon_ingreso" required>
-                                
-                                <input type="hidden" name="num_caja" value="<?php echo $_SESSION['numCaja']; ?>">
-                                <button type="submit" name="registrar_ingreso">Registrar Ingreso</button>
-                            </form>
+                                        ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4">Total Efectivo</td>
+                                            <td>$<?= number_format($totalEfectivoPagos) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Transferencia</td>
+                                            <td>$<?= number_format($totalTransferenciaPagos) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Tarjeta</td>
+                                            <td>$<?= number_format($totalTarjetaPagos) ?></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                         
-                        <!-- Panel para registrar egresos -->
-                        <div class="panel">
-                            <h2>Registrar Egreso</h2>
-                            <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-                                <label for="monto_egreso">Monto:</label>
-                                <input type="number" id="monto_egreso" name="monto_egreso" step="0.01" min="1" required>
+                        <?php 
 
-                                <label for="metodo_egreso">Método de pago:</label>
-                                <select id="metodo_egreso" name="metodo_egreso" required>
-                                    <option value="efectivo">Efectivo</option>
-                                    <option value="tarjeta">Tarjeta</option>
-                                    <option value="transferencia">Transferencia</option>
-                                </select>
-                                
-                                <label for="razon_egreso">Razón:</label>
-                                <input type="text" id="razon_egreso" name="razon_egreso" required>
-                                
-                                <input type="hidden" name="num_caja" value="<?php echo $datos_caja['numCaja']; ?>">
-                                <button type="submit" name="registrar_egreso">Registrar Egreso</button>
-                            </form>
+                        // Cambiar a 1 == 1 para mostrar la seccion de ingresos y egresos manuales
+                        if(1 == 0): 
+
+                        ?>
+
+                        <!-- Grid para ingresos y egresos -->
+                        <div class="grid">
+                            <!-- Panel para registrar ingresos -->
+                            <div class="panel">
+                                <h2>Registrar Ingreso</h2>
+                                <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+                                    <label for="monto_ingreso">Monto:</label>
+                                    <input type="number" id="monto_ingreso" name="monto_ingreso" step="0.01" min="1" required>
+                                    
+                                    <label for="metodo_ingreso">Método de pago:</label>
+                                    <select id="metodo_ingreso" name="metodo_ingreso" required>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta</option>
+                                        <option value="transferencia">Transferencia</option>
+                                    </select>
+
+                                    <label for="razon_ingreso">Razón:</label>
+                                    <input type="text" id="razon_ingreso" name="razon_ingreso" required>
+                                    
+                                    <input type="hidden" name="num_caja" value="<?php echo $_SESSION['numCaja']; ?>">
+                                    <button type="submit" name="registrar_ingreso">Registrar Ingreso</button>
+                                </form>
+                            </div>
+                            
+                            <!-- Panel para registrar egresos -->
+                            <div class="panel">
+                                <h2>Registrar Egreso</h2>
+                                <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+                                    <label for="monto_egreso">Monto:</label>
+                                    <input type="number" id="monto_egreso" name="monto_egreso" step="0.01" min="1" required>
+
+                                    <label for="metodo_egreso">Método de pago:</label>
+                                    <select id="metodo_egreso" name="metodo_egreso" required>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta</option>
+                                        <option value="transferencia">Transferencia</option>
+                                    </select>
+                                    
+                                    <label for="razon_egreso">Razón:</label>
+                                    <input type="text" id="razon_egreso" name="razon_egreso" required>
+                                    
+                                    <input type="hidden" name="num_caja" value="<?php echo $datos_caja['numCaja']; ?>">
+                                    <button type="submit" name="registrar_egreso">Registrar Egreso</button>
+                                </form>
+                            </div>
                         </div>
-                    </div>
+
+                        <?php endif; ?>
 
                     <?php endif; ?>
 

@@ -115,7 +115,7 @@ $sql = "SELECT
         FROM cajascerradas cc
         LEFT JOIN empleados e ON cc.idEmpleado = e.id
         $where
-        ORDER BY cc.fechaApertura DESC
+        ORDER BY cc.fechaCierre DESC
         LIMIT ?, ?";
 
 // Preparar y ejecutar consulta principal
