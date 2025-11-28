@@ -30,7 +30,7 @@
                         <!-- Precio de compra -->
                         <div class="form-group">
                             <label for="precioCompra">Precio Compra:</label>
-                            <input type="number" id="precioCompra" name="precioCompra" min="0" step="0.01" class="modal-input" required>
+                            <input type="number" id="precioCompra" name="precioCompra" min="0" step="0.01" class="modal-input" readonly style="cursor: not-allowed !important;">
                         </div>
 
                         <!-- Precio Venta 1 -->

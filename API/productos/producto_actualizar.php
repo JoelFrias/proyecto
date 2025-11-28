@@ -58,13 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->begin_transaction();
 
         // Actualizar la tabla 'productos'
-        $stmt = $conn->prepare("UPDATE productos SET descripcion = ?, precioCompra = ?, precioVenta1 = ?, precioVenta2 = ?, reorden = ?, activo = ?, idTipo = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE productos SET descripcion = ?, precioVenta1 = ?, precioVenta2 = ?, reorden = ?, activo = ?, idTipo = ? WHERE id = ?");
 
         if (!$stmt) {
             throw new Exception("Error al preparar la consulta: " . $conn->error);
         }
 
-        $stmt->bind_param("sddddiii", $descripcion, $precioCompra, $precioVenta1, $precioVenta2, $reorden, $activo, $tipo, $idProducto);
+        $stmt->bind_param("sdddiii", $descripcion, $precioVenta1, $precioVenta2, $reorden, $activo, $tipo, $idProducto);
         if (!$stmt->execute()) {
             throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
         }

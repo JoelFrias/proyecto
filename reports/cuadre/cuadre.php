@@ -1,303 +1,381 @@
 <?php
-require('../../libs/fpdf/fpdf.php');
+require_once '../../core/verificar-sesion.php';
+require_once '../../core/conexion.php';
+require_once '../../libs/fpdf/fpdf.php';
 
-class CajaReporte extends FPDF {
-    // Page header
-    function Header() {
-        // Logo (if available)
-        // $this->Image('logo.png', 10, 6, 30);
+$numCaja = '';
+if (isset($_GET['numCaja'])) {
+    if (preg_match('/^[a-zA-Z0-9]{5}$/', $_GET['numCaja'])) {
+        $numCaja = $_GET['numCaja'];
+    } else {
+        die("Formato de número de caja inválido");
+    }
+}
+
+// Obtener información de la caja
+$sql_caja = "SELECT
+                ce.numCaja AS numCaja, e.id AS idEmpleado,
+                CONCAT(e.nombre,' ',e.apellido) AS nombreEmpleado,
+                DATE_FORMAT(ce.fechaApertura, '%d/%m/%Y %l:%i %p') AS fechaApertura,
+                DATE_FORMAT(ce.fechaCierre, '%d/%m/%Y %l:%i %p') AS fechaCierre,
+                ce.saldoInicial AS saldoInicial, ce.saldoFinal AS saldoFinal,
+                ce.diferencia AS diferencia, ce.estado AS estado
+            FROM cajascerradas ce
+            JOIN empleados e ON e.id = ce.idEmpleado
+            WHERE ce.numCaja = ?;";
+$stmt = $conn->prepare($sql_caja);
+$stmt->bind_param("s", $numCaja);
+$stmt->execute();
+$result_caja = $stmt->get_result();
+if ($result_caja->num_rows > 0) {
+    $row_caja = $result_caja->fetch_assoc();
+} else {
+    die("No se encontró información para la caja especificada.");
+}
+
+// Obtener información de estado detalle
+$row_estado_detalle = null;
+$estado_lower = strtolower($row_caja['estado']);
+if ($estado_lower === 'cerrada' || $estado_lower === 'cancelada') {
+    $sql_estado_detalle = "SELECT
+                            CONCAT(e.nombre, ' ', e.apellido) AS nombreEmpleadoAccion,
+                            ced.nota AS notasAccion,
+                            DATE_FORMAT(ced.fecha, '%d/%m/%Y %l:%i %p') AS fechaAccion
+                        FROM caja_estado_detalle AS ced
+                        LEFT JOIN empleados AS e ON e.id = ced.id_empleado
+                        WHERE ced.numCaja = ?
+                        ORDER BY ced.fecha DESC LIMIT 1;";
+    $stmt_detalle = $conn->prepare($sql_estado_detalle);
+    $stmt_detalle->bind_param("s", $numCaja);
+    $stmt_detalle->execute();
+    $result_detalle = $stmt_detalle->get_result();
+    if ($result_detalle->num_rows > 0) {
+        $row_estado_detalle = $result_detalle->fetch_assoc();
+    }
+}
+
+// Obtener resumen de ingresos
+$sql_ingresos = "WITH
+                    fm AS (
+                        SELECT metodo, monto FROM facturas_metodopago JOIN facturas ON facturas.numFactura = facturas_metodopago.numFactura WHERE facturas_metodopago.noCaja = ? AND facturas.estado != 'Cancelada'
+                    ),
+                    ch AS (
+                        SELECT metodo, monto FROM clientes_historialpagos WHERE numCaja = ?
+                    )
+                    SELECT
+                        COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'efectivo'), 0) AS Fefectivo,
+                        COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'transferencia'), 0) AS Ftransferencia,
+                        COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'tarjeta'), 0) AS Ftarjeta,
+                        COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'efectivo'), 0) AS CPefectivo,
+                        COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'transferencia'), 0) AS CPtransferencia,
+                        COALESCE((SELECT SUM(monto) FROM ch WHERE metodo = 'tarjeta'), 0) AS CPtarjeta;";
+$stmt = $conn->prepare($sql_ingresos);
+$stmt->bind_param("ss", $numCaja, $numCaja);
+$stmt->execute();
+$result_ingresos = $stmt->get_result();
+$row_ingresos = $result_ingresos->fetch_assoc();
+
+$ItotalE = $row_ingresos['Fefectivo'] + $row_ingresos['CPefectivo'];
+$ItotalT = $row_ingresos['Ftransferencia'] + $row_ingresos['CPtransferencia'];
+$ItotalC = $row_ingresos['Ftarjeta'] + $row_ingresos['CPtarjeta'];
+
+// Obtener facturas a contado
+$sql_FacturasContado = "SELECT f.numFactura AS noFac, DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                            CONCAT(c.nombre,' ',c.apellido) AS nombrec, fm.metodo, fm.monto
+                        FROM facturas f
+                        JOIN clientes c ON c.id = f.idCliente
+                        JOIN facturas_metodopago fm ON fm.numFactura = f.numFactura AND fm.noCaja = ?
+                        WHERE f.tipoFactura = 'contado' AND f.estado != 'Cancelada';";
+$stmt = $conn->prepare($sql_FacturasContado);
+$stmt->bind_param("s", $numCaja);
+$stmt->execute();
+$result_FacturasContado = $stmt->get_result();
+
+// Obtener facturas a crédito
+$sql_FacturasCredito = "SELECT f.numFactura AS noFac, DATE_FORMAT(f.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                            CONCAT(c.nombre,' ',c.apellido) AS nombrec, fm.metodo, fm.monto
+                        FROM facturas f
+                        JOIN clientes c ON c.id = f.idCliente
+                        JOIN facturas_metodopago fm ON fm.numFactura = f.numFactura AND fm.noCaja = ?
+                        WHERE f.tipoFactura = 'credito' AND f.estado != 'Cancelada';";
+$stmt = $conn->prepare($sql_FacturasCredito);
+$stmt->bind_param("s", $numCaja);
+$stmt->execute();
+$result_FacturasCredito = $stmt->get_result();
+
+// Obtener pagos de clientes
+$sql_pagos = "SELECT ch.registro AS id, DATE_FORMAT(ch.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                CONCAT(c.nombre,' ',c.apellido) AS nombre, ch.metodo AS metodo, ch.monto AS monto
+            FROM clientes_historialpagos ch
+            JOIN clientes c ON c.id = ch.idCliente
+            WHERE ch.numCaja = ?;";
+$stmt = $conn->prepare($sql_pagos);
+$stmt->bind_param("s", $numCaja);
+$stmt->execute();
+$result_pagos = $stmt->get_result();
+
+// Crear PDF
+class PDF extends FPDF
+{
+    private $empresa = 'EasyPOS';
+    private $numCaja;
+    private $estado;
+    
+    function SetCajaInfo($numCaja, $estado) {
+        $this->numCaja = $numCaja;
+        $this->estado = $estado;
+    }
+    
+    function Header()
+    {
+        // Logo (ajusta la ruta según tu estructura)
+        // $this->Image('../../assets/img/logo.png', 10, 6, 30);
         
-        // Company name
+        // Título
         $this->SetFont('Arial', 'B', 16);
-        $this->Cell(0, 10, 'EasyPOS', 0, 1, 'L');
+        $this->Cell(0, 10, $this->empresa, 0, 1, 'C');
+        $this->SetFont('Arial', '', 10);
+        $this->Cell(0, 5, 'Reporte de Cuadre de Caja', 0, 1, 'C');
+        $this->Cell(0, 5, 'Caja #' . $this->numCaja . ' - Estado: ' . strtoupper($this->estado), 0, 1, 'C');
+        $this->Ln(5);
         
-        // Title
-        $this->SetFont('Arial', 'B', 14);
-        $this->Cell(0, 10, 'Detalles de Cuadre', 0, 1, 'C');
-        
-        // Line break
+        // Línea
+        $this->SetDrawColor(200, 200, 200);
+        $this->Line(10, $this->GetY(), 200, $this->GetY());
         $this->Ln(5);
     }
-
-    // Page footer
-    function Footer() {
-        // Position at 1.5 cm from bottom
+    
+    function Footer()
+    {
         $this->SetY(-15);
-        // Arial italic 8
         $this->SetFont('Arial', 'I', 8);
-        // Page number
-        $this->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'Página ') . $this->PageNo() . '/{nb}', 0, 0, 'C');
+        $this->SetTextColor(128, 128, 128);
+        $this->Cell(0, 10, 'Pagina ' . $this->PageNo() . ' - Generado el ' . date('d/m/Y H:i:s'), 0, 0, 'C');
+    }
+    
+    function SectionTitle($title)
+    {
+        $this->SetFont('Arial', 'B', 12);
+        $this->SetFillColor(44, 62, 80);
+        $this->SetTextColor(255, 255, 255);
+        $this->Cell(0, 8, $title, 0, 1, 'L', true);
+        $this->SetTextColor(0, 0, 0);
+        $this->Ln(3);
+    }
+    
+    function InfoBox($label, $value, $width = 95)
+    {
+        $this->SetFont('Arial', 'B', 9);
+        $this->Cell($width, 6, $label . ':', 0, 0);
+        $this->SetFont('Arial', '', 9);
+        $this->Cell(0, 6, $value, 0, 1);
+    }
+    
+    function TableHeader($headers, $widths)
+    {
+        $this->SetFont('Arial', 'B', 9);
+        $this->SetFillColor(241, 242, 246);
+        $this->SetTextColor(44, 62, 80);
+        foreach ($headers as $i => $header) {
+            $this->Cell($widths[$i], 7, $header, 1, 0, 'C', true);
+        }
+        $this->Ln();
+        $this->SetTextColor(0, 0, 0);
+    }
+    
+    function TableRow($data, $widths, $aligns = [])
+    {
+        $this->SetFont('Arial', '', 8);
+        foreach ($data as $i => $item) {
+            $align = isset($aligns[$i]) ? $aligns[$i] : 'L';
+            $this->Cell($widths[$i], 6, $item, 1, 0, $align);
+        }
+        $this->Ln();
+    }
+    
+    function TableFooter($label, $value, $widths, $colspan)
+    {
+        $this->SetFont('Arial', 'B', 9);
+        $this->SetFillColor(241, 242, 246);
+        $totalWidth = 0;
+        for ($i = 0; $i < $colspan - 1; $i++) {
+            $totalWidth += $widths[$i];
+        }
+        $this->Cell($totalWidth, 6, $label, 1, 0, 'R', true);
+        $this->Cell($widths[$colspan - 1], 6, $value, 1, 1, 'R', true);
     }
 }
 
-// Database connection
-require ('../../core/conexion.php');
-
-// Ensure database connection is UTF-8
-if (method_exists($conn, 'set_charset')) {
-    $conn->set_charset("utf8");
-}
-
-// Get cash register information
-function obtenerInfoCaja($conn, $numCaja) {
-    $cajaInfo = [];
-    
-    // Get basic cash register info
-    $sql = "SELECT
-                c.numCaja,
-                c.fechaApertura,
-                c.fechaCierre,
-                c.saldoInicial,
-                c.saldoFinal,
-                c.idEmpleado AS empleadoID,
-                c.diferencia,
-                CONCAT(e.nombre,' ',e.apellido) AS nombreEmpleado
-            FROM
-                cajascerradas c
-            JOIN empleados e ON
-                c.idEmpleado = e.id
-            WHERE 
-                c.numCaja = ?";
-                
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $numCaja);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        $cajaInfo = $result->fetch_assoc();
-    } else {
-        die("No se encontró información para la caja #" . $numCaja);
-    }
-    
-    // Get totals
-    $sqlIngresos = "SELECT
-                        SUM(monto) AS totalIngresos
-                    FROM
-                        cajaingresos
-                    WHERE
-                        numCaja = ?";
-    $stmtIngresos = $conn->prepare($sqlIngresos);
-    $stmtIngresos->bind_param("s", $numCaja);
-    $stmtIngresos->execute();
-    $resultIngresos = $stmtIngresos->get_result();
-    $rowIngresos = $resultIngresos->fetch_assoc();
-    $cajaInfo['totalIngresos'] = $rowIngresos['totalIngresos'] ?: 0;
-    
-    $sqlEgresos = "SELECT
-                        SUM(monto) AS totalEgresos
-                    FROM
-                        cajaegresos
-                    WHERE
-                        numCaja = ?";
-    $stmtEgresos = $conn->prepare($sqlEgresos);
-    $stmtEgresos->bind_param("s", $numCaja);
-    $stmtEgresos->execute();
-    $resultEgresos = $stmtEgresos->get_result();
-    $rowEgresos = $resultEgresos->fetch_assoc();
-    $cajaInfo['totalEgresos'] = $rowEgresos['totalEgresos'] ?: 0;
-    
-    return $cajaInfo;
-}
-
-// Get income details
-function obtenerIngresos($conn, $numCaja) {
-    $ingresos = [];
-    
-    $sql = "SELECT
-                c.monto,
-                c.metodo,
-                c.razon AS descripcion,
-                DATE_FORMAT(c.fecha, '%d/%m/%Y %l:%i %p') AS fecha
-            FROM
-                cajaingresos c
-            WHERE
-                numCaja = ?
-            ORDER BY
-                fecha ASC";
-                
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $numCaja);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    while ($row = $result->fetch_assoc()) {
-        $ingresos[] = $row;
-    }
-    
-    return $ingresos;
-}
-
-// Get expense details
-function obtenerEgresos($conn, $numCaja) {
-    $egresos = [];
-    
-    $sql = "SELECT
-                c.monto,
-                c.metodo,
-                c.razon AS descripcion,
-                DATE_FORMAT(c.fecha, '%d/%m/%Y %l:%i %p') AS fecha
-            FROM
-                cajaegresos c
-            WHERE
-                numCaja = ?
-            ORDER BY
-                fecha ASC";
-                
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $numCaja);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    while ($row = $result->fetch_assoc()) {
-        $egresos[] = $row;
-    }
-    
-    return $egresos;
-}
-
-// Get the cash register number from URL parameter
-$numCaja = isset($_GET['numCaja']) ? $_GET['numCaja'] : '';
-
-if (empty($numCaja)) {
-    die("Número de caja no especificado");
-}
-
-// Get data
-$cajaInfo = obtenerInfoCaja($conn, $numCaja);
-$ingresos = obtenerIngresos($conn, $numCaja);
-$egresos = obtenerEgresos($conn, $numCaja);
-
-// Close connection
-$conn->close();
-
-// Format values for display
-$fechaActual = date('d/m/Y H:i:s');
-$numIngresos = count($ingresos);
-$numEgresos = count($egresos);
-
-// Create new PDF document
-$pdf = new CajaReporte('P', 'mm', 'Letter');
-
-// Set document information
-$pdf->SetTitle('Reporte de Caja #' . $numCaja);
-$pdf->SetAuthor('Sistema EasyPOS');
-$pdf->SetCreator('FPDF');
-
-// Set default monospaced font
-$pdf->SetFont('Arial', '', 10);
-
-// Add a page
+$pdf = new PDF();
+$pdf->SetCajaInfo($numCaja, $row_caja['estado']);
 $pdf->AddPage();
-$pdf->AliasNbPages();
-
-// --------- Header information ---------
-// Cash register number
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Caja: ' . $numCaja, 0, 1, 'R');
-
-// Current date and employee
 $pdf->SetFont('Arial', '', 10);
-$pdf->Cell(0, 6, 'Fecha Actual: ' . $fechaActual, 0, 1, 'R');
-$pdf->Cell(0, 6, 'Empleado: ' . iconv('UTF-8', 'ISO-8859-1', $cajaInfo['nombreEmpleado']), 0, 1, 'R');
-$pdf->Ln(5);
 
-// --------- Cash register information ---------
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1', 'Información de Caja'), 0, 1, 'L');
+// Información General
+$pdf->SectionTitle('INFORMACION GENERAL');
+$pdf->InfoBox('Numero de Caja', $row_caja['numCaja']);
+$pdf->InfoBox('ID Empleado', $row_caja['idEmpleado']);
+$pdf->InfoBox('Empleado', $row_caja['nombreEmpleado']);
+$pdf->InfoBox('Fecha de Apertura', $row_caja['fechaApertura']);
+$pdf->InfoBox('Fecha de Cierre', $row_caja['fechaCierre']);
+$pdf->Ln(3);
 
-$pdf->SetFont('Arial', '', 10);
-// Opening and closing dates
-$pdf->Cell(90, 8, 'Fecha Apertura: ' . date('d/m/Y h:i A', strtotime($cajaInfo['fechaApertura'])), 0, 0);
-$pdf->Cell(90, 8, 'Fecha Cierre: ' . date('d/m/Y h:i A', strtotime($cajaInfo['fechaCierre'])), 0, 1);
-
-// Initial and final balance
-$pdf->Cell(90, 8, 'Saldo Inicial: $' . number_format($cajaInfo['saldoInicial'], 2), 0, 0);
-$pdf->Cell(90, 8, 'Saldo Final: $' . number_format($cajaInfo['saldoFinal'], 2), 0, 1);
-$pdf->Ln(5);
-
-// --------- Financial summary ---------
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Resumen Financiero', 0, 1, 'L');
-
-$pdf->SetFont('Arial', '', 10);
-// Total income and expenses
-$pdf->Cell(90, 8, 'Total Ingresos: $' . number_format($cajaInfo['totalIngresos'], 2), 0, 0);
-$pdf->Cell(90, 8, 'Total Egresos: $' . number_format($cajaInfo['totalEgresos'], 2), 0, 1);
-
-// Difference
-$pdf->SetFont('Arial', 'B', 10);
-$diferencia = $cajaInfo['diferencia'];
-$diferenciaTexto = '$' . number_format(abs($diferencia), 2);
-if ($diferencia < 0) {
-    $diferenciaTexto = '-' . $diferenciaTexto . ' (En contra)';
-} else {
-    $diferenciaTexto = '+' . $diferenciaTexto . ' (A favor)';
+// Información de Cierre/Cancelación si existe
+if ($row_estado_detalle) {
+    $titulo_estado = ($estado_lower === 'cerrada') ? 'INFORMACION DE CIERRE' : 'INFORMACION DE CANCELACION';
+    $pdf->SectionTitle($titulo_estado);
+    $pdf->InfoBox(($estado_lower === 'cerrada') ? 'Cerrado por' : 'Cancelado por', 
+                  $row_estado_detalle['nombreEmpleadoAccion'] ?? 'No disponible');
+    $pdf->InfoBox('Fecha de ' . $estado_lower, 
+                  $row_estado_detalle['fechaAccion'] ?? 'No disponible');
+    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->Cell(0, 6, 'Nota / Observacion:', 0, 1);
+    $pdf->SetFont('Arial', '', 8);
+    $pdf->MultiCell(0, 5, $row_estado_detalle['notasAccion'] ?? 'Sin notas');
+    $pdf->Ln(3);
 }
-$pdf->Cell(0, 8, 'Diferencia: ' . $diferenciaTexto, 0, 1, 'R');
+
+// Resumen de Saldos
+$pdf->SectionTitle('RESUMEN DE SALDOS');
+$pdf->SetFont('Arial', 'B', 10);
+$colorPositive = ($row_caja['saldoInicial'] >= 0) ? [39, 174, 96] : [231, 76, 60];
+$pdf->SetTextColor($colorPositive[0], $colorPositive[1], $colorPositive[2]);
+$pdf->Cell(63, 8, 'Saldo Inicial: $' . number_format($row_caja['saldoInicial'], 2), 1, 0, 'C');
+$pdf->SetTextColor(0, 0, 0);
+
+$colorFinal = ($row_caja['saldoFinal'] >= 0) ? [39, 174, 96] : [231, 76, 60];
+$pdf->SetTextColor($colorFinal[0], $colorFinal[1], $colorFinal[2]);
+$pdf->Cell(63, 8, 'Saldo Final: $' . number_format($row_caja['saldoFinal'], 2), 1, 0, 'C');
+$pdf->SetTextColor(0, 0, 0);
+
+$colorDif = ($row_caja['diferencia'] >= 0) ? [39, 174, 96] : [231, 76, 60];
+$pdf->SetTextColor($colorDif[0], $colorDif[1], $colorDif[2]);
+$pdf->Cell(64, 8, 'Diferencia: $' . number_format($row_caja['diferencia'], 2), 1, 1, 'C');
+$pdf->SetTextColor(0, 0, 0);
 $pdf->Ln(5);
 
-// --------- Income details ---------
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Ingresos (' . $numIngresos . ' registros)', 0, 1, 'L');
+// Resumen de Ingresos
+$pdf->SectionTitle('RESUMEN DE INGRESOS');
+$widths_ingresos = [70, 40, 40, 40];
+$pdf->TableHeader(['Descripcion', 'Efectivo', 'Transferencia', 'Tarjeta'], $widths_ingresos);
+$pdf->TableRow(['Facturas', '$'.number_format($row_ingresos['Fefectivo'], 2), 
+                '$'.number_format($row_ingresos['Ftransferencia'], 2), 
+                '$'.number_format($row_ingresos['Ftarjeta'], 2)], $widths_ingresos, ['L','R','R','R']);
+$pdf->TableRow(['Pagos de Clientes', '$'.number_format($row_ingresos['CPefectivo'], 2), 
+                '$'.number_format($row_ingresos['CPtransferencia'], 2), 
+                '$'.number_format($row_ingresos['CPtarjeta'], 2)], $widths_ingresos, ['L','R','R','R']);
+$pdf->SetFont('Arial', 'B', 9);
+$pdf->SetFillColor(241, 242, 246);
+$pdf->Cell($widths_ingresos[0], 6, 'TOTAL', 1, 0, 'R', true);
+$pdf->Cell($widths_ingresos[1], 6, '$'.number_format($ItotalE, 2), 1, 0, 'R', true);
+$pdf->Cell($widths_ingresos[2], 6, '$'.number_format($ItotalT, 2), 1, 0, 'R', true);
+$pdf->Cell($widths_ingresos[3], 6, '$'.number_format($ItotalC, 2), 1, 1, 'R', true);
+$pdf->Ln(5);
 
-// Table header
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->SetFillColor(230, 230, 230);
-$pdf->Cell(40, 8, 'Monto', 1, 0, 'C', true);
-$pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', 'Método'), 1, 0, 'C', true);
-$pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', 'Descripción'), 1, 0, 'C', true);
-$pdf->Cell(50, 8, 'Fecha', 1, 1, 'C', true);
+// Facturas a Contado
+$pdf->SectionTitle('FACTURAS A CONTADO');
+$widths_facturas = [25, 40, 60, 30, 35];
+$pdf->TableHeader(['No. Factura', 'Fecha', 'Cliente', 'Metodo', 'Monto'], $widths_facturas);
 
-// Table data
-$pdf->SetFont('Arial', '', 10);
-if ($numIngresos > 0) {
-    foreach ($ingresos as $ingreso) {
-        $pdf->Cell(40, 8, '$' . number_format($ingreso['monto'], 2), 1, 0, 'R');
-        $pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', $ingreso['metodo']), 1, 0, 'L');
-        $pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', $ingreso['descripcion']), 1, 0, 'L');
-        $pdf->Cell(50, 8, $ingreso['fecha'], 1, 1, 'L');
+$totalEfectivo = 0; $totalTransferencia = 0; $totalTarjeta = 0;
+if ($result_FacturasContado->num_rows > 0) {
+    while ($row = $result_FacturasContado->fetch_assoc()) {
+        $pdf->TableRow([
+            $row['noFac'],
+            $row['fecha'],
+            substr($row['nombrec'], 0, 25),
+            ucfirst($row['metodo']),
+            '$'.number_format($row['monto'], 2)
+        ], $widths_facturas, ['C','L','L','C','R']);
+        
+        if($row['metodo'] == 'efectivo') $totalEfectivo += $row['monto'];
+        elseif($row['metodo'] == 'transferencia') $totalTransferencia += $row['monto'];
+        elseif($row['metodo'] == 'tarjeta') $totalTarjeta += $row['monto'];
     }
+    $pdf->TableFooter('Total Efectivo:', '$'.number_format($totalEfectivo, 2), $widths_facturas, 5);
+    $pdf->TableFooter('Total Transferencia:', '$'.number_format($totalTransferencia, 2), $widths_facturas, 5);
+    $pdf->TableFooter('Total Tarjeta:', '$'.number_format($totalTarjeta, 2), $widths_facturas, 5);
 } else {
-    $pdf->SetFont('Arial', 'I', 10);
-    $pdf->Cell(190, 8, 'No hay registros de ingresos', 1, 1, 'C');
+    $pdf->SetFont('Arial', 'I', 9);
+    $pdf->Cell(array_sum($widths_facturas), 6, 'No hay facturas a contado', 1, 1, 'C');
 }
 $pdf->Ln(5);
 
-// --------- Expense details ---------
-$pdf->SetFont('Arial', 'B', 12);
-$pdf->Cell(0, 10, 'Egresos (' . $numEgresos . ' registros)', 0, 1, 'L');
+// Facturas a Crédito
+$pdf->SectionTitle('FACTURAS A CREDITO');
+$pdf->TableHeader(['No. Factura', 'Fecha', 'Cliente', 'Metodo', 'Monto'], $widths_facturas);
 
-// Table header
-$pdf->SetFont('Arial', 'B', 10);
-$pdf->SetFillColor(230, 230, 230);
-$pdf->Cell(40, 8, 'Monto', 1, 0, 'C', true);
-$pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', 'Método'), 1, 0, 'C', true);
-$pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', 'Descripción'), 1, 0, 'C', true);
-$pdf->Cell(50, 8, 'Fecha', 1, 1, 'C', true);
-
-// Table data
-$pdf->SetFont('Arial', '', 10);
-if ($numEgresos > 0) {
-    foreach ($egresos as $egreso) {
-        $pdf->Cell(40, 8, '$' . number_format($egreso['monto'], 2), 1, 0, 'R');
-        $pdf->Cell(40, 8, iconv('UTF-8', 'ISO-8859-1', $egreso['metodo']), 1, 0, 'L');
-        $pdf->Cell(60, 8, iconv('UTF-8', 'ISO-8859-1', $egreso['descripcion']), 1, 0, 'L');
-        $pdf->Cell(50, 8, $egreso['fecha'], 1, 1, 'L');
+$totalEfectivoCredito = 0; $totalTransferenciaCredito = 0; $totalTarjetaCredito = 0;
+if ($result_FacturasCredito->num_rows > 0) {
+    while ($row = $result_FacturasCredito->fetch_assoc()) {
+        $pdf->TableRow([
+            $row['noFac'],
+            $row['fecha'],
+            substr($row['nombrec'], 0, 25),
+            ucfirst($row['metodo']),
+            '$'.number_format($row['monto'], 2)
+        ], $widths_facturas, ['C','L','L','C','R']);
+        
+        if($row['metodo'] == 'efectivo') $totalEfectivoCredito += $row['monto'];
+        elseif($row['metodo'] == 'transferencia') $totalTransferenciaCredito += $row['monto'];
+        elseif($row['metodo'] == 'tarjeta') $totalTarjetaCredito += $row['monto'];
     }
+    $pdf->TableFooter('Total Efectivo:', '$'.number_format($totalEfectivoCredito, 2), $widths_facturas, 5);
+    $pdf->TableFooter('Total Transferencia:', '$'.number_format($totalTransferenciaCredito, 2), $widths_facturas, 5);
+    $pdf->TableFooter('Total Tarjeta:', '$'.number_format($totalTarjetaCredito, 2), $widths_facturas, 5);
 } else {
-    $pdf->SetFont('Arial', 'I', 10);
-    $pdf->Cell(190, 8, 'No hay registros de egresos', 1, 1, 'C');
+    $pdf->SetFont('Arial', 'I', 9);
+    $pdf->Cell(array_sum($widths_facturas), 6, 'No hay facturas a credito', 1, 1, 'C');
 }
-$pdf->Ln(10);
+$pdf->Ln(5);
 
-// --------- Signatures ---------
-$pdf->SetFont('Arial', '', 10);
-$pdf->Cell(95, 10, '_______________________', 0, 0, 'C');
-$pdf->Cell(95, 10, '_______________________', 0, 1, 'C');
-$pdf->Cell(95, 6, 'Firma del Cajero', 0, 0, 'C');
-$pdf->Cell(95, 6, 'Firma del Supervisor', 0, 1, 'C');
+// Pagos de Clientes
+$pdf->SectionTitle('PAGOS DE CLIENTES');
+$pdf->TableHeader(['No. Pago', 'Fecha', 'Cliente', 'Metodo', 'Monto'], $widths_facturas);
 
-// Output the PDF to browser
-$pdf->Output('I', 'reporte_caja_' . $numCaja . '.pdf');
+$totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
+if ($result_pagos->num_rows > 0) {
+    while ($row = $result_pagos->fetch_assoc()) {
+        $pdf->TableRow([
+            $row['id'],
+            $row['fecha'],
+            substr($row['nombre'], 0, 25),
+            ucfirst($row['metodo']),
+            '$'.number_format($row['monto'], 2)
+        ], $widths_facturas, ['C','L','L','C','R']);
+        
+        if($row['metodo'] == 'efectivo') $totalEfectivoPagos += $row['monto'];
+        elseif($row['metodo'] == 'transferencia') $totalTransferenciaPagos += $row['monto'];
+        elseif($row['metodo'] == 'tarjeta') $totalTarjetaPagos += $row['monto'];
+    }
+    $pdf->TableFooter('Total Efectivo:', '$'.number_format($totalEfectivoPagos, 2), $widths_facturas, 5);
+    $pdf->TableFooter('Total Transferencia:', '$'.number_format($totalTransferenciaPagos, 2), $widths_facturas, 5);
+    $pdf->TableFooter('Total Tarjeta:', '$'.number_format($totalTarjetaPagos, 2), $widths_facturas, 5);
+} else {
+    $pdf->SetFont('Arial', 'I', 9);
+    $pdf->Cell(array_sum($widths_facturas), 6, 'No hay pagos de clientes', 1, 1, 'C');
+}
+
+// Firmas
+
+$pdf->SetFont('Arial', '', 9);
+
+// Firma empleado que genera el reporte
+$pdf->Ln(8);
+$pdf->Cell(80, 6, '_______________________________', 0, 0, 'C');
+$pdf->Cell(30, 6, '', 0, 0); 
+$pdf->Cell(80, 6, '_______________________________', 0, 1, 'C');
+
+$pdf->SetFont('Arial', 'B', 9);
+$pdf->Cell(80, 6, $row_caja['nombreEmpleado'], 0, 0, 'C');  
+$pdf->Cell(30, 6, '', 0, 0);
+$pdf->Cell(80, 6, $_SESSION['nombre'], 0, 1, 'C');
+
+$pdf->SetFont('Arial', '', 8);
+$pdf->Cell(80, 5, 'Empleado', 0, 0, 'C');
+$pdf->Cell(30, 5, '', 0, 0);
+$pdf->Cell(80, 5, 'Encargado / Autorizador', 0, 1, 'C');
+
+
+$pdf->Output('I', 'Cuadre_Caja_'.$numCaja.'_'.date('YmdHis').'.pdf');
 ?>

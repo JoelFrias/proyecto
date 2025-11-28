@@ -7,13 +7,13 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 $id_empleado = $_SESSION['idEmpleado'];
-$permisoNum = 'CUA002';
+$permisoNum = 'ALM004';
 $permiso = validarPermiso($conn, $permisoNum, $id_empleado);
 
 if ($permiso) {
-    echo "El usuario tiene el permiso\nUsuario ID: " . $id_empleado . "\nPermiso: " . $permisoNum;
+    echo "El usuario tiene el permiso\n Usuario ID: " . $id_empleado . "\nPermiso: " . $permisoNum;
 } else {
-    echo "El usuario NO tiene el permiso";
+    echo "El usuario NO tiene el permiso\n Usuario ID: " . $id_empleado . "\nPermiso: " . $permisoNum;
 }
 
 

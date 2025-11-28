@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 04, 2025 at 12:10 AM
+-- Generation Time: Nov 28, 2025 at 10:09 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -34,7 +34,7 @@ CREATE TABLE `auditoria_caja` (
   `detalles` text DEFAULT NULL,
   `fecha` datetime DEFAULT NULL,
   `ip` varchar(45) DEFAULT 'DESCONOCIDA'
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -49,7 +49,7 @@ CREATE TABLE `auditoria_usuarios` (
   `detalles` text DEFAULT NULL,
   `fecha` datetime DEFAULT current_timestamp(),
   `ip` varchar(45) DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -61,7 +61,7 @@ CREATE TABLE `bancos` (
   `id` int(6) NOT NULL,
   `nombreBanco` varchar(100) DEFAULT NULL,
   `enable` tinyint(1) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `bancos`
@@ -78,7 +78,7 @@ INSERT INTO `bancos` (`id`, `nombreBanco`, `enable`) VALUES
 
 CREATE TABLE `cajacontador` (
   `contador` int(11) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `cajacontador`
@@ -101,7 +101,7 @@ CREATE TABLE `cajaegresos` (
   `numCaja` varchar(5) DEFAULT NULL,
   `razon` varchar(50) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -117,7 +117,7 @@ CREATE TABLE `cajaingresos` (
   `numCaja` varchar(5) DEFAULT NULL,
   `razon` varchar(50) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -131,7 +131,7 @@ CREATE TABLE `cajasabiertas` (
   `fechaApertura` datetime DEFAULT NULL,
   `saldoApertura` float DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -147,8 +147,23 @@ CREATE TABLE `cajascerradas` (
   `saldoInicial` float DEFAULT NULL,
   `saldoFinal` float DEFAULT NULL,
   `diferencia` float DEFAULT NULL,
+  `estado` varchar(15) DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `caja_estado_detalle`
+--
+
+CREATE TABLE `caja_estado_detalle` (
+  `numCaja` varchar(20) NOT NULL,
+  `id_empleado` int(11) NOT NULL,
+  `nota` text NOT NULL,
+  `fecha` datetime NOT NULL,
+  `registro` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -167,7 +182,7 @@ CREATE TABLE `clientes` (
   `notas` varchar(500) DEFAULT NULL,
   `fechaRegistro` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -179,7 +194,7 @@ CREATE TABLE `clientes_cuenta` (
   `idCliente` int(6) DEFAULT NULL,
   `limite_credito` float DEFAULT NULL,
   `balance` float DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -195,7 +210,7 @@ CREATE TABLE `clientes_direcciones` (
   `ciudad` varchar(100) DEFAULT NULL,
   `referencia` varchar(500) DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -215,7 +230,7 @@ CREATE TABLE `clientes_historialpagos` (
   `idBanco` int(6) NOT NULL,
   `idDestino` int(6) NOT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -226,14 +241,14 @@ CREATE TABLE `clientes_historialpagos` (
 CREATE TABLE `cotizaciones_contador` (
   `contador` int(10) DEFAULT NULL,
   `ultima_actualizacion` datetime NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `cotizaciones_contador`
 --
 
 INSERT INTO `cotizaciones_contador` (`contador`, `ultima_actualizacion`) VALUES
-(1, '2025-11-03 19:06:04');
+(1, NOW());
 
 -- --------------------------------------------------------
 
@@ -247,7 +262,7 @@ CREATE TABLE `cotizaciones_det` (
   `cantidad` float NOT NULL,
   `precio_s` float NOT NULL,
   `registro` int(11) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -266,7 +281,7 @@ CREATE TABLE `cotizaciones_inf` (
   `notas` text NOT NULL,
   `estado` varchar(15) NOT NULL,
   `registro` int(5) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -278,7 +293,14 @@ CREATE TABLE `destinocuentas` (
   `id` int(6) NOT NULL,
   `descripcion` varchar(100) DEFAULT NULL,
   `enable` tinyint(1) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `destinocuentas`
+--
+
+INSERT INTO `destinocuentas` (`id`, `descripcion`, `enable`) VALUES
+(1, 'N/A', 1);
 
 -- --------------------------------------------------------
 
@@ -296,14 +318,14 @@ CREATE TABLE `empleados` (
   `idPuesto` int(5) DEFAULT NULL,
   `fechaIngreso` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `empleados`
 --
 
 INSERT INTO `empleados` (`id`, `nombre`, `apellido`, `tipo_identificacion`, `identificacion`, `telefono`, `idPuesto`, `fechaIngreso`, `activo`) VALUES
-(1, 'Franklin Joel', 'Frias', 'Cedula', '00000000000', '0000000000', 1, '2025-02-18 23:22:40', 1);
+(1, 'Franklin Joel', 'Frias', 'Cedula', '00000000000', '0000000000', 1, NOW(), 1);
 
 -- --------------------------------------------------------
 
@@ -314,15 +336,16 @@ INSERT INTO `empleados` (`id`, `nombre`, `apellido`, `tipo_identificacion`, `ide
 CREATE TABLE `empleados_puestos` (
   `id` int(6) NOT NULL,
   `descripcion` varchar(50) DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `empleados_puestos`
 --
 
 INSERT INTO `empleados_puestos` (`id`, `descripcion`) VALUES
-(1, 'Desarrollador'),
-(2, 'Administrador'),
+(1, 'Administrador'),
+(2, 'Encargado de Almacén'),
+(3, 'Recepcionista'),
 (4, 'Vendedor');
 
 -- --------------------------------------------------------
@@ -344,7 +367,7 @@ CREATE TABLE `facturas` (
   `idEmpleado` int(6) NOT NULL,
   `estado` varchar(20) DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -358,7 +381,7 @@ CREATE TABLE `facturas_cancelaciones` (
   `fecha` datetime DEFAULT NULL,
   `idEmpleado` int(6) DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -376,7 +399,7 @@ CREATE TABLE `facturas_detalles` (
   `ganancias` float NOT NULL,
   `fecha` datetime DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -393,7 +416,7 @@ CREATE TABLE `facturas_metodopago` (
   `idBanco` int(5) DEFAULT NULL,
   `idDestino` int(5) DEFAULT NULL,
   `noCaja` varchar(20) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -406,14 +429,14 @@ CREATE TABLE `infofactura` (
   `text1` text DEFAULT NULL,
   `text2` text DEFAULT NULL,
   `text3` text DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `infofactura`
 --
 
 INSERT INTO `infofactura` (`name`, `text1`, `text2`, `text3`) VALUES
-('EasyPOS', 'Esto es un texto demo', 'Esto es un texto demo', 'Esto es un texto demo');
+('EasyPOS', 'Texto de encabezado', 'Texto adicional', 'Texto de pie de página');
 
 -- --------------------------------------------------------
 
@@ -426,7 +449,7 @@ CREATE TABLE `inventario` (
   `existencia` float DEFAULT NULL,
   `ultima_actualizacion` datetime DEFAULT NULL,
   `registro` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -438,7 +461,7 @@ CREATE TABLE `inventarioempleados` (
   `idProducto` int(6) DEFAULT NULL,
   `cantidad` float DEFAULT NULL,
   `idEmpleado` int(6) DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -454,7 +477,117 @@ CREATE TABLE `inventariotransacciones` (
   `fecha` datetime DEFAULT NULL,
   `descripcion` varchar(200) DEFAULT NULL,
   `idEmpleado` int(6) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_entradas`
+--
+
+CREATE TABLE `inventario_entradas` (
+  `id` int(11) NOT NULL,
+  `fecha` datetime NOT NULL,
+  `empleado` int(11) NOT NULL,
+  `referencia` varchar(150) NOT NULL,
+  `estado` varchar(15) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_entradas_canceladas`
+--
+
+CREATE TABLE `inventario_entradas_canceladas` (
+  `id_entrada` int(11) NOT NULL,
+  `fecha` datetime NOT NULL,
+  `empleado` int(11) NOT NULL,
+  `notas` text NOT NULL,
+  `registro` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_entradas_detalle`
+--
+
+CREATE TABLE `inventario_entradas_detalle` (
+  `id_entrada` int(11) NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `cantidad` double NOT NULL,
+  `costo` double NOT NULL,
+  `fecha` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_salidas`
+--
+
+CREATE TABLE `inventario_salidas` (
+  `id` int(11) NOT NULL,
+  `fecha` datetime NOT NULL,
+  `empleado` int(11) NOT NULL,
+  `razon` int(11) NOT NULL,
+  `notas` text DEFAULT NULL,
+  `estado` varchar(15) NOT NULL DEFAULT 'activo'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_salidas_canceladas`
+--
+
+CREATE TABLE `inventario_salidas_canceladas` (
+  `id_salida` int(11) NOT NULL,
+  `fecha` datetime NOT NULL,
+  `empleado` int(11) NOT NULL,
+  `notas` text NOT NULL,
+  `registro` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_salidas_detalle`
+--
+
+CREATE TABLE `inventario_salidas_detalle` (
+  `id_salida` int(11) NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `cantidad` double NOT NULL,
+  `costo` double NOT NULL,
+  `fecha` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inventario_salidas_razones`
+--
+
+CREATE TABLE `inventario_salidas_razones` (
+  `id` int(11) NOT NULL,
+  `descripcion` varchar(100) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `inventario_salidas_razones`
+--
+
+INSERT INTO `inventario_salidas_razones` (`id`, `descripcion`, `activo`) VALUES
+(1, 'Producto dañado', 1),
+(2, 'Vencido', 1),
+(3, 'Uso interno', 1),
+(4, 'Donación', 1),
+(5, 'Ajuste de inventario', 1),
+(6, 'Robo', 1),
+(7, 'Otro', 1);
 
 -- --------------------------------------------------------
 
@@ -464,7 +597,7 @@ CREATE TABLE `inventariotransacciones` (
 
 CREATE TABLE `numfactura` (
   `num` varchar(10) DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `numfactura`
@@ -490,7 +623,7 @@ CREATE TABLE `productos` (
   `reorden` float DEFAULT NULL,
   `fechaRegistro` datetime DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -501,7 +634,23 @@ CREATE TABLE `productos` (
 CREATE TABLE `productos_tipo` (
   `id` int(6) NOT NULL,
   `descripcion` varchar(50) DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `session_tokens`
+--
+
+CREATE TABLE `session_tokens` (
+  `id` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL,
+  `token_hash` varchar(64) NOT NULL,
+  `expiry` datetime NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -513,7 +662,7 @@ CREATE TABLE `transacciones_det` (
   `no` int(5) NOT NULL,
   `id_producto` float NOT NULL,
   `cantidad` float NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -527,7 +676,7 @@ CREATE TABLE `transacciones_inv` (
   `id_emp_reg` int(5) NOT NULL,
   `id_emp_des` int(5) NOT NULL,
   `tipo_mov` varchar(15) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -540,14 +689,57 @@ CREATE TABLE `usuarios` (
   `username` varchar(30) DEFAULT NULL,
   `password` varchar(500) DEFAULT NULL,
   `idEmpleado` int(5) DEFAULT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `usuarios`
 --
 
 INSERT INTO `usuarios` (`id`, `username`, `password`, `idEmpleado`) VALUES
-(1, 'fjoelfrias', '$2y$10$AmLhmrSvcXwZRWJXarWlAuXux44ghmArHi6Z.7aUkWkiWGMjzLbwe', 1);
+(1, 'fjoelfrias', '$2y$10$sT7H/5n8HaRJ.hJ2CerHKe99.vt7SaVk0IjumFaDiT7M.q29uKufe', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `usuarios_permisos`
+--
+
+CREATE TABLE `usuarios_permisos` (
+  `id_permiso` varchar(15) NOT NULL,
+  `id_empleado` int(11) NOT NULL,
+  `registro` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `usuarios_permisos`
+--
+
+INSERT INTO `usuarios_permisos` (`id_permiso`, `id_empleado`, `registro`) VALUES
+('CLI001', 1, 1),
+('CLI002', 1, 2),
+('PRO001', 1, 3),
+('PRO002', 1, 4),
+('CLI003', 1, 5),
+('CLI004', 1, 6),
+('FAC002', 1, 7),
+('ALM001', 1, 8),
+('ALM003', 1, 9),
+('FAC001', 1, 10),
+('COT001', 1, 11),
+('CAJ001', 1, 12),
+('PADM001', 1, 13),
+('PADM002', 1, 14),
+('PADM003', 1, 15),
+('USU001', 1, 16),
+('EMP001', 1, 17),
+('FAC003', 1, 18),
+('CUA001', 1, 19),
+('CUA002', 1, 20),
+('COT002', 1, 21),
+('COT003', 1, 22),
+('ALM002', 1, 23),
+('ALM004', 1, 24),
+('ALM005', 1, 25);
 
 --
 -- Indexes for dumped tables
@@ -593,6 +785,12 @@ ALTER TABLE `cajasabiertas`
 -- Indexes for table `cajascerradas`
 --
 ALTER TABLE `cajascerradas`
+  ADD PRIMARY KEY (`registro`);
+
+--
+-- Indexes for table `caja_estado_detalle`
+--
+ALTER TABLE `caja_estado_detalle`
   ADD PRIMARY KEY (`registro`);
 
 --
@@ -674,6 +872,48 @@ ALTER TABLE `inventariotransacciones`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `inventario_entradas`
+--
+ALTER TABLE `inventario_entradas`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `inventario_entradas_canceladas`
+--
+ALTER TABLE `inventario_entradas_canceladas`
+  ADD PRIMARY KEY (`registro`);
+
+--
+-- Indexes for table `inventario_entradas_detalle`
+--
+ALTER TABLE `inventario_entradas_detalle`
+  ADD PRIMARY KEY (`id_entrada`,`id_producto`);
+
+--
+-- Indexes for table `inventario_salidas`
+--
+ALTER TABLE `inventario_salidas`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `inventario_salidas_canceladas`
+--
+ALTER TABLE `inventario_salidas_canceladas`
+  ADD PRIMARY KEY (`registro`);
+
+--
+-- Indexes for table `inventario_salidas_detalle`
+--
+ALTER TABLE `inventario_salidas_detalle`
+  ADD PRIMARY KEY (`id_salida`,`id_producto`);
+
+--
+-- Indexes for table `inventario_salidas_razones`
+--
+ALTER TABLE `inventario_salidas_razones`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `productos`
 --
 ALTER TABLE `productos`
@@ -686,6 +926,15 @@ ALTER TABLE `productos_tipo`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `session_tokens`
+--
+ALTER TABLE `session_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `token_hash` (`token_hash`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `expiry` (`expiry`);
+
+--
 -- Indexes for table `transacciones_inv`
 --
 ALTER TABLE `transacciones_inv`
@@ -696,6 +945,12 @@ ALTER TABLE `transacciones_inv`
 --
 ALTER TABLE `usuarios`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `usuarios_permisos`
+--
+ALTER TABLE `usuarios_permisos`
+  ADD PRIMARY KEY (`registro`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -732,120 +987,121 @@ ALTER TABLE `cajaingresos`
   MODIFY `id` int(6) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `cajasabiertas`
+-- AUTO_INCREMENT for table cajasabiertas
+ALTER TABLE cajasabiertas
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `cajasabiertas`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table cajascerradas
+ALTER TABLE cajascerradas
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `cajascerradas`
+-- AUTO_INCREMENT for table caja_estado_detalle
+ALTER TABLE caja_estado_detalle
+MODIFY registro int(11) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `cajascerradas`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table clientes
+ALTER TABLE clientes
+MODIFY id int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `clientes`
+-- AUTO_INCREMENT for table clientes_direcciones
+ALTER TABLE clientes_direcciones
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `clientes`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table clientes_historialpagos
+ALTER TABLE clientes_historialpagos
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `clientes_direcciones`
+-- AUTO_INCREMENT for table cotizaciones_det
+ALTER TABLE cotizaciones_det
+MODIFY registro int(11) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `clientes_direcciones`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table cotizaciones_inf
+ALTER TABLE cotizaciones_inf
+MODIFY registro int(5) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `clientes_historialpagos`
+-- AUTO_INCREMENT for table destinocuentas
+ALTER TABLE destinocuentas
+MODIFY id int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
-ALTER TABLE `clientes_historialpagos`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table empleados
+ALTER TABLE empleados
+MODIFY id int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
--- AUTO_INCREMENT for table `cotizaciones_det`
+-- AUTO_INCREMENT for table empleados_puestos
+ALTER TABLE empleados_puestos
+MODIFY id int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 --
-ALTER TABLE `cotizaciones_det`
-  MODIFY `registro` int(11) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table facturas
+ALTER TABLE facturas
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `cotizaciones_inf`
+-- AUTO_INCREMENT for table facturas_cancelaciones
+ALTER TABLE facturas_cancelaciones
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `cotizaciones_inf`
-  MODIFY `registro` int(5) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table facturas_detalles
+ALTER TABLE facturas_detalles
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `destinocuentas`
+-- AUTO_INCREMENT for table inventario
+ALTER TABLE inventario
+MODIFY registro int(6) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `destinocuentas`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table inventariotransacciones
+ALTER TABLE inventariotransacciones
+MODIFY id int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `empleados`
+-- AUTO_INCREMENT for table inventario_entradas
+ALTER TABLE inventario_entradas
+MODIFY id int(11) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `empleados`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
+-- AUTO_INCREMENT for table inventario_entradas_canceladas
+ALTER TABLE inventario_entradas_canceladas
+MODIFY registro int(11) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `empleados_puestos`
+-- AUTO_INCREMENT for table inventario_entradas_detalle
+ALTER TABLE inventario_entradas_detalle
+MODIFY id_entrada int(11) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `empleados_puestos`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
+-- AUTO_INCREMENT for table inventario_salidas
+ALTER TABLE inventario_salidas
+MODIFY id int(11) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `facturas`
+-- AUTO_INCREMENT for table inventario_salidas_canceladas
+ALTER TABLE inventario_salidas_canceladas
+MODIFY registro int(11) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `facturas`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table inventario_salidas_razones
+ALTER TABLE inventario_salidas_razones
+MODIFY id int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 --
--- AUTO_INCREMENT for table `facturas_cancelaciones`
+-- AUTO_INCREMENT for table productos
+ALTER TABLE productos
+MODIFY id int(6) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `facturas_cancelaciones`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table productos_tipo
+ALTER TABLE productos_tipo
+MODIFY id int(6) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `facturas_detalles`
+-- AUTO_INCREMENT for table session_tokens
+ALTER TABLE session_tokens
+MODIFY id int(11) NOT NULL AUTO_INCREMENT;
 --
-ALTER TABLE `facturas_detalles`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table transacciones_inv
+ALTER TABLE transacciones_inv
+MODIFY no int(5) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `inventario`
+-- AUTO_INCREMENT for table usuarios
+ALTER TABLE usuarios
+MODIFY id int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
-ALTER TABLE `inventario`
-  MODIFY `registro` int(6) NOT NULL AUTO_INCREMENT;
-
+-- AUTO_INCREMENT for table usuarios_permisos
+ALTER TABLE usuarios_permisos
+MODIFY registro int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 --
--- AUTO_INCREMENT for table `inventariotransacciones`
+-- Constraints for dumped tables
 --
-ALTER TABLE `inventariotransacciones`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `productos`
---
-ALTER TABLE `productos`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `productos_tipo`
---
-ALTER TABLE `productos_tipo`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `transacciones_inv`
---
-ALTER TABLE `transacciones_inv`
-  MODIFY `no` int(5) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `usuarios`
---
-ALTER TABLE `usuarios`
-  MODIFY `id` int(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+-- Constraints for table session_tokens
+ALTER TABLE session_tokens
+ADD CONSTRAINT fk_session_tokens_usuario FOREIGN KEY (id_usuario) REFERENCES usuarios (id) ON DELETE CASCADE;
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

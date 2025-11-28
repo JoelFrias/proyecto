@@ -15,7 +15,6 @@ Este es un sistema de facturación web desarrollado para la gestión de facturas
 - **PHP**: Backend del sistema, manejo de sesiones, y generación dinámica de contenido.
 - **JavaScript**: Lógica del frontend, validaciones, y manejo de interacciones del usuario.
 - **MySQL**: Base de datos para almacenar información de facturas, clientes, productos, etc.
-- **SweetAlert2**: Para mostrar alertas interactivas y mensajes de confirmación.
 
 ## Constribuidores
 

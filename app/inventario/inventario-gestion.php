@@ -1,4 +1,5 @@
 <?php 
+
 require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php'; // Conexión a la base de datos
 

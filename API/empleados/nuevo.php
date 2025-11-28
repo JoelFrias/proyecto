@@ -148,7 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'cot-registro' => 'COT002',
         'cot-cancelar' => 'COT003',
         'tran-inventario' => 'ALM002',
-        'admi-inventario' => 'ALM004',
+        'entrada-inventario' => 'ALM004',
+        'salida-inventario' => 'ALM005',
     ];
 
     $permisosActivos = [];

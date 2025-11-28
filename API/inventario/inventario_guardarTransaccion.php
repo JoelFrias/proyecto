@@ -1,31 +1,21 @@
 <?php
 
-/* Verificacion de sesion */
+require_once '../../core/conexion.php';  // Conexion a la base de datos
 
-// Iniciar sesión
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'ALM002';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+    exit();
 }
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    die(json_encode(["success" => false, "error" => "No se ha encontrado una sesion activa"]));
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    die(json_encode(["success" => false, "error" => "La sesion ha caducado"]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require_once '../../core/conexion.php';
 
 // Funcion para guardar los logs de facturacion
 function logDebug($message, $data = null) {

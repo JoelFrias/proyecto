@@ -674,23 +674,6 @@ function construirQueryFiltros($filtros) {
 </head>
 <body>
 
-    <?php 
-        if (isset($_GET['error']) && $_GET['error'] == 'missing_numFactura') {
-            echo "<script>
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se encontró la factura seleccionada.',
-                    confirmButtonText: 'Aceptar'
-                }).then(() => {
-                    window.location.href = 'factura-registro.php';
-                });
-            </script>";
-        }
-    
-    ?>
-
-
     <div class="navegator-nav">
 
         <!-- Menu-->

@@ -362,12 +362,6 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
             color: var(--danger);
         }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-        }
-
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -397,13 +391,19 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
             border-bottom: none;
         }
 
-        .table-footer {
+        table tfoot {
+            border-top: 2px solid var(--border);
+        }
+
+        table tfoot td {
             background-color: var(--light-gray);
-            padding: 0.75rem 1rem;
             font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            border-top: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            color: var(--primary);
+        }
+
+        table tfoot .table-footer-row td:first-child {
+            text-align: left;
         }
 
 
@@ -455,9 +455,6 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
         }
 
         @media (max-width: 768px) {
-            .grid-container {
-                grid-template-columns: 1fr;
-            }
             .cabecera {
                 flex-direction: column;
                 align-items: flex-start;
@@ -485,6 +482,24 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
             }
             .btn {
                 width: 100%;
+            }
+        }
+
+        .grid-container {
+            column-count: 2;
+            column-gap: 1.5rem;
+        }
+
+        .grid-container .card {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                column-count: 1;
             }
         }
     </style>
@@ -589,28 +604,66 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                 </div>
 
                 <div class="grid-container">
+                    <!-- RESUMEN DE INGRESOS -->
                     <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-chart-line"></i> Resumen de Ingresos</h2></div>
+                        <div class="card-header">
+                            <h2><i class="fas fa-chart-line"></i> Resumen de Ingresos</h2>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table>
-                                    <thead><tr><th>Descripción</th><th>Efectivo</th><th>Transferencia</th><th>Tarjeta</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th>Efectivo</th>
+                                            <th>Transferencia</th>
+                                            <th>Tarjeta</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
-                                        <tr><td><strong>Facturas</strong></td><td>$<?= number_format($row['Fefectivo']) ?></td><td>$<?= number_format($row['Ftransferencia']) ?></td><td>$<?= number_format($row['Ftarjeta']) ?></td></tr>
-                                        <tr><td><strong>Pagos de Clientes</strong></td><td>$<?= number_format($row['CPefectivo']) ?></td><td>$<?= number_format($row['CPtransferencia']) ?></td><td>$<?= number_format($row['CPtarjeta']) ?></td></tr>
+                                        <tr>
+                                            <td><strong>Facturas</strong></td>
+                                            <td>$<?= number_format($row['Fefectivo']) ?></td>
+                                            <td>$<?= number_format($row['Ftransferencia']) ?></td>
+                                            <td>$<?= number_format($row['Ftarjeta']) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Pagos de Clientes</strong></td>
+                                            <td>$<?= number_format($row['CPefectivo']) ?></td>
+                                            <td>$<?= number_format($row['CPtransferencia']) ?></td>
+                                            <td>$<?= number_format($row['CPtarjeta']) ?></td>
+                                        </tr>
                                     </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td>Total</td>
+                                            <td>$<?= number_format($ItotalE) ?></td>
+                                            <td>$<?= number_format($ItotalT) ?></td>
+                                            <td>$<?= number_format($ItotalC) ?></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
-                                <div class="table-footer"><div>Total</div><div>$<?= number_format($ItotalE) ?></div><div>$<?= number_format($ItotalT) ?></div><div>$<?= number_format($ItotalC) ?></div></div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- FACTURAS A CONTADO -->
                     <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-receipt"></i> Facturas a Contado</h2></div>
+                        <div class="card-header">
+                            <h2><i class="fas fa-receipt"></i> Facturas a Contado</h2>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table>
-                                    <thead><tr><th>No.</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Monto</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
                                         <?php
                                         if ($result_FacturasContado->num_rows > 0) {
@@ -620,23 +673,47 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                                                 elseif($row['metodo'] == 'transferencia') $totalTransferencia += $row['monto'];
                                                 elseif($row['metodo'] == 'tarjeta') $totalTarjeta += $row['monto'];
                                             }
-                                        } else { echo "<tr><td colspan='5'>No hay facturas a contado</td></tr>"; }
+                                        } else {
+                                            echo "<tr><td colspan='5'>No hay facturas a contado</td></tr>";
+                                        }
                                         ?>
                                     </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4">Total Efectivo:</strong></td>
+                                            <td>$<?= number_format($totalEfectivo) ?></strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Transferencia:</strong></td>
+                                            <td>$<?= number_format($totalTransferencia) ?></strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Tarjeta:</strong></td>
+                                            <td>$<?= number_format($totalTarjeta) ?></strong></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
-                            <div class="table-footer"><div>Total Efectivo:</div><div>$<?= number_format($totalEfectivo) ?></div></div>
-                            <div class="table-footer"><div>Total Transferencia:</div><div>$<?= number_format($totalTransferencia) ?></div></div>
-                            <div class="table-footer"><div>Total Tarjeta:</div><div>$<?= number_format($totalTarjeta) ?></div></div>
                         </div>
                     </div>
 
+                    <!-- FACTURAS A CRÉDITO -->
                     <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-credit-card"></i> Facturas a Crédito</h2></div>
+                        <div class="card-header">
+                            <h2><i class="fas fa-credit-card"></i> Facturas a Crédito</h2>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table>
-                                    <thead><tr><th>No.</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Monto</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
                                         <?php
                                         if ($result_FacturasCredito->num_rows > 0) {
@@ -646,23 +723,47 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                                                 elseif($row['metodo'] == 'transferencia') $totalTransferenciaCredito += $row['monto'];
                                                 elseif($row['metodo'] == 'tarjeta') $totalTarjetaCredito += $row['monto'];
                                             }
-                                        } else { echo "<tr><td colspan='5'>No hay facturas a crédito</td></tr>"; }
+                                        } else {
+                                            echo "<tr><td colspan='5'>No hay facturas a crédito</td></tr>";
+                                        }
                                         ?>
                                     </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4">Total Efectivo:</td>
+                                            <td>$<?= number_format($totalEfectivoCredito) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Transferencia:</td>
+                                            <td>$<?= number_format($totalTransferenciaCredito) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Tarjeta:</td>
+                                            <td>$<?= number_format($totalTarjetaCredito) ?></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
-                            <div class="table-footer"><div>Total Efectivo:</div><div>$<?= number_format($totalEfectivoCredito) ?></div></div>
-                            <div class="table-footer"><div>Total Transferencia:</div><div>$<?= number_format($totalTransferenciaCredito) ?></div></div>
-                            <div class="table-footer"><div>Total Tarjeta:</div><div>$<?= number_format($totalTarjetaCredito) ?></div></div>
                         </div>
                     </div>
 
+                    <!-- PAGOS DE CLIENTES -->
                     <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-hand-holding-usd"></i> Pagos de Clientes</h2></div>
+                        <div class="card-header">
+                            <h2><i class="fas fa-hand-holding-usd"></i> Pagos de Clientes</h2>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table>
-                                    <thead><tr><th>No.</th><th>Fecha</th><th>Cliente</th><th>Método</th><th>Monto</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
                                         <?php
                                         if ($result_pagos->num_rows > 0) {
@@ -672,17 +773,31 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                                                 elseif($row['metodo'] == 'transferencia') $totalTransferenciaPagos += $row['monto'];
                                                 elseif($row['metodo'] == 'tarjeta') $totalTarjetaPagos += $row['monto'];
                                             }
-                                        } else { echo "<tr><td colspan='5'>No hay pagos de clientes</td></tr>"; }
+                                        } else {
+                                            echo "<tr><td colspan='5'>No hay pagos de clientes</td></tr>";
+                                        }
                                         ?>
                                     </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4">Total Efectivo:</td>
+                                            <td>$<?= number_format($totalEfectivoPagos) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Transferencia:</td>
+                                            <td>$<?= number_format($totalTransferenciaPagos) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">Total Tarjeta:</td>
+                                            <td>$<?= number_format($totalTarjetaPagos) ?></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
-                            <div class="table-footer"><div>Total Efectivo:</div><div>$<?= number_format($totalEfectivoPagos) ?></div></div>
-                            <div class="table-footer"><div>Total Transferencia:</div><div>$<?= number_format($totalTransferenciaPagos) ?></div></div>
-                            <div class="table-footer"><div>Total Tarjeta:</div><div>$<?= number_format($totalTarjetaPagos) ?></div></div>
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
     </div>
 

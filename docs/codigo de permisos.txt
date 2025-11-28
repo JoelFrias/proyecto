@@ -21,4 +21,5 @@
 •  Cotizaciones Registro:   COT002
 •  Cotizaciones Cancelar:   COT003
 •  Transferir inventario:   ALM002
-•  Administrar Inventario:  ALM004
+•  Entrada a Inventario:    ALM004
+•  Salida de Inventario:    ALM005

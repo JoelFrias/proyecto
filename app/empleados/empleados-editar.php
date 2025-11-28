@@ -79,7 +79,8 @@ $mapeoPermisos = [
     'COT002' => 'cot-registro',
     'COT003' => 'cot-cancelar',
     'ALM002' => 'tran-inventario',
-    'ALM004' => 'admi-inventario',
+    'ALM004' => 'entrada-inventario',
+    'ALM005' => 'salida-inventario',
 ];
 
 $permisos_checked = [];
@@ -344,7 +345,6 @@ foreach ($permisos_activos as $codigo) {
                             } else {
                                 echo "<option value='' disabled>No hay opciones</option>";
                             }
-                            $conn->close();
                             ?>
                         </select>
                     </div>
@@ -371,6 +371,7 @@ foreach ($permisos_activos as $codigo) {
                 </div>
 
                 <legend>Permisos de Usuario</legend>
+
                 <div class="permisos-container">
                     
                     <!-- Sección: Clientes -->
@@ -430,8 +431,12 @@ foreach ($permisos_activos as $codigo) {
                                     <span>Transferencias de Inventario</span>
                                 </label>
                                 <label>
-                                    <input type="checkbox" name="permisos[admi-inventario]" id="admi-inventario">
-                                    <span>Administrar Inventario</span>
+                                    <input type="checkbox" name="permisos[entrada-inventario]" id="entrada-inventario">
+                                    <span>Entrada de Inventario</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[salida-inventario]" id="salida-inventario">
+                                    <span>Salida de Inventario</span>
                                 </label>
                             </div>
                         </div>
@@ -570,7 +575,7 @@ foreach ($permisos_activos as $codigo) {
                 'inv-empleados', 'facturacion', 'cot-accion', 'caja', 'pan-adm', 
                 'estadisticas', 'bancos-destinos', 'usuarios', 'empleados', 
                 'inf-factura', 'cuadres', 'cuadres-accion', 'cot-registro', 'cot-cancelar',
-                'tran-inventario','admi-inventario'
+                'tran-inventario','entrada-inventario', 'salida-inventario'
             ];
 
             const permisos = {};
@@ -686,7 +691,8 @@ foreach ($permisos_activos as $codigo) {
                 'inf-factura',
                 'cot-registro',
                 'tran-inventario',
-                'admi-inventario',
+                'entrada-inventario',
+                'salida-inventario',
                 'cuadres'
             ],
             'cuadres' : ['cuadres-accion']

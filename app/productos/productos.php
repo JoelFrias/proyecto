@@ -686,7 +686,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
 
             </main>
 
-            <?php require 'productos-actualizar.php'; ?>
+            <?php
+                $idProducto = null;  // Warning PHP fix
+                require 'productos-actualizar.php'; 
+            
+            ?>
 
         <!-- TODO EL CONTENIDO VA ENCIMA DE ESTA LINEA -->
         </div>

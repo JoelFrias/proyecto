@@ -21,7 +21,8 @@ $permiso_info_factura = validarPermiso($conn, 'FAC003', $id_empleado);
 $permiso_cuadres = validarPermiso($conn, 'CUA001', $id_empleado);
 $permiso_cotizaciones = validarPermiso($conn, 'COT002', $id_empleado);
 $permiso_transferencias = validarPermiso($conn, 'ALM002', $id_empleado);
-$permiso_inventario = validarPermiso($conn, 'ALM004', $id_empleado);
+$entrada_inventario = validarPermiso($conn, 'ALM004', $id_empleado);
+$salida_inventario = validarPermiso($conn, 'ALM005', $id_empleado);
 $permiso_bancos_destinos = validarPermiso($conn, 'PADM003', $id_empleado);
 
 // Tabla Bancos
@@ -1000,9 +1001,15 @@ if ($permiso_info_factura) {
                 </div>
                 <?php endif; ?>
 
-                <?php if($permiso_inventario): ?>
+                <?php if($entrada_inventario): ?>
                 <div id="div-inventory">
-                    <button id="manager-inventory" onclick="navigateTo('../../app/inventario/inventario-gestion.php')">Administrar Inventario</button>
+                    <button id="entrada-inventory" onclick="navigateTo('../../app/inventario/inventario-entrada-lista.php')">Entrada Inventario</button>
+                </div>
+                <?php endif; ?>
+
+                <?php if($salida_inventario): ?>
+                <div id="div-inventory">
+                    <button id="salida-inventory" onclick="navigateTo('../../app/inventario/inventario-salida-lista.php')">Salida Inventario</button>
                 </div>
                 <?php endif; ?>
             </div>

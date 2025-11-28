@@ -340,7 +340,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                                     <span>Transferencias de Inventario</span>
                                 </label>
                                 <label>
-                                    <input type="checkbox" name="permisos[admi-inventario]" id="admi-inventario">
+                                    <input type="checkbox" name="permisos[entrada-inventario]" id="entrada-inventario">
+                                    <span>Administrar Inventario</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="permisos[salida-inventario]" id="Salida-inventario">
                                     <span>Administrar Inventario</span>
                                 </label>
                             </div>
@@ -469,7 +473,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                                     'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
                                     'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
                                     'cuadres', 'cot-registro', 'cot-cancelar', 'tran-inventario',
-                                    'admi-inventario'
+                                    'entrada-inventario', 'salida-inventario'
                                 ];
 
             const permisos = {};
@@ -595,7 +599,8 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 'inf-factura',
                 'cot-registro',
                 'tran-inventario',
-                'admi-inventario',
+                'entrada-inventario',
+                'salida-inventario',
                 'cuadres'
             ],
             'cuadres' : ['cuadres-accion']
@@ -714,7 +719,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
                 'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
                 'cuadres', 'cuadres-accion', 'cot-registro', 'cot-cancelar', 'tran-inventario',
-                'admi-inventario'
+                'entrada-inventario', 'salida-inventario'
             ];
 
             const permisos = {};
