@@ -197,6 +197,34 @@ function crearEntrada($conn) {
             return;
         }
         
+        // Validar productos duplicados
+        $productos_ids = array_column($productos, 'id_producto');
+        $productos_unicos = array_unique($productos_ids);
+        
+        if (count($productos_ids) !== count($productos_unicos)) {
+            // Encontrar cuáles son los duplicados para mostrar en el mensaje
+            $duplicados = array_diff_assoc($productos_ids, $productos_unicos);
+            $ids_duplicados = array_unique($duplicados);
+            
+            // Obtener nombres de productos duplicados
+            $placeholders = implode(',', array_fill(0, count($ids_duplicados), '?'));
+            $stmt = $conn->prepare("SELECT descripcion FROM productos WHERE id IN ($placeholders)");
+            $types = str_repeat('i', count($ids_duplicados));
+            $stmt->bind_param($types, ...$ids_duplicados);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $nombres_duplicados = [];
+            while($row = $result->fetch_assoc()) {
+                $nombres_duplicados[] = $row['descripcion'];
+            }
+            $stmt->close();
+            
+            $mensaje = 'No se pueden agregar productos duplicados en la misma orden de entrada. Productos duplicados: ' . implode(', ', $nombres_duplicados);
+            echo json_encode(['success' => false, 'message' => $mensaje]);
+            return;
+        }
+        
         $conn->begin_transaction();
         
         // Insertar entrada principal
@@ -209,12 +237,21 @@ function crearEntrada($conn) {
         $id_entrada = $conn->insert_id;
         $stmt->close();
         
-        // Insertar detalle de productos y actualizar inventario
+        // Preparar statements
         $stmt_detalle = $conn->prepare("
             INSERT INTO inventario_entradas_detalle (id_entrada, id_producto, cantidad, costo, fecha)
             VALUES (?, ?, ?, ?, NOW())
         ");
         
+        // CRÍTICO: Actualizar inventario (almacén general)
+        $stmt_update_inventario = $conn->prepare("
+            UPDATE inventario 
+            SET existencia = existencia + ?,
+                ultima_actualizacion = NOW()
+            WHERE idProducto = ?
+        ");
+        
+        // Actualizar existencia total y costo en productos
         $stmt_update_producto = $conn->prepare("
             UPDATE productos 
             SET existencia = existencia + ?, 
@@ -255,7 +292,14 @@ function crearEntrada($conn) {
             );
             $stmt_detalle->execute();
             
-            // Actualizar existencia y costo promedio en productos
+            // CRÍTICO: Actualizar existencia en inventario (almacén general)
+            $stmt_update_inventario->bind_param("di",
+                $prod['cantidad'],
+                $prod['id_producto']
+            );
+            $stmt_update_inventario->execute();
+            
+            // Actualizar existencia total y costo promedio en productos
             $stmt_update_producto->bind_param("ddi",
                 $prod['cantidad'],
                 $costo_promedio,
@@ -265,6 +309,7 @@ function crearEntrada($conn) {
         }
         
         $stmt_detalle->close();
+        $stmt_update_inventario->close();
         $stmt_update_producto->close();
         
         $conn->commit();

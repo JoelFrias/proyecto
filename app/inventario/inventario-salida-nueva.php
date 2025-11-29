@@ -626,9 +626,10 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 document.getElementById('scroll-indicator').style.display = 'block';
             }
 
-            // ⬅️ TomSelect correctamente inicializado para este select
             new TomSelect(`#producto-select-${id}`, {
-                placeholder: "Seleccionar producto...",
+                placeholder: "Buscar producto...",
+                maxOptions: 200,
+                dropdownParent: 'body',
                 onChange: function(value) {
                     actualizarProductoSeleccionado(id, value);
                 }

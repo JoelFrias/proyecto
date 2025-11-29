@@ -23,6 +23,8 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     <link rel="stylesheet" href="../../assets/css/menu.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">  <!-- Tom Select CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script> <!-- Tom Select JS -->
     <style>
         * {
             margin: 0;
@@ -160,11 +162,14 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         /* Contenedor con scroll para tabla */
+
         .table-container {
             overflow-x: auto;
+            overflow-y: visible;
             margin-top: 20px;
             border-radius: 8px;
             border: 1px solid #ddd;
+            position: relative;
         }
         
         .productos-table {
@@ -482,9 +487,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         </div>
     </div>
 
-    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">  <!-- Tom Select CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script> <!-- Tom Select JS -->
-
     <script>
         let productosDisponibles = [];
         let contadorProductos = 0;
@@ -587,11 +589,15 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 document.getElementById('scroll-indicator').style.display = 'block';
             }
 
-            // Inicializar TomSelect correctamente
+            // Inicializar TomSelect
             new TomSelect(`#producto-select-${id}`, {
-                placeholder: "Seleccionar producto...",
+                placeholder: "Buscar producto...",
+                maxOptions: 200,
+                dropdownParent: 'body', // Esto renderiza el dropdown en el body
                 onChange: function(value) {
-                    actualizarCosto(id);
+                    if (value) {
+                        actualizarCosto(id);
+                    }
                 }
             });
         }
@@ -601,28 +607,22 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             const row = document.getElementById(`producto-${id}`);
             if (!row) return;
 
-            const input = row.querySelector('.producto-input'); // input del datalist
+            const select = row.querySelector('.producto-select');
             const costoInput = row.querySelector('.costo-input');
+            
+            // Obtener el option seleccionado
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) return;
 
-            // El datalist correspondiente
-            const datalist = row.querySelector(`#lista-productos-${id}`);
-            const valor = input.value;
-
-            // Buscar el option cuyo value coincida
-            const selectedOption = Array.from(datalist.options)
-                .find(opt => opt.value === valor);
-
-            if (!selectedOption) return;
-
+            // Obtener el costo del data-attribute
             const costo = selectedOption.getAttribute('data-costo');
 
             if (costo) {
-                costoInput.value = costo;
+                costoInput.value = parseFloat(costo).toFixed(2);
                 calcularSubtotal(id);
             }
         }
-
-
         
         function calcularSubtotal(id) {
             const row = document.getElementById(`producto-${id}`);

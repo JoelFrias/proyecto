@@ -13,8 +13,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     exit(); 
 }
 
-////////////////////////////////////////////////////////////////////
-
 // Validar permisos para realizar o vender cotizaciones
 $codigo_permiso = 'COT001';
 $permiso_cotizaciones = validarPermiso($conn, $codigo_permiso, $id_empleado);  // Ya se realizó el request del archivo
@@ -40,11 +38,6 @@ if (!$result) {
     die("Error en la consulta: " . $conn->error); // Muestra el error de la consulta
 }
 
-if ($result->num_rows > 0) {
-    // echo "Número de filas: " . $result->num_rows; // Muestra el número de filas obtenidas
-} else {
-    // echo "0 resultados";
-}
 ?>
 
 <!DOCTYPE html>

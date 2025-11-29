@@ -46,8 +46,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Validar que los campos obligatorios no estén vacíos
-    if (empty($descripcion) || $precioCompra < 0 || $precioVenta1 < 0 || $precioVenta2 < 0 || $reorden < 0) {
+    if (empty($descripcion) || $precioVenta1 < 0 || $precioVenta2 < 0 || $reorden < 0) {
         $_SESSION['errors'][] = "Por favor, complete todos los campos correctamente.";
+        header("Location: ../../app/productos/productos.php");
+        exit;
+    }
+
+    // Validar que los precios de venta sean mayores al costo
+    if ($precioVenta1 <= $precioCompra) {
+        $_SESSION['errors'][] = "El Precio de Venta 1 debe ser mayor al costo de compra (RD$ " . number_format($precioCompra, 2) . ").";
+        header("Location: ../../app/productos/productos.php");
+        exit;
+    }
+
+    if ($precioVenta2 <= $precioCompra) {
+        $_SESSION['errors'][] = "El Precio de Venta 2 debe ser mayor al costo de compra (RD$ " . number_format($precioCompra, 2) . ").";
+        header("Location: ../../app/productos/productos.php");
+        exit;
+    }
+
+    // Validar que los precios de venta no sean iguales entre sí
+    if ($precioVenta1 == $precioVenta2) {
+        $_SESSION['errors'][] = "Los precios de venta no pueden ser iguales entre sí.";
         header("Location: ../../app/productos/productos.php");
         exit;
     }

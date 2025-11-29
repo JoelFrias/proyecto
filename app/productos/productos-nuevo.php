@@ -229,6 +229,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .btn-save {
         background-color: #4CAF50;
         color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
         }
 
         .btn-save:hover {
@@ -238,6 +243,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .btn-cancel {
         background-color: #9e9e9e;
         color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
         }
 
         .btn-cancel:hover {

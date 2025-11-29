@@ -1,5 +1,6 @@
 <?php
 
+require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php';  // Conexion a la base de datos
 
 // Validar permisos de usuario

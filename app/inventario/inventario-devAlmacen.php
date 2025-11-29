@@ -360,34 +360,37 @@ $resultEmpleados = $stmtEmp->get_result();
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Buscar productos...">
                 </div>
-                <div class="products-grid" id="productsGrid"">
-                    <?php
-                    if ($result && $result->num_rows > 0) {
-                        while ($row = $result->fetch_assoc()) {
-                            echo '  <div class="product-card">';
-                            echo '      <div class="product-info">';
-                            echo '          <div>';
-                            echo '              <div class="product-name">' . $row["id"] .'   '. $row["descripcion"] . '</div>';
-                            echo '                  <div class="product-quantity">Existencia General: ' . $row["existenciaGeneral"] . '</div>';
-                            echo '                  <div class="product-quantity">Existencia en Empleado: ' . $row["existenciaInventario"] . '</div>';   
-                            echo '              </div>';
-                            echo '          <div class="product-total"></div>';
-                            echo '      </div>';
-                            echo '      <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
-                            echo '      <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["existenciaGeneral"] . ', ' . $row["existenciaInventario"] . ')">Agregar Producto</button>';
-                            echo '  </div>';
-                        }
-                    } else {
-                        echo "<p style='text-align:center;width:100%;'>No existe ningún producto disponible en el almacén del empleado seleccionado.</p>";
+                <?php
+                if ($result && $result->num_rows > 0) {
+
+                    echo '<div class="products-grid" id="productsGrid">';
+                
+                    while ($row = $result->fetch_assoc()) {
+                        echo '  <div class="product-card">';
+                        echo '      <div class="product-info">';
+                        echo '          <div>';
+                        echo '              <div class="product-name">' . $row["id"] .'   '. $row["descripcion"] . '</div>';
+                        echo '                  <div class="product-quantity">Existencia General: ' . $row["existenciaGeneral"] . '</div>';
+                        echo '                  <div class="product-quantity">Existencia en Empleado: ' . $row["existenciaInventario"] . '</div>';   
+                        echo '              </div>';
+                        echo '          <div class="product-total"></div>';
+                        echo '      </div>';
+                        echo '      <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
+                        echo '      <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["existenciaGeneral"] . ', ' . $row["existenciaInventario"] . ')">Agregar Producto</button>';
+                        echo '  </div>';
                     }
-                    ?>
-                    <?php else: ?>
-                        <div class="no-employee-message" style="text-align:center; margin-top:20px; padding:15px; background-color:#f8f9fa; border-radius:5px;">
-                            <p><i class="fas fa-user-slash" style="font-size:30px; color:#6c757d; margin-bottom:10px;"></i></p>
-                            <p>Por favor seleccione un empleado para ver sus productos disponibles.</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
+
+                    echo '</div>';
+                } else {
+                    echo "<p style='text-align:center;width:100%;'>No existe ningún producto disponible en el almacén del empleado seleccionado.</p>";
+                }
+                ?>
+                <?php else: ?>
+                    <div class="no-employee-message" style="text-align:center; margin-top:20px; padding:15px; background-color:#f8f9fa; border-radius:5px;">
+                        <p><i class="fas fa-user-slash" style="font-size:30px; color:#6c757d; margin-bottom:10px;"></i></p>
+                        <p>Por favor seleccione un empleado para ver sus productos disponibles.</p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="order-menu" id="orderMenu">

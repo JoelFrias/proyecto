@@ -45,7 +45,7 @@ switch($accion) {
 
 function listarProductos($conn) {
     try {
-        // CORREGIDO: Ahora usa inventario.existencia en lugar de productos.existencia
+        // Ahora usa inventario.existencia en lugar de productos.existencia
         $query = "
             SELECT 
                 p.id, 
@@ -118,9 +118,37 @@ function crearSalida($conn) {
             return;
         }
         
+        // Validar productos duplicados
+        $productos_ids = array_column($productos, 'id_producto');
+        $productos_unicos = array_unique($productos_ids);
+        
+        if (count($productos_ids) !== count($productos_unicos)) {
+            // Encontrar cuáles son los duplicados para mostrar en el mensaje
+            $duplicados = array_diff_assoc($productos_ids, $productos_unicos);
+            $ids_duplicados = array_unique($duplicados);
+            
+            // Obtener nombres de productos duplicados
+            $placeholders = implode(',', array_fill(0, count($ids_duplicados), '?'));
+            $stmt = $conn->prepare("SELECT descripcion FROM productos WHERE id IN ($placeholders)");
+            $types = str_repeat('i', count($ids_duplicados));
+            $stmt->bind_param($types, ...$ids_duplicados);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $nombres_duplicados = [];
+            while($row = $result->fetch_assoc()) {
+                $nombres_duplicados[] = $row['descripcion'];
+            }
+            $stmt->close();
+            
+            $mensaje = 'No se pueden agregar productos duplicados en la misma salida. Productos duplicados: ' . implode(', ', $nombres_duplicados);
+            echo json_encode(['success' => false, 'message' => $mensaje]);
+            return;
+        }
+        
         $conn->begin_transaction();
         
-        // CORREGIDO: Verificar existencias en INVENTARIO (almacén general)
+        // Verificar existencias en INVENTARIO (almacén general)
         foreach($productos as $prod) {
             $stmt = $conn->prepare("
                 SELECT i.existencia, p.descripcion 
@@ -159,7 +187,7 @@ function crearSalida($conn) {
             VALUES (?, ?, ?, ?, NOW())
         ");
         
-        // CORREGIDO: Actualizar inventario (almacén general)
+        // Actualizar inventario (almacén general)
         $stmt_update_inventario = $conn->prepare("
             UPDATE inventario 
             SET existencia = existencia - ?,
@@ -167,7 +195,7 @@ function crearSalida($conn) {
             WHERE idProducto = ?
         ");
         
-        // CORREGIDO: Actualizar existencia total en productos
+        // Actualizar existencia total en productos
         $stmt_update_producto = $conn->prepare("
             UPDATE productos 
             SET existencia = existencia - ?
@@ -421,7 +449,7 @@ function cancelarSalida($conn) {
         }
         $stmt->close();
         
-        // CORREGIDO: Revertir inventario (devolver las cantidades al almacén general)
+        // Revertir inventario (devolver las cantidades al almacén general)
         $stmt_update_inventario = $conn->prepare("
             UPDATE inventario 
             SET existencia = existencia + ?,
@@ -429,7 +457,7 @@ function cancelarSalida($conn) {
             WHERE idProducto = ?
         ");
         
-        // CORREGIDO: Actualizar existencia total en productos
+        // Actualizar existencia total en productos
         $stmt_update_producto = $conn->prepare("
             UPDATE productos 
             SET existencia = existencia + ?
