@@ -129,7 +129,6 @@ while ($producto = $resultProductos->fetch_assoc()) {
         /* Contenedor de cotización */
         .invoice-container {
             flex: 1;
-            max-width: 1024px;
             margin: 0 auto;
             padding: 1rem;
         }
@@ -363,6 +362,7 @@ while ($producto = $resultProductos->fetch_assoc()) {
             margin-top: 1rem;
             border-radius: 0.5rem;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 80%;
         }
 
         .notes-section label {

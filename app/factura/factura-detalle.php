@@ -127,7 +127,6 @@ if ($result->num_rows > 0) {
             min-height: 100vh; /* para evitar el desborde hacia abajo*/
             position: relative;
             transition: margin-left 0.3s ease;
-            
         }
 
         .sidebar.collapsed ~ .container {
@@ -138,7 +137,6 @@ if ($result->num_rows > 0) {
         /* Contenedor de factura */
         .invoice-container {
             flex: 1;
-            max-width: 1024px;
             margin: 0 auto;
             padding: 1rem;
         }

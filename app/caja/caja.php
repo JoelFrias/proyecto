@@ -419,7 +419,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <style>
         /* Estilos generales dentro de page-content */
         .page-content .container {
-            max-width: 1200px;
             margin: 0 auto;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }

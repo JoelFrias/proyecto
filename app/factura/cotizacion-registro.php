@@ -13,8 +13,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     exit(); 
 }
 
-////////////////////////////////////////////////////////////////////
-
 // Configuración de paginación
 $registros_por_pagina = 10;
 $pagina_actual = isset($_GET['pagina']) ? intval($_GET['pagina']) : 1;
@@ -194,8 +192,7 @@ function construirQueryFiltros($filtros) {
         }
 
         .contenedor {
-            max-width: 1400px;
-            margin: 1rem;
+            margin: 0 auto;
         }
 
         .cabeza {

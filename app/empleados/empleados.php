@@ -110,7 +110,6 @@ if (isset($_GET['editar'])) {
 
         /* Estilos específicos para la tabla de empleados - con prefijo emp_ para evitar conflictos */
         .emp_general-container {
-            max-width: 1200px;
             margin: 0 auto;
             padding: 1rem;
             flex: 1;

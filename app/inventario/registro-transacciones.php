@@ -190,8 +190,7 @@ function construirQueryFiltros($filtros) {
         }
 
         .contenedor {
-            max-width: 1400px;
-            margin: 1rem;
+            margin: 0 auto;
         }
 
         .cabeza {

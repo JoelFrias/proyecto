@@ -33,7 +33,24 @@ if (isset($_SESSION['username'])) {
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative; /* Necesario */
+            overflow: hidden;   /* Evita scroll extraño por el blur */
         }
+
+        /* Imagen de fondo borrosa */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: url("../../assets/img/fondo-login.webp") center/cover no-repeat;
+            filter: blur(10px);         /* Nivel de desenfoque */
+            transform: scale(1.1);      /* Evita bordes feos al aplicar blur */
+            z-index: -1;                /* Se coloca detrás del contenido */
+        }
+
 
         .container {
             background: white;
@@ -41,7 +58,7 @@ if (isset($_SESSION['username'])) {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             padding: 48px 40px;
             width: 100%;
-            max-width: 420px;
+            max-width: 525px;
             animation: fadeIn 0.3s ease-out;
         }
 
@@ -358,7 +375,7 @@ if (isset($_SESSION['username'])) {
 <body>
     <div class="container">
 
-         <div class="logo">
+        <div class="logo">
             <img src="../../assets/img/logo.png" alt="EasyPOS Logo" class="logo-img">
             <div class="logo-text">EasyPOS</div>
         </div>
@@ -409,7 +426,7 @@ if (isset($_SESSION['username'])) {
             </button>
         </form>
     </div>
-    
+
     <script>
         const loginForm = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');

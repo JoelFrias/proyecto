@@ -38,7 +38,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .container {
-            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 10px;
