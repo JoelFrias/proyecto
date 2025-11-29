@@ -1,46 +1,7 @@
 <?php
 
-/* Verificacion de sesion */
-
-// Iniciar sesión
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "No se ha encontrado una sesión activa",
-        "error_code" => "SESSION_NOT_FOUND",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "La sesión ha expirado por inactividad",
-        "error_code" => "SESSION_EXPIRED",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-// Incluir conexion a la base de datos
-require_once '../../core/conexion.php';
+require_once '../../core/conexion.php';  // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php';    // Verificar sesión activa
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -137,17 +98,6 @@ try {
     }
 
     $stmt->close();
-
-    /**
-     *  2. Auditoria de acciones de usuario
-     */
-
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Actualizar infoFactura';
-    $detalle = 'name: ' . $name . ', text1: ' . $text1. ', text2: ' . $text2 . ', text3: ' . $text3;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
     /**
      *  3. Se ejecuta la transacción

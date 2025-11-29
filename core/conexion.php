@@ -4,6 +4,11 @@
  * Sin patrón Singleton - Conexión directa tradicional
  */
 
+// Después de la configuración de errores y antes de cargar .env
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Configuración de errores según entorno
 if (getenv('APP_ENV') === 'production') {
     error_reporting(0);
@@ -131,86 +136,86 @@ function showDatabaseError($message) {
                 <p>Error técnico: ' . htmlspecialchars($message) . '</p>';
         }
         
-        echo '<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error de conexión</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .error-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            width: 80%;
-            max-width: 500px;
-            text-align: center;
-        }
-        .error-icon {
-            color: #dc3545;
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #dc3545;
-            margin-bottom: 15px;
-        }
-        p {
-            color: #6c757d;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        .btn {
-            display: inline-block;
-            background-color: #0d6efd;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #0b5ed7;
-        }
-        .details {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: rgb(229, 229, 229);
-            border-radius: 5px;
-            font-size: 14px;
-            color: rgb(52, 57, 60);
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
-    <div class="error-container">
-        <div class="error-icon">⚠️</div>
-        <h1>No se pudo conectar al servidor</h1>
-        <p>Lo sentimos, no se ha podido establecer conexión con el servidor de base de datos.</p>
-        <p>Por favor, inténtelo de nuevo más tarde.</p>
-        <div class="details">
-            <p>Error: ' . htmlspecialchars($displayMessage) . '</p>
-            ' . $debugInfo . '
-        </div>
-    </div>
-    <script>
-        console.error("Error de conexión a la base de datos: ' . addslashes($displayMessage) . '");
-    </script>
-</body>
-</html>';
+        echo '  <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Error de conexión</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            background-color: #f8f9fa;
+                            margin: 0;
+                            padding: 0;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                        }
+                        .error-container {
+                            background-color: white;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                            padding: 30px;
+                            width: 80%;
+                            max-width: 500px;
+                            text-align: center;
+                        }
+                        .error-icon {
+                            color: #dc3545;
+                            font-size: 48px;
+                            margin-bottom: 20px;
+                        }
+                        h1 {
+                            color: #dc3545;
+                            margin-bottom: 15px;
+                        }
+                        p {
+                            color: #6c757d;
+                            margin-bottom: 20px;
+                            line-height: 1.5;
+                        }
+                        .btn {
+                            display: inline-block;
+                            background-color: #0d6efd;
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            text-decoration: none;
+                            font-weight: bold;
+                            transition: background-color 0.3s;
+                        }
+                        .btn:hover {
+                            background-color: #0b5ed7;
+                        }
+                        .details {
+                            margin-top: 20px;
+                            padding: 15px;
+                            background-color: rgb(229, 229, 229);
+                            border-radius: 5px;
+                            font-size: 14px;
+                            color: rgb(52, 57, 60);
+                            text-align: left;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="error-container">
+                        <div class="error-icon">⚠️</div>
+                        <h1>No se pudo conectar al servidor</h1>
+                        <p>Lo sentimos, no se ha podido establecer conexión con el servidor de base de datos.</p>
+                        <p>Por favor, inténtelo de nuevo más tarde.</p>
+                        <div class="details">
+                            <p>Error: ' . htmlspecialchars($displayMessage) . '</p>
+                            ' . $debugInfo . '
+                        </div>
+                    </div>
+                    <script>
+                        console.error("Error de conexión a la base de datos: ' . addslashes($displayMessage) . '");
+                    </script>
+                </body>
+                </html>';
         exit();
     }
     
@@ -266,11 +271,23 @@ while ($attempt < $maxRetries && $conn === null) {
             throw new Exception("Error estableciendo charset: " . $conn->error);
         }
         
-        // Configurar el modo estricto de SQL
-        $conn->query("SET SESSION sql_mode = 'STRICT_ALL_TABLES'");
-        
-        // Establecer zona horaria para la conexión MySQL (Santo Domingo = UTC-4)
-        $conn->query("SET time_zone = '-04:00'");
+        $conn->query("SET SESSION sql_mode = 'STRICT_ALL_TABLES'"); // Configurar el modo estricto de SQL
+        $conn->query("SET time_zone = '-04:00'"); // Establecer zona horaria para la conexión MySQL (Santo Domingo = UTC-4)
+
+        // Establecer variable id empleado en BD para auditoría
+        if (isset($_SESSION['idEmpleado'])) {
+            // Sanitizar para evitar SQL injection
+            $id_empleado_auditoria = (int)$_SESSION['idEmpleado']; // Casting a entero
+            
+            if ($id_empleado_auditoria > 0) {
+                $conn->query("SET @usuario_app_id = {$id_empleado_auditoria}");
+            } else {
+                $conn->query("SET @usuario_app_id = NULL");
+            }
+        } else {
+            // Si no hay sesión activa, establecer NULL
+            $conn->query("SET @usuario_app_id = NULL");
+        }
         
         // Log de éxito
         if (env('APP_DEBUG', false)) {
@@ -339,9 +356,24 @@ function reconnectDatabase() {
             throw new Exception($conn->connect_error);
         }
         
-        $conn->set_charset($charset);
-        $conn->query("SET SESSION sql_mode = 'STRICT_ALL_TABLES'");
-        $conn->query("SET time_zone = '-04:00'");
+        $conn->set_charset($charset);  // Establecer conjunto de caracteres
+        $conn->query("SET SESSION sql_mode = 'STRICT_ALL_TABLES'");  // Modo estricto
+        $conn->query("SET time_zone = '-04:00'");  // Zona horaria
+
+        // Establecer variable id empleado en BD para auditoría
+        if (isset($_SESSION['idEmpleado'])) {
+            // Sanitizar para evitar SQL injection
+            $id_empleado_auditoria = (int)$_SESSION['idEmpleado']; // Casting a entero
+            
+            if ($id_empleado_auditoria > 0) {
+                $conn->query("SET @usuario_app_id = {$id_empleado_auditoria}");
+            } else {
+                $conn->query("SET @usuario_app_id = NULL");
+            }
+        } else {
+            // Si no hay sesión activa, establecer NULL
+            $conn->query("SET @usuario_app_id = NULL");
+        }
         
         error_log("✓ Reconexión exitosa");
         return true;

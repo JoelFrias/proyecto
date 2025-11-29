@@ -1,7 +1,7 @@
 <?php
 
-require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php'; // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php'; // Verificar Session
 
 // Inicializar la variable de búsqueda
 $search = isset($_GET['search']) ? htmlspecialchars(trim($_GET['search'])) : "";

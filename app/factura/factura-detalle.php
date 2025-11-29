@@ -1,7 +1,8 @@
 <?php
 
-require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php'; // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php'; // Verificar Session
+
 
 // Obtener el número de factura y el estado desde el formulario (si existen)
 $numFactura = isset($_GET['numFactura']) && !empty($_GET['numFactura']) ? intval($_GET['numFactura']) : null;

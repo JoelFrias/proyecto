@@ -1,8 +1,6 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 require '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -88,18 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$stmt->execute()) {
             throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
         }
-
-        /**
-         *  2. Auditoria de acciones de usuario
-         */
-
-        require_once '../../core/auditorias.php';
-        $usuario_id = $_SESSION['idEmpleado'];
-        $accion = 'Actualizar producto';
-        $detalle = 'Producto actualizado: ' . $descripcion . ', ID: ' . $idProducto;
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-        registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-
+        
         // Confirmar la transacción
         $conn->commit();
 

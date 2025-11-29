@@ -1,17 +1,7 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
 require '../../core/conexion.php';
-
-header('Content-Type: application/json; charset=utf-8');
-
-// Verificar sesión
-if (!isset($_SESSION['username']) || !isset($_SESSION['idEmpleado'])) {
-    echo json_encode(['error' => 'Sesión no válida'], JSON_UNESCAPED_UNICODE);
-    exit();
-}
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -25,6 +15,14 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         "error_code" => "INSUFFICIENT_PERMISSIONS",
         "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
     ]));
+}
+
+header('Content-Type: application/json; charset=utf-8');
+
+// Verificar sesión
+if (!isset($_SESSION['username']) || !isset($_SESSION['idEmpleado'])) {
+    echo json_encode(['error' => 'Sesión no válida'], JSON_UNESCAPED_UNICODE);
+    exit();
 }
 
 // Obtener datos del POST

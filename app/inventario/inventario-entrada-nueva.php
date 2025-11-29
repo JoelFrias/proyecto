@@ -1,7 +1,7 @@
 <?php 
 
-require_once '../../core/verificar-sesion.php';
 require_once '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'ALM004';

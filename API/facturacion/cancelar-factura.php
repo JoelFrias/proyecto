@@ -1,9 +1,7 @@
 <?php
-// cancelar-factura.php - Procesa la cancelación de factura
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+
 require_once('../../core/conexion.php');
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -282,9 +280,6 @@ try {
         throw new Exception('Error buscando los productos a devolver');
     }
 
-    // Requerir Auditoria
-    require_once '../../core/auditorias.php';
-
     foreach ($resultdevb as $resultb) {
         // Actualizar inventario de empleados
         $sqlCheck = "SELECT idProducto FROM inventarioempleados WHERE idProducto = ? AND idEmpleado = ? LIMIT 1";
@@ -351,14 +346,6 @@ try {
             throw new Exception("No se registró la transacción de inventario para el producto ID: " . $resultb['id']);
         }
     }
-
-    // Registrar auditoria de acciones de usuario
-
-    $usuario = $_SESSION['idEmpleado'];
-    $accion = 'Cancelacion de factura';
-    $descripcion = "Motivos: " . $motivo;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario, $accion, $descripcion, $ip);
     
     // Confirmar los cambios
     $conn->commit();

@@ -1,15 +1,7 @@
 <?php
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 require_once '../../core/conexion.php';
-require_once '../../core/auditorias.php';
-
-// 1. Configuración de la Respuesta
-header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -24,6 +16,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
     ]));
 }
+
+// 1. Configuración de la Respuesta
+header('Content-Type: application/json');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
 // Inicializar la respuesta
 $response = ['success' => false, 'message' => ''];
@@ -133,9 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
-
-    // El ID del empleado para auditoría.
-    $usuario_id = $_SESSION['idEmpleado'] ?? 0; 
     
     // 7. Verificación de Duplicados (Excluyendo el cliente actual)
     try {
@@ -190,13 +184,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_direccion->bind_param("sssssi", $no, $calle, $sector, $ciudad, $referencia, $cliente_id);
         $stmt_direccion->execute();
         $stmt_direccion->close();
-
-        // e) Auditoría
-        $accion = 'Actualizar cliente';
-        // Formatear el detalle de la auditoría
-        $detalle = "Cliente actualizado (ID: $cliente_id): Nombre: $nombre - Apellido: $apellido - Identificacion: $identificacion - Límite: $limite_credito - Activo: " . ($activo_estado ? 'Sí' : 'No');
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-        registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
         // Confirmar la transacción
         $conn->commit();

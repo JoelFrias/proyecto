@@ -1,11 +1,7 @@
 <?php
 // Incluir archivo de configuración de la base de datos
 require_once '../../core/conexion.php';
-
-// Iniciar sesión si no está iniciada
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';

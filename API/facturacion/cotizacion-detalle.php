@@ -1,9 +1,7 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
 require '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';

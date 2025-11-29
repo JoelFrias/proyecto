@@ -1,31 +1,7 @@
 <?php
 
-/* Verificacion de sesion */
-
-// Iniciar sesión
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    die(json_encode(["success" => false, "error" => "No se ha encontrado una sesion activa"]));
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    die(json_encode(["success" => false, "error" => "La sesion ha caducado"]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
 require_once '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -285,18 +261,6 @@ try {
         }
         logDebug("Detalle de transacción de inventario registrado", $producto);
     }
-
-
-    /**
-     *      2. Auditoria de acciones de usuario
-     */
-
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Transacción a Almacen';
-    $detalle = 'Se han transferido productos al almacen principal desde inventario del empleado con ID: ' . $idEmpleado . ' - Productos: ' . json_encode($productos);
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
     /**
      *      3. Confirmar la transacción

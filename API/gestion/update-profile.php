@@ -1,8 +1,7 @@
 <?php
-// Iniciar sesión al principio del archivo
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+
+require_once '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 // Configurar cabecera JSON antes de cualquier salida
 header('Content-Type: application/json; charset=utf-8');
@@ -11,40 +10,6 @@ header('Content-Type: application/json; charset=utf-8');
 if (ob_get_level()) {
     ob_clean();
 }
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "No se ha encontrado una sesión activa",
-        "error_code" => "SESSION_NOT_FOUND",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "La sesión ha expirado por inactividad",
-        "error_code" => "SESSION_EXPIRED",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require_once '../../core/conexion.php';
 
 // Validar metodo de entrada
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -129,16 +94,6 @@ try {
 
     // Actualizar la sesión con el nuevo nombre de usuario
     $_SESSION['username'] = $user;
-
-    // Auditoria de acciones de usuario
-
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Actualizar perfil';
-    $detalle = 'Se actualizó el perfil del usuario con id ' . $_SESSION['id'] . ' a ' . $user;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-
     
     $conn->commit();
     

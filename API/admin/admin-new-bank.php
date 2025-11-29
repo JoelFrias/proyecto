@@ -1,51 +1,6 @@
 <?php
-// Iniciar sesión al principio del archivo
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Configurar cabecera JSON antes de cualquier salida
-header('Content-Type: application/json; charset=utf-8');
-
-// Verificar si hay output buffer y limpiarlo si existe
-if (ob_get_level()) {
-    ob_clean();
-}
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "No se ha encontrado una sesión activa",
-        "error_code" => "SESSION_NOT_FOUND",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "La sesión ha expirado por inactividad",
-        "error_code" => "SESSION_EXPIRED",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-// Incluir la conexión a la base de datos
-require_once '../../core/conexion.php';
+require_once '../../core/conexion.php';  // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php';    // Verificar sesión activa
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -127,15 +82,6 @@ try {
     
     $row = $result->fetch_assoc();
     $newId = $row['last_id'];
-
-    // Auditoria de acciones de usuario
-
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Agregar banco';
-    $detalle = 'Se ha agregado un nuevo banco: ' . $nameBank;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
     
     $conn->commit();
     

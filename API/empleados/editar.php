@@ -1,19 +1,7 @@
 <?php
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 require_once '../../core/conexion.php';
-
-// 1. Configuración de la Respuesta
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // Ajustar esto en producción
-header('Access-Control-Allow-Methods: PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-// Inicializar la respuesta
-$response = ['success' => false, 'message' => ''];
-$errors = [];
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -28,6 +16,16 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
     ]));
 }
+
+// 1. Configuración de la Respuesta
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *'); // Ajustar esto en producción
+header('Access-Control-Allow-Methods: PUT, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Inicializar la respuesta
+$response = ['success' => false, 'message' => ''];
+$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -271,13 +269,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             }
             $stmt->close();
         }
-
-        // Auditoría
-        require_once '../../core/auditorias.php';
-        $accion = 'Actualización usuario/empleado';
-        $detalle = 'ID del empleado: ' . $idEmpleado . ', Username: ' . $username;
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-        registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
         // Confirmar la transacción
         $conn->commit();

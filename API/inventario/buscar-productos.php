@@ -1,22 +1,10 @@
 <?php
 
-// Iniciar sesión para verificación
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Verificar que el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    header('HTTP/1.1 401 Unauthorized');
-    echo json_encode(['error' => 'Sesión no iniciada']);
-    exit();
-}
+require_once '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 // Verificar que se recibió el parámetro de búsqueda
 $searchTerm = isset($_POST['search']) ? $_POST['search'] : '';
-
-// Configuración de la conexión a la base de datos
-require_once '../../core/conexion.php';
 
 // Verificar conexión
 if ($conn->connect_error) {

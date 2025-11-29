@@ -1,19 +1,7 @@
 <?php
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 require_once '../../core/conexion.php';
-
-// 1. Configuración de la Respuesta
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // Ajustar esto en producción
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-// Inicializar la respuesta
-$response = ['success' => false, 'message' => ''];
-$errors = [];
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -28,6 +16,16 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
     ]));
 }
+
+// 1. Configuración de la Respuesta
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *'); // Ajustar esto en producción
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Inicializar la respuesta
+$response = ['success' => false, 'message' => ''];
+$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     // Manejar la solicitud OPTIONS (preflight CORS)
@@ -123,9 +121,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
-
-    // El ID del empleado para auditoría. Usar 0 si no hay sesión activa.
-    $usuario_id = $_SESSION['idEmpleado'] ?? 0; 
     
     // 6. Verificación de Duplicados
     try {
@@ -167,13 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_direccion = $conn->prepare("INSERT INTO clientes_direcciones (idCliente, no, calle, sector, ciudad, referencia) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt_direccion->bind_param("isssss", $cliente_id, $no, $calle, $sector, $ciudad, $referencia);
         $stmt_direccion->execute();
-
-        // Auditoría
-        require_once '../../core/auditorias.php';
-        $accion = 'Nuevo cliente';
-        $detalle = 'ID del cliente: ' . $cliente_id;
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-        registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
         // Confirmar la transacción
         $conn->commit();

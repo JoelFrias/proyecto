@@ -1,8 +1,7 @@
 <?php
 
-require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php'; // Conexión a la base de datos
-require_once '../../core/auditorias.php';  // Requerir auditoria
+require_once '../../core/verificar-sesion.php'; // Verificar Session
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -134,17 +133,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if (!$stmt->execute()) {
                     throw new Exception("Error al abrir caja en sistema");
                 }
-
-                /**
-                 *  2. Auditoria de acciones de usuario
-                 */
-
-                require_once '../../core/auditorias.php';
-                $usuario_id = $_SESSION['idEmpleado'];
-                $accion = 'APERTURA_CAJA';
-                $detalle = 'Caja abierta con saldo inicial: ' . $saldo_apertura . ' y número de caja: ' . $num_caja;
-                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
                 
                 $conn->commit();
                 $mensaje = "Caja abierta exitosamente";
@@ -164,10 +152,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
                 $_SESSION['registro'] = $datos_caja['registro'];
                 
-                // Registrar auditoría
-                registrarAuditoriaCaja($conn, $id_empleado, 'APERTURA_CAJA', 
-                    "Caja #$num_caja abierta con saldo inicial: $saldo_apertura");
-                
             } catch (Exception $e) {
                 $conn->rollback();
                 $mensaje = "Error en transacción: " . $e->getMessage();
@@ -175,10 +159,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             
             $conn->autocommit(TRUE);
-            if ($error) {
-                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_APERTURA', 
-                    "Fallo al abrir caja: " . $mensaje);
-            }
         }
 
     }
@@ -218,23 +198,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if (!$stmt->execute()) {
                     throw new Exception("Error al eliminar caja abierta");
                 }
-
-                /**
-                 *  2. Auditoria de acciones de usuario
-                 */
-                $usuario_id = $_SESSION['idEmpleado'];
-                $accion = 'CIERRE_CAJA';
-                $detalle = 'Caja cerrada con saldo final: ' . $saldo_final . ' y número de caja: ' . $num_caja;
-                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
                 
                 $conn->commit();
                 $mensaje = "Caja cerrada exitosamente";
                 $caja_abierta = false;
-
-                // Registrar auditoría
-                registrarAuditoriaCaja($conn, $id_empleado, 'CIERRE_CAJA', 
-                    "Caja #$num_caja cerrada. Saldo final: $saldo_final, Diferencia: $diferencia");
                 
                 // Limpiar variables de caja
                 unset($_SESSION['numCaja']);
@@ -249,10 +216,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             
             $conn->autocommit(TRUE);
-            if ($error) {
-                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_CIERRE', 
-                    "Fallo al cerrar caja #$num_caja: " . $mensaje);
-            }
         }
 
     }
@@ -296,24 +259,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $row_ingresos = $result_ingresos->fetch_assoc();
                     $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
                 }
-
-                /**
-                 *  2. Auditoria de acciones de usuario
-                 */
-
-                require_once '../../core/auditorias.php';
-                $usuario_id = $_SESSION['idEmpleado'];
-                $accion = 'INGRESO_CAJA';
-                $detalle = 'Ingreso registrado con monto: ' . $monto . ' y número de caja: ' . $num_caja . ' Razón: ' . $razon;
-                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
                 
                 $conn->commit();
                 $mensaje = "Ingreso registrado exitosamente";
-                
-                // Registrar auditoría
-                registrarAuditoriaCaja($conn, $id_empleado, 'INGRESO', 
-                    "Monto: $monto, Razón: $razon, Caja: $num_caja");
                 
             } catch (Exception $e) {
                 $conn->rollback();
@@ -322,10 +270,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             
             $conn->autocommit(TRUE);
-            if ($error) {
-                registrarAuditoriaCaja($conn, $id_empleado, 'Error-cierre-caja', 
-                    "Fallo al registrar ingreso: " . $mensaje);
-            }
         }
 
 
@@ -370,21 +314,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
                 }
 
-                /**
-                 *  2. Auditoria de acciones de usuario
-                 */
-
-                require_once '../../core/auditorias.php';
-                $usuario_id = $_SESSION['idEmpleado'];
-                $accion = 'EGRESO_CAJA';
-                $detalle = 'Egreso registrado con monto: ' . $monto . ' y número de caja: ' . $num_caja . ' Razón: ' . $razon;
-                $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-                
-                // Registrar auditoría
-                registrarAuditoriaCaja($conn, $id_empleado, 'EGRESO', 
-                    "Monto: $monto, Razón: $razon, Caja: $num_caja");
-
                 $conn->commit();
                 $mensaje = "Egreso registrado exitosamente";
                 
@@ -395,10 +324,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             
             $conn->autocommit(TRUE);
-            if ($error) {
-                registrarAuditoriaCaja($conn, $id_empleado, 'ERROR_EGRESO', 
-                    "Fallo al registrar egreso: " . $mensaje);
-            }
         }
         
     }

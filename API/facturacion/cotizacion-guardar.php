@@ -1,15 +1,7 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
 require '../../core/conexion.php';
-
-// Verificar sesión
-if (!isset($_SESSION['username']) || !isset($_SESSION['idEmpleado'])) {
-    echo json_encode(['error' => 'Sesión no válida']);
-    exit();
-}
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';

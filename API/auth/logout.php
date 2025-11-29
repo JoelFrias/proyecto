@@ -31,15 +31,6 @@ if (isset($_COOKIE['remember_token'])) {
             $stmt->close();
         }
         
-        // Registrar auditoría si hay usuario
-        if ($usuario_id && $username) {
-            require_once '../../core/auditorias.php';
-            $accion = 'Sesión cerrada';
-            $detalle = 'El usuario ' . $username . ' ha cerrado sesión.';
-            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-            registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-        }
-        
         $conn->close();
         
     } catch (Exception $e) {

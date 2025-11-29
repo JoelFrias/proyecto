@@ -1,11 +1,7 @@
 <?php
 
-// Iniciar la sesion
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
 require_once '../../core/conexion.php'; // Conexion a la Base de Datos.
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -466,26 +462,6 @@ try {
     }
 
     logDebug("Ingresos en caja registrado");
-
-
-    /**
-     *      10. Registrar auditorias
-     */
-
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-
-    // auditoria de caja
-    $accion = "Registro de venta por factura #".$numFactura;
-    $detalles = "Método: ".$formaPago.", Monto: ".$montoNeto.", Razón: ".$razon;
-    registrarAuditoriaCaja($conn, $usuario_id, $accion, $detalles);
-    
-    // auditoria de usuarios
-    $accion = "Registro de venta por factura #".$numFactura;
-    $detalles = "Método: ".$formaPago.", Monto: ".$montoNeto.", Razón: ".$razon;
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalles);
-
 
     /**
      *      11. Actualizar balance del cliente

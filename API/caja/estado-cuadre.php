@@ -1,13 +1,19 @@
 <?php
-// cambiar-estado-cuadre.php
 
-require_once '../../core/verificar-sesion.php';
 require_once '../../core/conexion.php';
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'CUA002';
 $id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'No tiene permisos para realizar esta acción'
+    ]);
+    exit();
+}
 
 // Configurar respuesta JSON
 header('Content-Type: application/json');
@@ -17,15 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
         'message' => 'Método de petición no válido'
-    ]);
-    exit();
-}
-
-// Validar permisos
-if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'No tiene permisos para realizar esta acción'
     ]);
     exit();
 }

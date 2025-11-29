@@ -1,4 +1,22 @@
 <?php
+
+require_once '../../core/conexion.php';             // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php';     // Verificar sesión de usuario
+
+// Validar permisos de usuario
+require_once '../../core/validar-permisos.php';
+$permiso_necesario = 'CLI004';
+$id_empleado = $_SESSION['idEmpleado'];
+if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
+    http_response_code(403);
+    die(json_encode([
+        "success" => false, 
+        "error" => "No tiene permisos para realizar esta acción",
+        "error_code" => "INSUFFICIENT_PERMISSIONS",
+        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
+    ]));
+}
+
 // Prevenir acceso directo a este script
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('HTTP/1.1 405 Method Not Allowed');
@@ -16,38 +34,8 @@ if (!isset($data['registro_pago']) || empty($data['registro_pago'])) {
     exit;
 }
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-// Verificar que el usuario esté autenticado
-if (!isset($_SESSION['idEmpleado'])) {
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Acceso denegado'
-    ]);
-    exit;
-}
-
 $registro_pago = intval($data['registro_pago']);
 $empleado_id = $_SESSION['idEmpleado'] ?? null;
-$ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-
-// Incluir el archivo de conexión a la base de datos
-require_once '../../core/conexion.php';
-
-// Validar permisos de usuario
-require_once '../../core/validar-permisos.php';
-$permiso_necesario = 'CLI004';
-$id_empleado = $_SESSION['idEmpleado'];
-if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
-    http_response_code(403);
-    die(json_encode([
-        "success" => false, 
-        "error" => "No tiene permisos para realizar esta acción",
-        "error_code" => "INSUFFICIENT_PERMISSIONS",
-        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
-    ]));
-}
 
 try {
     // Iniciar transacción
@@ -171,21 +159,6 @@ try {
     
     // 7. Actualizar el balance del cliente
     actualizarBalanceCliente($conn, $idCliente);
-    
-    // 8. Registrar la acción en la auditoría
-    $detalles = "Cancelación de pago de cliente ID: $idCliente por un monto de $monto_pago";
-    
-    $stmt = $conn->prepare("INSERT INTO auditoria_usuarios (empleado_id, accion, detalles, ip) VALUES (?, 'Cancelar pago', ?, ?)");
-    if (!$stmt) {
-        throw new Exception("Error preparando registro de auditoría: " . $conn->error);
-    }
-    
-    $stmt->bind_param('iss', $empleado_id, $detalles, $ip);
-    
-    if (!$stmt->execute()) {
-        throw new Exception("Error registrando auditoría: " . $stmt->error);
-    }
-    $stmt->close();
     
     // Confirmar la transacción
     $conn->commit();

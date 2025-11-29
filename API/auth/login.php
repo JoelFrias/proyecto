@@ -178,18 +178,6 @@ if ($stmt = $conn->prepare($query)) {
             // Verificar si el empleado tiene una caja abierta
             $datosCaja = verificarCajaAbierta($conn, $row['idEmpleado']);
 
-            // Registrar auditoría
-            try {
-                require_once '../../core/auditorias.php';
-                $usuario_id = $_SESSION['idEmpleado'];
-                $accion = 'Nueva sesión iniciada';
-                $detalle = 'El usuario ' . $_SESSION['username'] . ' ha iniciado sesión.' . ($remember_me ? ' (Sesión persistente activada)' : '');
-                $ip = $_SERVER['REMOTE_ADDR'];
-                registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
-            } catch (Exception $e) {
-                error_log("Error en auditoría: " . $e->getMessage());
-            }
-
             // Respuesta exitosa
             echo json_encode([
                 'success' => true,

@@ -1,7 +1,7 @@
 <?php
 
-require_once '../core/verificar-sesion.php'; // Verificar Session
 require_once '../core/conexion.php'; // Cargar Conexion
+require_once '../core/verificar-sesion.php'; // Verificar Session
 
 ?>
 

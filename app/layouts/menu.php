@@ -62,18 +62,18 @@ $permisoPanelAdmin = validarPermiso($conn, 'PADM001', $id_empleado);
         <li onclick="navigateTo('<?= $productosUrl ?>')"><i class="fa-solid fa-box-open"></i></i><span>Productos</span></li>
         <li onclick="navigateTo('<?= $facturaUrl ?>')"><i class="fa-solid fa-list-ul"></i></i><span>Registro de Facturas</span></li>
         
-        <?php if ($permisoAlmacen): ?>
-            <li onclick="navigateTo('<?= $almacenUrl ?>')"><i class="fa-solid fa-warehouse"></i><span>Almacén</span></li>
-        <?php endif; ?>
-        
-        <li onclick="navigateTo('<?= $inventarioPUrl ?>')"><i class="fa-solid fa-boxes-stacked"></i><span>Inventario Personal</span></li>
-        
         <?php if ($permisoFacturacion): ?>
             <li onclick="navigateTo('<?= $facturacionUrl ?>')"><i class="fa-solid fa-shop"></i><span>Facturación</span></li>
         <?php endif; ?>
         
         <?php if ($permisoCaja): ?>
             <li onclick="navigateTo('<?= $cajaUrl ?>')"><i class="fa-solid fa-cash-register"></i><span>Caja</span></li>
+        <?php endif; ?>
+        
+        <li onclick="navigateTo('<?= $inventarioPUrl ?>')"><i class="fa-solid fa-boxes-stacked"></i><span>Inventario Personal</span></li>
+        
+        <?php if ($permisoAlmacen): ?>
+            <li onclick="navigateTo('<?= $almacenUrl ?>')"><i class="fa-solid fa-warehouse"></i><span>Almacén</span></li>
         <?php endif; ?>
 
         <?php if ($permisoPanelAdmin): ?>

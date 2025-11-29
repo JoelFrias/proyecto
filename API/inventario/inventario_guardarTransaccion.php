@@ -1,7 +1,7 @@
 <?php
 
-require_once '../../core/verificar-sesion.php'; // Verificar Session
 require_once '../../core/conexion.php';  // Conexion a la base de datos
+require_once '../../core/verificar-sesion.php'; // Verificar Session
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -252,17 +252,6 @@ try {
         }
         logDebug("Detalle de transacción de inventario registrado", $producto);
     }
-
-    /**
-     *      2. Auditoria de acciones de usuario
-     */
-
-    require_once '../../core/auditorias.php';
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Transacción de inventario';
-    $detalle = 'Se han transferido productos al inventario del empleado con ID: ' . $idEmpleado . ' - Productos: ' . json_encode($productos);
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
     /**
      *      3. Confirmar la transacción

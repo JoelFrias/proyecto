@@ -1,45 +1,7 @@
 <?php
 
-/* Verificacion de sesion */
-
-// Iniciar sesión
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Configurar el tiempo de caducidad de la sesión
-$inactivity_limit = 900; // 15 minutos en segundos
-
-// Verificar si el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "No se ha encontrado una sesión activa",
-        "error_code" => "SESSION_NOT_FOUND",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Verificar si la sesión ha expirado por inactividad
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > $inactivity_limit)) {
-    session_unset(); // Eliminar todas las variables de sesión
-    session_destroy(); // Destruir la sesión
-    die(json_encode([
-        "success" => false, 
-        "error" => "La sesión ha expirado por inactividad",
-        "error_code" => "SESSION_EXPIRED",
-        "solution" => "Por favor inicie sesión nuevamente"
-    ]));
-}
-
-// Actualizar el tiempo de la última actividad
-$_SESSION['last_activity'] = time();
-
-/* Fin de verificacion de sesion */
-
-require_once '../../core/conexion.php';
+require_once '../../core/conexion.php';             // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php';     // Verificar sesión de usuario
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -401,30 +363,6 @@ try {
         throw new Exception("Error insertando el ingreso: " . $stmt->error);
     }
     logDebug("Ingresos en caja registrado");
-
-
-    /**
-     * *  5. Registrar auditoría de caja
-     */
-
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = "Registro de pago a cuenta del cliente: " . $idCliente;
-    $detalles = "Método: " . $formaPago . ", Monto: " . $montoPagado1 . ", Autorización: " . $numeroAutorizacion . ", Tarjeta: " . $numeroTarjeta . ", Banco: " . $banco . ", Destino: " . $destino;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-
-    require_once '../../core/auditorias.php';
-    registrarAuditoriaCaja($conn, $usuario_id, $accion, $detalles);
-
-
-    /**
-     *  6. Auditoria de acciones de usuario
-     */
-
-    $usuario_id = $_SESSION['idEmpleado'];
-    $accion = 'Pago a cuenta del cliente: ' . $idCliente;
-    $detalle = 'Método: ' . $formaPago . ', Monto: ' . $montoPagado1 . ', Autorización: ' . $numeroAutorizacion . ', Tarjeta: ' . $numeroTarjeta . ', Banco: ' . $banco . ', Destino: ' . $destino;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario_id, $accion, $detalle, $ip);
 
     /**
      *  7. Confirmar la transacción
