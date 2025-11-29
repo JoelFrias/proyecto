@@ -95,7 +95,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .btn-danger {
-            background: #dc3545;
+            background: #f95f5fff;
             color: white;
             padding: 8px 15px;
             font-size: 13px;
@@ -146,7 +146,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #895757ff 0%, #455b65ff 100%);
+            background: linear-gradient(135deg, #f95f5fff 0%, #fdd6d6ff 100%);
             color: white;
             padding: 20px;
             border-radius: 10px;

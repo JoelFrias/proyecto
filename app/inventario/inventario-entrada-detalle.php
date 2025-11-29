@@ -379,7 +379,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             
             if(!entradaId) {
                 Swal.fire('Error', 'ID de entrada no especificado', 'error').then(() => {
-                    window.location.href = 'inventario_entradas_lista.php';
+                    window.location.href = 'inventario-entradas-lista.php';
                 });
                 return;
             }
@@ -399,7 +399,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         mostrarDetalle(data.entrada, data.detalle);
                     } else {
                         Swal.fire('Error', data.message, 'error').then(() => {
-                            window.location.href = 'inventario_entradas_lista.php';
+                            window.location.href = 'inventario-entradas-lista.php';
                         });
                     }
                 })

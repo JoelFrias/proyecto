@@ -1,17 +1,7 @@
 <?php
-// registrar_entrada.php - Archivo para registrar entradas de inventario
 
-// Iniciar sesión para verificación
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Verificar que el usuario ha iniciado sesión
-if (!isset($_SESSION['username'])) {
-    header('HTTP/1.1 401 Unauthorized');
-    echo json_encode(['success' => false, 'message' => 'Sesión no iniciada']);
-    exit();
-}
+require_once '../../core/verificar-sesion.php';
+require_once '../../core/conexion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -19,147 +9,602 @@ $permiso_necesario = 'ALM004';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     http_response_code(403);
-    die(json_encode([
-        "success" => false, 
-        "error" => "No tiene permisos para realizar esta acción",
-        "error_code" => "INSUFFICIENT_PERMISSIONS",
-        "solution" => "Contacte al administrador del sistema para obtener los permisos necesarios"
-    ]));
-}
-
-// Recibir los datos JSON y decodificarlos
-$jsonData = file_get_contents('php://input');
-$data = json_decode($jsonData, true);
-
-// Validar datos recibidos
-if (!isset($data['id_producto']) || !isset($data['cantidad']) || $data['cantidad'] <= 0) {
-    header('HTTP/1.1 400 Bad Request');
-    echo json_encode(['success' => false, 'message' => 'Datos incompletos o inválidos']);
+    echo json_encode(['success' => false, 'message' => 'Error: INSUFFICIENT_PERMISSIONS']);
     exit();
 }
 
-// Limpiar y preparar los datos
-$id_producto = filter_var($data['id_producto'], FILTER_SANITIZE_NUMBER_INT);
-$cantidad = filter_var($data['cantidad'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-$descripcion = isset($data['descripcion']) ? filter_var($data['descripcion'], FILTER_SANITIZE_FULL_SPECIAL_CHARS) : null;
-$precio_compra = isset($data['precio_compra']) ? filter_var($data['precio_compra'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;
-$precio_venta1 = isset($data['precio_venta1']) ? filter_var($data['precio_venta1'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;
-$precio_venta2 = isset($data['precio_venta2']) ? filter_var($data['precio_venta2'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;
-$punto_reorden = isset($data['punto_reorden']) ? filter_var($data['punto_reorden'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null;
+header('Content-Type: application/json');
 
-// Configuración de la conexión a la base de datos
-require_once '../../core/conexion.php';
+$accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 
-// Verificar conexión
-if ($conn->connect_error) {
-    header('HTTP/1.1 500 Internal Server Error');
-    echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
-    exit();
+switch($accion) {
+    case 'listar_productos':
+        listarProductos($conn);
+        break;
+    case 'crear_entrada':
+        crearEntrada($conn);
+        break;
+    case 'listar_entradas':
+        listarEntradas($conn);
+        break;
+    case 'obtener_entrada':
+        obtenerEntrada($conn);
+        break;
+    case 'cancelar_entrada':
+        cancelarEntrada($conn);
+        break;
+    case 'obtener_cancelacion':
+        obtenerCancelacion($conn);
+        break;
+    default:
+        echo json_encode(['success' => false, 'message' => 'Acción no válida']);
 }
 
-// Iniciar transacción
-$conn->begin_transaction();
-
-try {
-
-    // 1. Actualizar el inventario (tabla productos)
-    $sqlUpdateInventario = "UPDATE productos SET 
-                          existencia = existencia + ?,
-                          descripcion = COALESCE(?, descripcion),
-                          precioCompra = COALESCE(?, precioCompra),
-                          precioVenta1 = COALESCE(?, precioVenta1),
-                          precioVenta2 = COALESCE(?, precioVenta2),
-                          reorden = COALESCE(?, reorden)
-                          WHERE id = ?";
-    
-    $stmtInventario = $conn->prepare($sqlUpdateInventario);
-    if (!$stmtInventario) {
-        throw new Exception("Error al preparar la actualización del inventario: " . $conn->error);
+function listarProductos($conn) {
+    try {
+        $query = "
+            SELECT p.id, p.descripcion, p.existencia, p.precioCompra, 
+                   p.precioVenta1, p.precioVenta2, pt.descripcion as tipo
+            FROM productos p
+            LEFT JOIN productos_tipo pt ON p.idTipo = pt.id
+            WHERE p.activo = 1
+            ORDER BY p.descripcion
+        ";
+        
+        $result = $conn->query($query);
+        
+        if (!$result) {
+            throw new Exception($conn->error);
+        }
+        
+        $productos = [];
+        while ($row = $result->fetch_assoc()) {
+            $productos[] = $row;
+        }
+        
+        echo json_encode(['success' => true, 'productos' => $productos]);
+        
+    } catch(Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
-    
-    $stmtInventario->bind_param(
-        "dsssssi",
-        $cantidad,
-        $descripcion,
-        $precio_compra,
-        $precio_venta1,
-        $precio_venta2,
-        $punto_reorden,
-        $id_producto
-    );
-    
-    if (!$stmtInventario->execute()) {
-        throw new Exception("Error al actualizar el producto: " . $stmtInventario->error);
-    }
-    
-    // Verificar si se actualizó algún registro
-    if ($stmtInventario->affected_rows === 0) {
-        throw new Exception("No se encontró el producto con ID: $id_producto en productos");
-    }
-
-    // 2. Actualizar existencia en inventario
-
-    $sqlito = "UPDATE inventario SET existencia = existencia + ?, ultima_actualizacion = NOW() WHERE idProducto = ?";
-    
-    $statement = $conn->prepare($sqlito);
-    if (!$statement) {
-        throw new Exception("Error al preparar la actualización del inventario: " . $conn->error);
-    }
-    
-    $statement->bind_param("di", $cantidad, $id_producto);
-    
-    if (!$statement->execute()) {
-        throw new Exception("Error al actualizar el inventario: " . $statement->error);
-    }
-    
-    // 3. Registrar la transaccion de inventario (tabla inventariotransacciones)
-    $sqlTransacciones = "INSERT INTO inventariotransacciones
-                        (tipo, idProducto, cantidad, fecha, descripcion, idEmpleado)
-                        VALUES ('entrada', ?, ?, NOW(), ?, ?)";
-
-    $stmtTransacciones = $conn->prepare($sqlTransacciones);
-    if (!$stmtTransacciones){
-        throw new Exception("Error al preparar el registro en transacciones: " . $conn->error);
-    }
-
-    $usuario = $_SESSION['idEmpleado'];
-    $detalles = json_encode([
-        'descripcion_nueva' => $descripcion,
-        'precio_compra_nuevo' => $precio_compra,
-        'precio_venta1_nuevo' => $precio_venta1,
-        'precio_venta2_nuevo' => $precio_venta2,
-        'punto_reorden_nuevo' => $punto_reorden
-    ]);
-
-    $stmtTransacciones->bind_param("idss", $id_producto, $cantidad, $detalles, $usuario);
-
-    if(!$stmtTransacciones->execute()){
-        throw new Exception("Error al registrar en transacciones: " . $stmtTransacciones->error);
-    }
-
-    // 4. Registrar auditoria de acciones de usuario
-    require_once '../../core/auditorias.php';
-
-    $accion = 'Entrada de producto a inventario';
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'DESCONOCIDA';
-    registrarAuditoriaUsuarios($conn, $usuario, $accion, $detalles, $ip);
-    
-    // Confirmar la transacción
-    $conn->commit();
-    
-    // Éxito
-    echo json_encode(['success' => true, 'message' => 'Entrada registrada correctamente']);
-    
-} catch (Exception $e) {
-    // Revertir cambios en caso de error
-    $conn->rollback();
-    
-    header('HTTP/1.1 500 Internal Server Error');
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
-// Cerrar conexiones
-if (isset($stmtInventario)) $stmtInventario->close();
-if (isset($stmtTransacciones)) $stmtTransacciones->close();
+/**
+ * Calcula el costo promedio ponderado de un producto
+ * Formula: ∑(cantidad×costo) / ∑cantidad
+ * CORREGIDO: Ahora usa inventario.existencia (almacén general)
+ */
+function calcularCostoPromedioPonderado($conn, $id_producto, $nueva_cantidad, $nuevo_costo) {
+    try {
+        // CORREGIDO: Obtener existencia del almacén general (inventario) y costo actual
+        $stmt = $conn->prepare("
+            SELECT i.existencia, p.precioCompra 
+            FROM inventario i
+            INNER JOIN productos p ON i.idProducto = p.id
+            WHERE i.idProducto = ?
+        ");
+        $stmt->bind_param("i", $id_producto);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+        $stmt->close();
+        
+        if (!$data) {
+            throw new Exception("Producto no encontrado en inventario");
+        }
+        
+        $existencia_actual = floatval($data['existencia']);
+        $costo_actual = floatval($data['precioCompra']);
+        
+        // Si no hay existencia actual, el costo promedio es el nuevo costo
+        if ($existencia_actual <= 0) {
+            return $nuevo_costo;
+        }
+        
+        // Calcular el costo promedio ponderado
+        // Formula: [(existencia_actual × costo_actual) + (nueva_cantidad × nuevo_costo)] / (existencia_actual + nueva_cantidad)
+        $suma_costos = ($existencia_actual * $costo_actual) + ($nueva_cantidad * $nuevo_costo);
+        $suma_cantidades = $existencia_actual + $nueva_cantidad;
+        
+        $costo_promedio = $suma_costos / $suma_cantidades;
+        
+        return round($costo_promedio, 2);
+        
+    } catch(Exception $e) {
+        throw new Exception("Error al calcular costo promedio: " . $e->getMessage());
+    }
+}
+
+/**
+ * Ajusta automáticamente los precios de venta si son menores o iguales al costo
+ * Regla: precioVenta2 > precioVenta1 > costo
+ * Si precioVenta1 <= costo: precioVenta1 = costo * 1.25 (25% margen mínimo)
+ * Si precioVenta2 <= precioVenta1: precioVenta2 = precioVenta1 * 1.15 (15% diferencia mínima)
+ */
+function ajustarPreciosVenta($conn, $id_producto, $nuevo_costo_promedio) {
+    try {
+        $stmt = $conn->prepare("SELECT descripcion, precioVenta1, precioVenta2 FROM productos WHERE id = ?");
+        $stmt->bind_param("i", $id_producto);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $producto = $result->fetch_assoc();
+        $stmt->close();
+        
+        if (!$producto) {
+            return [
+                'ajustado' => false, 
+                'mensaje' => 'Producto no encontrado',
+                'precioVenta1' => 0,
+                'precioVenta2' => 0
+            ];
+        }
+        
+        $precioVenta1_original = floatval($producto['precioVenta1']);
+        $precioVenta2_original = floatval($producto['precioVenta2']);
+        $descripcion = $producto['descripcion'];
+        
+        $precioVenta1_nuevo = $precioVenta1_original;
+        $precioVenta2_nuevo = $precioVenta2_original;
+        $ajustes_realizados = [];
+        
+        // Ajustar precioVenta1 si es menor o igual al costo
+        if ($precioVenta1_nuevo <= $nuevo_costo_promedio) {
+            $precioVenta1_nuevo = round($nuevo_costo_promedio * 1.25, 2); // 25% de margen mínimo
+            $ajustes_realizados[] = "Precio Venta 1: RD$ $precioVenta1_original → RD$ $precioVenta1_nuevo";
+        }
+        
+        // Ajustar precioVenta2 si es menor o igual a precioVenta1
+        if ($precioVenta2_nuevo <= $precioVenta1_nuevo) {
+            $precioVenta2_nuevo = round($precioVenta1_nuevo * 1.15, 2); // 15% más que precioVenta1
+            $ajustes_realizados[] = "Precio Venta 2: RD$ $precioVenta2_original → RD$ $precioVenta2_nuevo";
+        }
+        
+        // Si se realizaron ajustes, actualizar en la base de datos
+        if (!empty($ajustes_realizados)) {
+            $stmt_update = $conn->prepare("UPDATE productos SET precioVenta1 = ?, precioVenta2 = ? WHERE id = ?");
+            $stmt_update->bind_param("ddi", $precioVenta1_nuevo, $precioVenta2_nuevo, $id_producto);
+            $stmt_update->execute();
+            $stmt_update->close();
+            
+            return [
+                'ajustado' => true,
+                'producto' => $descripcion,
+                'ajustes' => $ajustes_realizados,
+                'precioVenta1' => $precioVenta1_nuevo,
+                'precioVenta2' => $precioVenta2_nuevo,
+                'costo_promedio' => $nuevo_costo_promedio
+            ];
+        }
+        
+        return [
+            'ajustado' => false,
+            'precioVenta1' => $precioVenta1_nuevo,
+            'precioVenta2' => $precioVenta2_nuevo
+        ];
+        
+    } catch(Exception $e) {
+        return [
+            'ajustado' => false, 
+            'mensaje' => 'Error al ajustar precios: ' . $e->getMessage(),
+            'precioVenta1' => 0,
+            'precioVenta2' => 0
+        ];
+    }
+}
+
+function crearEntrada($conn) {
+    try {
+        $empleado = $_SESSION['idEmpleado']; 
+        $productos = json_decode($_POST['productos'], true);
+        $referencia = $_POST['referencia'] ?? '';
+        
+        if(empty($productos)) {
+            echo json_encode(['success' => false, 'message' => 'Debe agregar al menos un producto']);
+            return;
+        }
+        
+        $conn->begin_transaction();
+        
+        // Insertar entrada principal
+        $stmt = $conn->prepare("
+            INSERT INTO inventario_entradas (fecha, empleado, referencia, estado)
+            VALUES (NOW(), ?, ?, 'activo')
+        ");
+        $stmt->bind_param("is", $empleado, $referencia);
+        $stmt->execute();
+        $id_entrada = $conn->insert_id;
+        $stmt->close();
+        
+        // Insertar detalle de productos y actualizar inventario
+        $stmt_detalle = $conn->prepare("
+            INSERT INTO inventario_entradas_detalle (id_entrada, id_producto, cantidad, costo, fecha)
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        
+        // CORREGIDO: Actualizar inventario (almacén general)
+        $stmt_update_inventario = $conn->prepare("
+            UPDATE inventario 
+            SET existencia = existencia + ?,
+                ultima_actualizacion = NOW()
+            WHERE idProducto = ?
+        ");
+        
+        // CORREGIDO: Actualizar existencia total y costo en productos
+        $stmt_update_producto = $conn->prepare("
+            UPDATE productos 
+            SET existencia = existencia + ?, 
+                precioCompra = ?
+            WHERE id = ?
+        ");
+        
+        $productos_ajustados = [];
+        
+        foreach($productos as $prod) {
+            // Calcular costo promedio ponderado
+            $costo_promedio = calcularCostoPromedioPonderado(
+                $conn, 
+                $prod['id_producto'], 
+                $prod['cantidad'], 
+                $prod['costo']
+            );
+            
+            // Ajustar precios de venta si es necesario
+            $ajuste = ajustarPreciosVenta($conn, $prod['id_producto'], $costo_promedio);
+            
+            if ($ajuste['ajustado']) {
+                $productos_ajustados[] = [
+                    'producto' => $ajuste['producto'],
+                    'ajustes' => $ajuste['ajustes'],
+                    'costo_promedio' => $ajuste['costo_promedio'],
+                    'precioVenta1' => $ajuste['precioVenta1'],
+                    'precioVenta2' => $ajuste['precioVenta2']
+                ];
+            }
+            
+            // Insertar detalle
+            $stmt_detalle->bind_param("iidd", 
+                $id_entrada,
+                $prod['id_producto'],
+                $prod['cantidad'],
+                $prod['costo']
+            );
+            $stmt_detalle->execute();
+            
+            // Actualizar existencia en inventario (almacén general)
+            $stmt_update_inventario->bind_param("di",
+                $prod['cantidad'],
+                $prod['id_producto']
+            );
+            $stmt_update_inventario->execute();
+            
+            // Actualizar existencia total y costo promedio en productos
+            $stmt_update_producto->bind_param("ddi",
+                $prod['cantidad'],
+                $costo_promedio,
+                $prod['id_producto']
+            );
+            $stmt_update_producto->execute();
+        }
+        
+        $stmt_detalle->close();
+        $stmt_update_inventario->close();
+        $stmt_update_producto->close();
+        
+        $conn->commit();
+        
+        $response = [
+            'success' => true, 
+            'message' => 'Entrada registrada exitosamente',
+            'id_entrada' => $id_entrada
+        ];
+        
+        // Agregar información sobre ajustes si los hubo
+        if (!empty($productos_ajustados)) {
+            $response['precios_ajustados'] = true;
+            $response['ajustes'] = $productos_ajustados;
+        }
+        
+        echo json_encode($response);
+        
+    } catch(Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function listarEntradas($conn) {
+    try {
+        $limite = (int)($_GET['limite'] ?? 10);
+        $pagina = (int)($_GET['pagina'] ?? 1);
+        $offset = ($pagina - 1) * $limite;
+        
+        $where = [];
+        $params = [];
+        $types = '';
+        
+        if(!empty($_GET['estado'])) {
+            $where[] = "ie.estado = ?";
+            $params[] = $_GET['estado'];
+            $types .= 's';
+        }
+        
+        if(!empty($_GET['fecha_desde'])) {
+            $where[] = "DATE(ie.fecha) >= ?";
+            $params[] = $_GET['fecha_desde'];
+            $types .= 's';
+        }
+        
+        if(!empty($_GET['fecha_hasta'])) {
+            $where[] = "DATE(ie.fecha) <= ?";
+            $params[] = $_GET['fecha_hasta'];
+            $types .= 's';
+        }
+        
+        $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+        
+        $query = "
+            SELECT 
+                ie.id,
+                ie.fecha,
+                CONCAT(e.nombre, ' ', e.apellido) AS empleado,
+                ie.estado,
+                COUNT(ied.id_producto) as total_productos,
+                SUM(ied.cantidad) as total_cantidad,
+                SUM(ied.cantidad * ied.costo) as total_costo
+            FROM inventario_entradas ie
+            LEFT JOIN inventario_entradas_detalle ied ON ie.id = ied.id_entrada
+            LEFT JOIN empleados e ON e.id = ie.empleado
+            $whereClause
+            GROUP BY ie.id
+            ORDER BY ie.fecha DESC
+            LIMIT $limite OFFSET $offset
+        ";
+        
+        if(!empty($params)) {
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        } else {
+            $result = $conn->query($query);
+        }
+        
+        if (!$result) {
+            throw new Exception($conn->error);
+        }
+        
+        $entradas = [];
+        while ($row = $result->fetch_assoc()) {
+            $entradas[] = $row;
+        }
+        
+        $countQuery = "SELECT COUNT(*) as total FROM inventario_entradas ie $whereClause";
+        
+        if(!empty($params)) {
+            $stmt_count = $conn->prepare($countQuery);
+            $stmt_count->bind_param($types, ...$params);
+            $stmt_count->execute();
+            $result_total = $stmt_count->get_result();
+        } else {
+            $result_total = $conn->query($countQuery);
+        }
+        
+        $total = $result_total->fetch_assoc()['total'];
+        
+        echo json_encode([
+            'success' => true, 
+            'entradas' => $entradas,
+            'total' => $total,
+            'pagina' => $pagina,
+            'total_paginas' => ceil($total / $limite)
+        ]);
+        
+    } catch(Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerEntrada($conn) {
+    try {
+        $id_entrada = (int)($_GET['id'] ?? 0);
+        
+        $stmt = $conn->prepare("SELECT
+                                    ie.*,
+                                    CONCAT(e.nombre, ' ', e.apellido) AS empleado_nombre
+                                FROM
+                                    inventario_entradas ie
+                                LEFT JOIN empleados e ON e.id = ie.empleado
+                                WHERE ie.id = ?");
+
+        $stmt->bind_param("i", $id_entrada);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $entrada = $result->fetch_assoc();
+        $stmt->close();
+        
+        if(!$entrada) {
+            echo json_encode(['success' => false, 'message' => 'Entrada no encontrada']);
+            return;
+        }
+        
+        $stmt = $conn->prepare("
+            SELECT 
+                ied.*,
+                p.descripcion,
+                pt.descripcion as tipo
+            FROM inventario_entradas_detalle ied
+            INNER JOIN productos p ON ied.id_producto = p.id
+            LEFT JOIN productos_tipo pt ON p.idTipo = pt.id
+            WHERE ied.id_entrada = ?
+        ");
+        $stmt->bind_param("i", $id_entrada);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $detalle = [];
+        while ($row = $result->fetch_assoc()) {
+            $detalle[] = $row;
+        }
+        $stmt->close();
+        
+        echo json_encode([
+            'success' => true,
+            'entrada' => $entrada,
+            'detalle' => $detalle
+        ]);
+        
+    } catch(Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function cancelarEntrada($conn) {
+    try {
+        $id_entrada = (int)($_POST['id_entrada'] ?? 0);
+        $notas = $_POST['notas'] ?? '';
+        $empleado = (int)($_SESSION['idEmpleado'] ?? 1);
+        
+        $conn->begin_transaction();
+        
+        $stmt = $conn->prepare("SELECT estado FROM inventario_entradas WHERE id = ?");
+        $stmt->bind_param("i", $id_entrada);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $entrada = $result->fetch_assoc();
+        $stmt->close();
+        
+        if(!$entrada) {
+            echo json_encode(['success' => false, 'message' => 'Entrada no encontrada']);
+            return;
+        }
+        
+        if($entrada['estado'] == 'cancelado') {
+            echo json_encode(['success' => false, 'message' => 'La entrada ya está cancelada']);
+            return;
+        }
+        
+        // Obtener detalle de productos para recalcular costos
+        $stmt = $conn->prepare("
+            SELECT id_producto, cantidad, costo FROM inventario_entradas_detalle WHERE id_entrada = ?
+        ");
+        $stmt->bind_param("i", $id_entrada);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $productos = [];
+        while ($row = $result->fetch_assoc()) {
+            $productos[] = $row;
+        }
+        $stmt->close();
+        
+        // CORREGIDO: Actualizar inventario (almacén general) y recalcular costo promedio
+        $stmt_update_inventario = $conn->prepare("
+            UPDATE inventario 
+            SET existencia = existencia - ?,
+                ultima_actualizacion = NOW()
+            WHERE idProducto = ?
+        ");
+        
+        // CORREGIDO: Actualizar productos con nuevo costo promedio
+        $stmt_update_producto = $conn->prepare("
+            UPDATE productos 
+            SET existencia = existencia - ?, 
+                precioCompra = ? 
+            WHERE id = ?
+        ");
+        
+        foreach($productos as $prod) {
+            // Obtener datos actuales del inventario (almacén general)
+            $stmt = $conn->prepare("
+                SELECT i.existencia, p.precioCompra 
+                FROM inventario i
+                INNER JOIN productos p ON i.idProducto = p.id
+                WHERE i.idProducto = ?
+            ");
+            $stmt->bind_param("i", $prod['id_producto']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $data_actual = $result->fetch_assoc();
+            $stmt->close();
+            
+            $existencia_actual = floatval($data_actual['existencia']);
+            $costo_actual = floatval($data_actual['precioCompra']);
+            
+            // Calcular el nuevo costo promedio sin esta entrada
+            // Formula: [(existencia_actual × costo_actual) - (cantidad_cancelada × costo_cancelado)] / (existencia_actual - cantidad_cancelada)
+            $nueva_existencia = $existencia_actual - $prod['cantidad'];
+            
+            if ($nueva_existencia > 0) {
+                $suma_costos_actual = $existencia_actual * $costo_actual;
+                $suma_costos_cancelados = $prod['cantidad'] * $prod['costo'];
+                $nuevo_costo_promedio = ($suma_costos_actual - $suma_costos_cancelados) / $nueva_existencia;
+                $nuevo_costo_promedio = round($nuevo_costo_promedio, 2);
+            } else {
+                $nuevo_costo_promedio = 0;
+            }
+            
+            // Actualizar inventario (almacén general)
+            $stmt_update_inventario->bind_param("di", $prod['cantidad'], $prod['id_producto']);
+            $stmt_update_inventario->execute();
+            
+            // Actualizar productos (existencia total y costo)
+            $stmt_update_producto->bind_param("ddi", $prod['cantidad'], $nuevo_costo_promedio, $prod['id_producto']);
+            $stmt_update_producto->execute();
+        }
+        
+        $stmt_update_inventario->close();
+        $stmt_update_producto->close();
+        
+        // Marcar entrada como cancelada
+        $stmt = $conn->prepare("UPDATE inventario_entradas SET estado = 'cancelado' WHERE id = ?");
+        $stmt->bind_param("i", $id_entrada);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Registrar cancelación
+        $stmt = $conn->prepare("
+            INSERT INTO inventario_entradas_canceladas (id_entrada, fecha, empleado, notas)
+            VALUES (?, NOW(), ?, ?)
+        ");
+        $stmt->bind_param("iis", $id_entrada, $empleado, $notas);
+        $stmt->execute();
+        $stmt->close();
+        
+        $conn->commit();
+        echo json_encode(['success' => true, 'message' => 'Entrada cancelada exitosamente']);
+        
+    } catch(Exception $e) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerCancelacion($conn) {
+    try {
+        $id_entrada = (int)($_GET['id'] ?? 0);
+        
+        $stmt = $conn->prepare("SELECT
+                                    iec.*,
+                                    CONCAT(e.nombre, ' ', e.apellido) AS nombre_empleado
+                                FROM
+                                    inventario_entradas_canceladas iec
+                                LEFT JOIN empleados e ON e.id = iec.empleado
+                                WHERE iec.id_entrada = ?");
+        $stmt->bind_param("i", $id_entrada);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $cancelacion = $result->fetch_assoc();
+        $stmt->close();
+        
+        echo json_encode([
+            'success' => true,
+            'cancelacion' => $cancelacion
+        ]);
+        
+    } catch(Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+}
+
 $conn->close();
 ?>

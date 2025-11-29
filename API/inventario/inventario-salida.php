@@ -45,12 +45,20 @@ switch($accion) {
 
 function listarProductos($conn) {
     try {
+        // CORREGIDO: Ahora usa inventario.existencia en lugar de productos.existencia
         $query = "
-            SELECT p.id, p.descripcion, p.existencia, p.precioCompra, 
-                   p.precioVenta1, p.precioVenta2, pt.descripcion as tipo
+            SELECT 
+                p.id, 
+                p.descripcion, 
+                i.existencia,
+                p.precioCompra, 
+                p.precioVenta1, 
+                p.precioVenta2, 
+                pt.descripcion as tipo
             FROM productos p
+            INNER JOIN inventario i ON p.id = i.idProducto
             LEFT JOIN productos_tipo pt ON p.idTipo = pt.id
-            WHERE p.activo = 1 AND p.existencia > 0
+            WHERE p.activo = 1 AND i.existencia > 0
             ORDER BY p.descripcion
         ";
         
@@ -112,21 +120,26 @@ function crearSalida($conn) {
         
         $conn->begin_transaction();
         
-        // Verificar existencias antes de proceder
+        // CORREGIDO: Verificar existencias en INVENTARIO (almacén general)
         foreach($productos as $prod) {
-            $stmt = $conn->prepare("SELECT existencia, descripcion FROM productos WHERE id = ?");
+            $stmt = $conn->prepare("
+                SELECT i.existencia, p.descripcion 
+                FROM inventario i
+                INNER JOIN productos p ON i.idProducto = p.id
+                WHERE i.idProducto = ?
+            ");
             $stmt->bind_param("i", $prod['id_producto']);
             $stmt->execute();
             $result = $stmt->get_result();
-            $producto = $result->fetch_assoc();
+            $inventario = $result->fetch_assoc();
             $stmt->close();
             
-            if(!$producto) {
-                throw new Exception("Producto ID {$prod['id_producto']} no encontrado");
+            if(!$inventario) {
+                throw new Exception("Producto ID {$prod['id_producto']} no encontrado en inventario");
             }
             
-            if($producto['existencia'] < $prod['cantidad']) {
-                throw new Exception("Stock insuficiente para {$producto['descripcion']}. Disponible: {$producto['existencia']}, Solicitado: {$prod['cantidad']}");
+            if($inventario['existencia'] < $prod['cantidad']) {
+                throw new Exception("Stock insuficiente en almacén para {$inventario['descripcion']}. Disponible: {$inventario['existencia']}, Solicitado: {$prod['cantidad']}");
             }
         }
         
@@ -146,6 +159,15 @@ function crearSalida($conn) {
             VALUES (?, ?, ?, ?, NOW())
         ");
         
+        // CORREGIDO: Actualizar inventario (almacén general)
+        $stmt_update_inventario = $conn->prepare("
+            UPDATE inventario 
+            SET existencia = existencia - ?,
+                ultima_actualizacion = NOW()
+            WHERE idProducto = ?
+        ");
+        
+        // CORREGIDO: Actualizar existencia total en productos
         $stmt_update_producto = $conn->prepare("
             UPDATE productos 
             SET existencia = existencia - ?
@@ -171,7 +193,14 @@ function crearSalida($conn) {
             );
             $stmt_detalle->execute();
             
-            // Actualizar existencia en productos
+            // Actualizar existencia en inventario (almacén general)
+            $stmt_update_inventario->bind_param("di",
+                $prod['cantidad'],
+                $prod['id_producto']
+            );
+            $stmt_update_inventario->execute();
+            
+            // Actualizar existencia total en productos
             $stmt_update_producto->bind_param("di",
                 $prod['cantidad'],
                 $prod['id_producto']
@@ -180,6 +209,7 @@ function crearSalida($conn) {
         }
         
         $stmt_detalle->close();
+        $stmt_update_inventario->close();
         $stmt_update_producto->close();
         
         $conn->commit();
@@ -391,16 +421,32 @@ function cancelarSalida($conn) {
         }
         $stmt->close();
         
-        // Revertir inventario (devolver las cantidades)
+        // CORREGIDO: Revertir inventario (devolver las cantidades al almacén general)
+        $stmt_update_inventario = $conn->prepare("
+            UPDATE inventario 
+            SET existencia = existencia + ?,
+                ultima_actualizacion = NOW()
+            WHERE idProducto = ?
+        ");
+        
+        // CORREGIDO: Actualizar existencia total en productos
         $stmt_update_producto = $conn->prepare("
-            UPDATE productos SET existencia = existencia + ? WHERE id = ?
+            UPDATE productos 
+            SET existencia = existencia + ?
+            WHERE id = ?
         ");
         
         foreach($productos as $prod) {
+            // Devolver al inventario (almacén general)
+            $stmt_update_inventario->bind_param("di", $prod['cantidad'], $prod['id_producto']);
+            $stmt_update_inventario->execute();
+            
+            // Actualizar existencia total en productos
             $stmt_update_producto->bind_param("di", $prod['cantidad'], $prod['id_producto']);
             $stmt_update_producto->execute();
         }
         
+        $stmt_update_inventario->close();
         $stmt_update_producto->close();
         
         // Marcar salida como cancelada
