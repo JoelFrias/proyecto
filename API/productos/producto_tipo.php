@@ -77,7 +77,7 @@ function getTiposProducto() {
         $result = $conn->query($sql);
         
         // Verificar si hay resultados
-        if ($result) {
+        if ($result !== false && $result !== null) {
             $tipos = [];
             while ($row = $result->fetch_assoc()) {
                 $tipos[] = $row;
@@ -94,9 +94,16 @@ function getTiposProducto() {
 /**
  * Crea un nuevo tipo de producto
  */
+
 function crearTipoProducto($descripcion) {
     
     global $conn;
+    
+    // Guard: asegura que $conn es un objeto mysqli antes de usarlo
+    if (!($conn instanceof mysqli)) {
+        responder('error', 'Conexión a la base de datos no inicializada');
+        return;
+    }
     
     // Validación básica
     $descripcion = trim($descripcion);
