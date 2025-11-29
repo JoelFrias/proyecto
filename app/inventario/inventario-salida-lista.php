@@ -35,7 +35,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
         }
         
         .container {
@@ -54,11 +53,16 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             margin-bottom: 30px;
             border-bottom: 2px solid #dc3545;
             padding-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .header h2 {
             color: #333;
-            font-size: 28px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .btn {
@@ -72,6 +76,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            white-space: nowrap;
         }
         
         .btn-primary {
@@ -110,15 +115,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 25px;
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
         }
         
         .filter-group label {
@@ -141,30 +140,38 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 30px;
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #f95f5fff 0%, #fdd6d6ff 100%);
+            background: linear-gradient(135deg, #598498ff 0%, #455b65ff 100%);
             color: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
         }
         
         .stat-card h3 {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.9;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .stat-card .value {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
         }
         
+        /* TABLA PARA DESKTOP */
         .table-container {
             overflow-x: auto;
         }
@@ -192,6 +199,81 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         .salidas-table tr:hover {
             background: #f8f9fa;
+        }
+        
+        /* CARDS PARA MÓVILES */
+        .salidas-cards {
+            display: none;
+        }
+        
+        .salida-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .salida-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .card-id {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .card-body {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .card-label {
+            font-weight: 500;
+            color: #666;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .card-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .card-actions .btn {
+            flex: 1;
+            justify-content: center;
         }
         
         .badge {
@@ -230,6 +312,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             gap: 10px;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
         
         .pagination button {
@@ -290,6 +373,100 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h2 {
+                font-size: 20px;
+                text-align: center;
+            }
+            
+            .header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .filters {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card h3 {
+                font-size: 12px;
+            }
+            
+            .stat-card .value {
+                font-size: 22px;
+            }
+            
+            /* Ocultar tabla y mostrar cards en móvil */
+            .salidas-table {
+                display: none !important;
+            }
+            
+            .salidas-cards {
+                display: block;
+            }
+            
+            .pagination button {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            
+            .pagination .page-info {
+                width: 100%;
+                text-align: center;
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h2 {
+                font-size: 18px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                font-size: 13px;
+                padding: 8px 15px;
+            }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+            
+            .card-actions .btn {
+                width: 100%;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .salidas-cards {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -329,7 +506,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label for="buscador">ㅤ</label>
+                        <label>ㅤ</label>
                         <button id="buscador" class="btn btn-primary" onclick="aplicarFiltros()" style="width: 100%;">
                             <i class="fas fa-search"></i> Buscar
                         </button>
@@ -355,12 +532,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </div>
                 </div>
                 
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando salidas...</p>
+                </div>
+                
+                <!-- TABLA PARA DESKTOP -->
                 <div class="table-container">
-                    <div class="loading" id="loading">
-                        <i class="fas fa-spinner"></i>
-                        <p>Cargando salidas...</p>
-                    </div>
-                    
                     <table class="salidas-table" id="salidas-table" style="display: none;">
                         <thead>
                             <tr>
@@ -374,19 +552,21 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="salidas-tbody">
-                        </tbody>
+                        <tbody id="salidas-tbody"></tbody>
                     </table>
-                    
-                    <div class="empty-state" id="empty-state" style="display: none;">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No hay salidas registradas</h3>
-                        <p>Comienza agregando una nueva salida de inventario</p>
-                        <br>
-                        <a href="inventario-salida-nueva.php" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Nueva Salida
-                        </a>
-                    </div>
+                </div>
+                
+                <!-- CARDS PARA MÓVILES -->
+                <div class="salidas-cards" id="salidas-cards"></div>
+                
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No hay salidas registradas</h3>
+                    <p>Comienza agregando una nueva salida de inventario</p>
+                    <br>
+                    <a href="inventario-salida-nueva.php" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Salida
+                    </a>
                 </div>
                 
                 <div class="pagination" id="pagination" style="display: none;">
@@ -414,11 +594,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         let salidasData = [];
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Establecer fecha actual en los filtros
             const hoy = new Date().toISOString().split('T')[0];
             document.getElementById('fecha-hasta').value = hoy;
             
-            // Fecha de hace 30 días
             const hace30Dias = new Date();
             hace30Dias.setDate(hace30Dias.getDate() - 30);
             document.getElementById('fecha-desde').value = hace30Dias.toISOString().split('T')[0];
@@ -446,6 +624,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         function cargarSalidas() {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('salidas-table').style.display = 'none';
+            document.getElementById('salidas-cards').style.display = 'none';
             document.getElementById('empty-state').style.display = 'none';
             
             const estado = document.getElementById('filtro-estado').value;
@@ -487,8 +666,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         function mostrarSalidas() {
+            // Mostrar tabla (desktop)
             const tbody = document.getElementById('salidas-tbody');
             tbody.innerHTML = '';
+            
+            // Mostrar cards (móvil)
+            const cardsContainer = document.getElementById('salidas-cards');
+            cardsContainer.innerHTML = '';
             
             salidasData.forEach(salida => {
                 const fecha = new Date(salida.fecha).toLocaleString('es-DO', {
@@ -503,6 +687,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     ? '<span class="badge badge-success"><i class="fas fa-check"></i> Activo</span>'
                     : '<span class="badge badge-danger"><i class="fas fa-times"></i> Cancelado</span>';
                 
+                // Fila para tabla (desktop)
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>#${salida.id}</td>
@@ -526,9 +711,53 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </td>
                 `;
                 tbody.appendChild(row);
+                
+                // Card para móviles
+                const card = document.createElement('div');
+                card.className = 'salida-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-id">#${salida.id}</div>
+                        ${estadoBadge}
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-calendar"></i> Fecha</span>
+                            <span class="card-value">${fecha}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-tag"></i> Razón</span>
+                            <span class="card-value"><span class="badge badge-reason">${salida.razon_texto || 'Sin especificar'}</span></span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-box"></i> Productos</span>
+                            <span class="card-value">${salida.total_productos.toLocaleString('en-US') || 0}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-cubes"></i> Unidades</span>
+                            <span class="card-value">${parseFloat(salida.total_cantidad || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-dollar-sign"></i> Costo Total</span>
+                            <span class="card-value">RD$ ${parseFloat(salida.total_costo || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="inventario-salida-detalle.php?id=${salida.id}" class="btn btn-info">
+                            <i class="fas fa-eye"></i> Ver Detalles
+                        </a>
+                        ${salida.estado === 'activo' ? `
+                            <button class="btn btn-danger" onclick="cancelarSalida(${salida.id})">
+                                <i class="fas fa-ban"></i> Cancelar
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
             });
             
             document.getElementById('salidas-table').style.display = 'table';
+            document.getElementById('salidas-cards').style.display = 'block';
             document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
         }
         
@@ -615,10 +844,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                             Swal.fire('Cancelado', data.message, 'success');
                             cargarSalidas();
                         } else {
-                            Swal.fire('Error', data.message, 'error');
+                        Swal.fire('Error', data.message, 'error');
                         }
-                    })
-                    .catch(error => {
+                    }).catch(error => {
                         Swal.fire('Error', 'Error al cancelar la salida', 'error');
                     });
                 }

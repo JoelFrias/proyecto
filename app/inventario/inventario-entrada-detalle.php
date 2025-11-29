@@ -35,7 +35,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
         }
         
         .container {
@@ -44,34 +43,47 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 30px;
+            padding: 20px;
         }
         
         .header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
             border-bottom: 2px solid #4CAF50;
             padding-bottom: 15px;
         }
         
         .header h1 {
             color: #333;
-            font-size: 28px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .btn {
-            padding: 10px 20px;
+            padding: 10px 16px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.3s;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             text-decoration: none;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 120px;
         }
         
         .btn-secondary {
@@ -103,34 +115,37 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         .info-card {
             background: #f8f9fa;
-            padding: 25px;
+            padding: 20px;
             border-radius: 8px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             border-left: 4px solid #4CAF50;
         }
         
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
         }
         
         .info-item {
             display: flex;
             flex-direction: column;
+            gap: 5px;
         }
         
         .info-item label {
             color: #666;
-            font-size: 13px;
-            margin-bottom: 5px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
         .info-item .value {
             color: #333;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
         }
         
@@ -154,23 +169,31 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .section-title {
-            font-size: 20px;
+            font-size: 18px;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        /* Tabla - Solo visible en pantallas grandes */
+        .productos-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 15px;
         }
         
         .productos-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            min-width: 600px;
         }
         
         .productos-table th,
         .productos-table td {
-            padding: 15px;
+            padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
@@ -179,6 +202,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: #f8f9fa;
             font-weight: 600;
             color: #555;
+            font-size: 13px;
+        }
+        
+        .productos-table td {
+            font-size: 14px;
         }
         
         .productos-table tr:hover {
@@ -192,17 +220,132 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .productos-table tfoot td {
             background: #f8f9fa;
             border-top: 2px solid #4CAF50;
-            font-size: 18px;
+            font-size: 16px;
+            color: #4CAF50;
+            padding: 15px 12px;
+        }
+
+        /* Cards para móviles - Ocultas por defecto */
+        .productos-cards {
+            display: none;
+        }
+
+        .producto-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .producto-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .producto-card-id {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .producto-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .producto-card-tipo {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .producto-card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .producto-card-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .producto-card-field label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .producto-card-field .value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .producto-card-subtotal {
+            grid-column: 1 / -1;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+            margin-top: 5px;
+        }
+
+        .producto-card-subtotal .value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #4CAF50;
+        }
+
+        .total-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-card label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .total-card .value {
+            font-size: 20px;
+            font-weight: 700;
             color: #4CAF50;
         }
         
         .actions-bar {
             display: flex;
-            gap: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
             justify-content: flex-end;
-            margin-top: 30px;
+            margin-top: 25px;
             padding-top: 20px;
             border-top: 1px solid #ddd;
+        }
+
+        .actions-bar .btn {
+            flex: 1;
+            min-width: 150px;
+            max-width: 200px;
         }
         
         .loading {
@@ -223,12 +366,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .alert {
-            padding: 15px 20px;
+            padding: 12px 15px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: flex;
-            align-items: center;
+            align-items: start;
             gap: 12px;
+            font-size: 14px;
         }
         
         .alert-warning {
@@ -238,12 +382,18 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .alert i {
-            font-size: 20px;
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 4px;
         }
         
         .cancelacion-info {
             background: #f8d7da;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             border-left: 4px solid #dc3545;
             margin-top: 20px;
@@ -252,11 +402,124 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .cancelacion-info h4 {
             color: #721c24;
             margin-bottom: 10px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .cancelacion-info p {
             color: #721c24;
             margin: 5px 0;
+            font-size: 13px;
+        }
+
+        /* Responsive Media Queries */
+        @media (min-width: 768px) {
+            .header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .header-buttons {
+                flex-wrap: nowrap;
+            }
+
+            .btn {
+                flex: initial;
+                min-width: auto;
+            }
+
+            .container {
+                padding: 30px;
+            }
+
+            body {
+                padding: 20px;
+            }
+        }
+
+        /* Móviles: Mostrar cards, ocultar tabla */
+        @media (max-width: 767px) {
+            .productos-table-container {
+                display: none;
+            }
+
+            .productos-cards {
+                display: block;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header h1 i {
+                font-size: 18px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+
+            .actions-bar .btn {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .alert {
+                font-size: 13px;
+            }
+        }
+
+        /* Móviles muy pequeños */
+        @media (max-width: 480px) {
+
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+
+            .producto-card {
+                padding: 12px;
+            }
+
+            .producto-card-title {
+                font-size: 14px;
+            }
+
+            .total-card {
+                padding: 15px;
+            }
+
+            .total-card label {
+                font-size: 14px;
+            }
+
+            .total-card .value {
+                font-size: 18px;
+            }
         }
         
         @media print {
@@ -272,6 +535,14 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             .container {
                 box-shadow: none;
             }
+
+            .productos-cards {
+                display: none !important;
+            }
+
+            .productos-table-container {
+                display: block !important;
+            }
         }
     </style>
 </head>
@@ -286,7 +557,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             <div class="container">
                 <div class="header">
                     <h1><i class="fas fa-file-alt"></i> Detalle de Entrada #<span id="entrada-id">...</span></h1>
-                    <div style="display: flex; gap: 10px;">
+                    <div class="header-buttons">
                         <button class="btn btn-success" onclick="window.print()">
                             <i class="fas fa-print"></i> Imprimir
                         </button>
@@ -335,25 +606,37 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         <i class="fas fa-boxes"></i> Productos Ingresados
                     </div>
                     
-                    <table class="productos-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 10%">ID</th>
-                                <th style="width: 40%">Producto</th>
-                                <th style="width: 15%">Cantidad</th>
-                                <th style="width: 17%">Costo Unit.</th>
-                                <th style="width: 18%">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productos-tbody">
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4" style="text-align: right;">TOTAL:</td>
-                                <td id="total-general">RD$ 0.00</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    <!-- Tabla para pantallas grandes -->
+                    <div class="productos-table-container">
+                        <table class="productos-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%">ID</th>
+                                    <th style="width: 40%">Producto</th>
+                                    <th style="width: 15%">Cantidad</th>
+                                    <th style="width: 17%">Costo Unit.</th>
+                                    <th style="width: 18%">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productos-tbody">
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" style="text-align: right;">TOTAL:</td>
+                                    <td id="total-general">RD$ 0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Cards para móviles -->
+                    <div class="productos-cards" id="productos-cards">
+                    </div>
+
+                    <div class="total-card" id="total-card-mobile" style="display: none;">
+                        <label>TOTAL:</label>
+                        <div class="value" id="total-general-mobile">RD$ 0.00</div>
+                    </div>
                     
                     <div id="cancelacion-info" style="display: none;"></div>
                     
@@ -436,9 +719,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 cargarInfoCancelacion();
             }
             
-            // Mostrar productos
+            // Mostrar productos en TABLA
             const tbody = document.getElementById('productos-tbody');
             tbody.innerHTML = '';
+            
+            // Mostrar productos en CARDS (móvil)
+            const cardsContainer = document.getElementById('productos-cards');
+            cardsContainer.innerHTML = '';
             
             let totalGeneral = 0;
             
@@ -446,6 +733,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 const subtotal = prod.cantidad * prod.costo;
                 totalGeneral += subtotal;
                 
+                // Crear fila de tabla
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><strong>${prod.id_producto}</strong></td>
@@ -458,9 +746,42 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     <td><strong>RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
                 `;
                 tbody.appendChild(row);
+
+                // Crear card para móvil
+                const card = document.createElement('div');
+                card.className = 'producto-card';
+                card.innerHTML = `
+                    <div class="producto-card-header">
+                        <div>
+                            <div class="producto-card-title">${prod.descripcion}</div>
+                            ${prod.tipo ? `<div class="producto-card-tipo"><i class="fas fa-tag"></i> ${prod.tipo}</div>` : ''}
+                        </div>
+                        <div class="producto-card-id">ID: ${prod.id_producto}</div>
+                    </div>
+                    <div class="producto-card-body">
+                        <div class="producto-card-field">
+                            <label><i class="fas fa-cubes"></i> Cantidad</label>
+                            <div class="value">${parseFloat(prod.cantidad).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div class="producto-card-field">
+                            <label><i class="fas fa-dollar-sign"></i> Costo Unit.</label>
+                            <div class="value">RD$ ${parseFloat(prod.costo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div class="producto-card-field producto-card-subtotal">
+                            <label><i class="fas fa-calculator"></i> Subtotal</label>
+                            <div class="value">RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
             });
             
-            document.getElementById('total-general').textContent = `RD$ ${totalGeneral.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            // Actualizar totales
+            const totalFormateado = `RD$ ${totalGeneral.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('total-general').textContent = totalFormateado;
+            document.getElementById('total-general-mobile').textContent = totalFormateado;
+            document.getElementById('total-card-mobile').style.display = 'flex';
+            
             document.getElementById('content').style.display = 'block';
         }
         

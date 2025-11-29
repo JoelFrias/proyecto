@@ -34,7 +34,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
         }
         
         .container {
@@ -52,11 +51,15 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             border-bottom: 2px solid #dc3545;
             padding-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .header h1 {
             color: #333;
             font-size: 28px;
+            flex: 1;
+            min-width: 250px;
         }
         
         .btn {
@@ -69,6 +72,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
         
         .btn-primary {
@@ -138,10 +142,18 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             gap: 20px;
         }
         
+        /* Contenedor con scroll para tabla */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
         .productos-table {
             width: 100%;
+            min-width: 800px;
             border-collapse: collapse;
-            margin-top: 20px;
         }
         
         .productos-table th,
@@ -155,24 +167,33 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: #f8f9fa;
             font-weight: 600;
             color: #555;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .productos-table tr:hover {
             background: #f8f9fa;
         }
         
-        .producto-row input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
+        .producto-row input,
         .producto-row select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .stock-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .stock-warning {
+            color: #dc3545;
+            font-weight: bold;
         }
         
         .btn-icon {
@@ -182,6 +203,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             font-size: 18px;
             color: #dc3545;
             transition: all 0.3s;
+            padding: 5px;
         }
         
         .btn-icon:hover {
@@ -218,17 +240,22 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             gap: 15px;
             justify-content: flex-end;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
         
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 40px 20px;
             color: #999;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
         }
         
         .empty-state i {
             font-size: 48px;
             margin-bottom: 15px;
+            opacity: 0.5;
         }
         
         .alert-warning {
@@ -245,15 +272,142 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             margin-right: 8px;
         }
         
-        .stock-info {
+        /* Indicador de scroll en móvil */
+        .scroll-indicator {
+            display: none;
+            background: #fff3cd;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 5px;
             font-size: 12px;
-            color: #666;
-            margin-top: 3px;
+            text-align: center;
+            margin-top: 10px;
+            border-left: 4px solid #ffc107;
         }
         
-        .stock-warning {
-            color: #dc3545;
-            font-weight: bold;
+        /* Responsive Design */
+        @media screen and (max-width: 968px) {
+            .container {
+                padding: 20px;
+                border-radius: 8px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 15px;
+                border-radius: 0;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                min-width: auto;
+                text-align: center;
+            }
+            
+            .header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .form-section h3 {
+                font-size: 16px;
+            }
+            
+            /* Mostrar indicador de scroll */
+            .scroll-indicator {
+                display: block;
+            }
+            
+            .table-container {
+                border-radius: 5px;
+            }
+            
+            .productos-table {
+                font-size: 13px;
+                min-width: 750px;
+            }
+            
+            .productos-table th,
+            .productos-table td {
+                padding: 8px;
+            }
+            
+            .producto-row input,
+            .producto-row select {
+                padding: 6px;
+                font-size: 13px;
+            }
+            
+            .summary {
+                padding: 15px;
+            }
+            
+            .summary-row {
+                font-size: 14px;
+            }
+            
+            .summary-row.total {
+                font-size: 18px;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .alert-warning {
+                font-size: 14px;
+                padding: 12px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+            
+            .form-control {
+                padding: 8px;
+                font-size: 13px;
+            }
+            
+            .summary {
+                padding: 12px;
+            }
+            
+            .productos-table {
+                font-size: 12px;
+                min-width: 700px;
+            }
+            
+            .productos-table th,
+            .productos-table td {
+                padding: 6px;
+            }
         }
     </style>
 </head>
@@ -298,24 +452,28 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </button>
                     
                     <div id="productos-container">
-                        <table class="productos-table" id="productos-table" style="display: none;">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%">Producto</th>
-                                    <th style="width: 15%">Cantidad</th>
-                                    <th style="width: 20%">Costo Unitario</th>
-                                    <th style="width: 20%">Subtotal</th>
-                                    <th style="width: 5%"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="productos-tbody">
-                            </tbody>
-                        </table>
-                        
-                        <div class="empty-state" id="empty-state">
-                            <i class="fas fa-inbox"></i>
-                            <p>No hay productos agregados. Haz clic en "Agregar Producto" para comenzar.</p>
+                        <div class="table-container" id="table-container" style="display: none;">
+                            <table class="productos-table" id="productos-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%">Producto</th>
+                                        <th style="width: 15%">Cantidad</th>
+                                        <th style="width: 20%">Costo Unitario</th>
+                                        <th style="width: 20%">Subtotal</th>
+                                        <th style="width: 5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productos-tbody"></tbody>
+                            </table>
                         </div>
+                        <div class="scroll-indicator" id="scroll-indicator">
+                            <i class="fas fa-arrows-alt-h"></i> Desliza horizontalmente para ver toda la tabla
+                        </div>
+                    </div>
+                    
+                    <div class="empty-state" id="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay productos agregados. Haz clic en "Agregar Producto" para comenzar.</p>
                     </div>
                 </div>
                 
@@ -346,10 +504,14 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         </div>
     </div>
 
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">  <!-- Tom Select CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script> <!-- Tom Select JS -->
+
     <script>
         let productosDisponibles = [];
         let razones = [];
         let contadorProductos = 0;
+        let productosData = {};
         
         document.addEventListener('DOMContentLoaded', function() {
             cargarProductos();
@@ -400,97 +562,165 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             }
             
             contadorProductos++;
-            const row = document.createElement('tr');
-            row.className = 'producto-row';
-            row.id = `producto-${contadorProductos}`;
+            const id = contadorProductos;
+            
+            productosData[id] = {
+                productoId: '',
+                cantidad: 1,
+                costo: 0,
+                existencia: 0
+            };
             
             let optionsHTML = '<option value="">Seleccionar producto...</option>';
             productosDisponibles.forEach(prod => {
-                optionsHTML += `<option value="${prod.id}" 
-                    data-costo="${prod.precioCompra}"
-                    data-existencia="${prod.existencia}">
-                    ${prod.descripcion} (Stock: ${parseFloat(prod.existencia).toFixed(2)})
-                </option>`;
+                optionsHTML += `
+                    <option value="${prod.id}" 
+                        data-costo="${prod.precioCompra}"
+                        data-existencia="${prod.existencia}">
+                        ${prod.descripcion} (Stock: ${parseFloat(prod.existencia).toFixed(2)})
+                    </option>`;
             });
+
+            const row = document.createElement('tr');
+            row.className = 'producto-row';
+            row.id = `producto-${id}`;
+            row.setAttribute('data-id', id);
             
             row.innerHTML = `
                 <td>
-                    <select class="producto-select" onchange="actualizarInfo(${contadorProductos})">
+                    <select id="producto-select-${id}" class="producto-select" 
+                            onchange="actualizarProductoSeleccionado(${id}, this.value)">
                         ${optionsHTML}
                     </select>
-                    <div class="stock-info" id="stock-info-${contadorProductos}"></div>
+                    <div class="stock-info" id="stock-info-${id}"></div>
                 </td>
+
                 <td>
                     <input type="number" class="cantidad-input" min="0.01" step="0.01" value="1" 
-                           onchange="validarCantidad(${contadorProductos})" onkeyup="validarCantidad(${contadorProductos})">
+                        onchange="actualizarCantidad(${id}, this.value)"
+                        onkeyup="actualizarCantidad(${id}, this.value)">
                 </td>
+
                 <td>
                     <input type="number" class="costo-input" min="0" step="0.01" value="0" readonly
-                           style="background: #f8f9fa; cursor: not-allowed !important;">
+                        style="background: #f8f9fa; cursor: not-allowed;">
                 </td>
+
                 <td>
-                    <span class="subtotal" id="subtotal-${contadorProductos}">RD$ 0.00</span>
+                    <span class="subtotal" id="subtotal-${id}">RD$ 0.00</span>
                 </td>
+
                 <td>
-                    <button class="btn-icon" onclick="eliminarProducto(${contadorProductos})">
+                    <button class="btn-icon" onclick="eliminarProducto(${id})" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
             `;
-            
+
             document.getElementById('productos-tbody').appendChild(row);
-            document.getElementById('productos-table').style.display = 'table';
+            document.getElementById('table-container').style.display = 'block';
             document.getElementById('empty-state').style.display = 'none';
             document.getElementById('summary').style.display = 'block';
+            
+            // Indicador de scroll para móvil
+            if(window.innerWidth <= 768) {
+                document.getElementById('scroll-indicator').style.display = 'block';
+            }
+
+            // ⬅️ TomSelect correctamente inicializado para este select
+            new TomSelect(`#producto-select-${id}`, {
+                placeholder: "Seleccionar producto...",
+                onChange: function(value) {
+                    actualizarProductoSeleccionado(id, value);
+                }
+            });
         }
+
         
-        function actualizarInfo(id) {
+        function actualizarProductoSeleccionado(id, productoId) {
+            if(!productosData[id]) return;
+            
+            productosData[id].productoId = productoId;
+            
             const row = document.getElementById(`producto-${id}`);
+            if(!row) return;
+            
             const select = row.querySelector('.producto-select');
             const costoInput = row.querySelector('.costo-input');
-            const stockInfo = document.getElementById(`stock-info-${id}`);
             
-            const selectedOption = select.options[select.selectedIndex];
-            const costo = selectedOption.getAttribute('data-costo');
-            const existencia = selectedOption.getAttribute('data-existencia');
+            let costo = 0;
+            let existencia = 0;
             
-            if(costo && existencia) {
-                costoInput.value = costo;
-                stockInfo.innerHTML = `<i class="fas fa-warehouse"></i> Stock disponible: <strong>${parseFloat(existencia).toFixed(2)}</strong> unidades`;
-                validarCantidad(id);
-            } else {
-                stockInfo.innerHTML = '';
+            if(productoId) {
+                const option = select.options[select.selectedIndex];
+                if(option) {
+                    costo = parseFloat(option.getAttribute('data-costo')) || 0;
+                    existencia = parseFloat(option.getAttribute('data-existencia')) || 0;
+                }
             }
+            
+            productosData[id].costo = costo;
+            productosData[id].existencia = existencia;
+            
+            costoInput.value = costo.toFixed(2);
+            
+            actualizarStockInfo(id);
+            validarYCalcular(id);
         }
         
-        function validarCantidad(id) {
+        function actualizarCantidad(id, cantidad) {
+            if(!productosData[id]) return;
+            
+            cantidad = parseFloat(cantidad) || 0;
+            productosData[id].cantidad = cantidad;
+            
+            validarYCalcular(id);
+        }
+        
+        function actualizarStockInfo(id) {
+            const data = productosData[id];
+            const stockInfo = document.getElementById(`stock-info-${id}`);
+            
+            if(!data || !data.productoId || !stockInfo) {
+                if(stockInfo) stockInfo.innerHTML = '';
+                return;
+            }
+            
+            const existencia = data.existencia;
+            stockInfo.innerHTML = `<i class="fas fa-warehouse"></i> Stock disponible: <strong>${existencia.toFixed(2)}</strong> unidades`;
+        }
+        
+        function validarYCalcular(id) {
+            const data = productosData[id];
+            if(!data) return;
+            
             const row = document.getElementById(`producto-${id}`);
-            const select = row.querySelector('.producto-select');
+            if(!row) return;
+            
+            const cantidad = data.cantidad;
+            const existencia = data.existencia;
+            const costo = data.costo;
+            
             const cantidadInput = row.querySelector('.cantidad-input');
             const stockInfo = document.getElementById(`stock-info-${id}`);
             
-            const selectedOption = select.options[select.selectedIndex];
-            const existencia = parseFloat(selectedOption.getAttribute('data-existencia')) || 0;
-            const cantidad = parseFloat(cantidadInput.value) || 0;
-            
-            if(cantidad > existencia) {
-                stockInfo.innerHTML = `<span class="stock-warning"><i class="fas fa-exclamation-triangle"></i> ¡Cantidad excede stock disponible! (${existencia.toFixed(2)})</span>`;
-                cantidadInput.style.borderColor = '#dc3545';
+            // Validar cantidad vs existencia
+            if(cantidad > existencia && data.productoId) {
+                const warningHtml = `<span class="stock-warning"><i class="fas fa-exclamation-triangle"></i> ¡Cantidad excede stock disponible! (${existencia.toFixed(2)})</span>`;
+                if(stockInfo) stockInfo.innerHTML = warningHtml;
+                if(cantidadInput) cantidadInput.style.borderColor = '#dc3545';
             } else {
-                stockInfo.innerHTML = `<i class="fas fa-warehouse"></i> Stock disponible: <strong>${existencia.toFixed(2)}</strong> unidades`;
-                cantidadInput.style.borderColor = '#ddd';
+                actualizarStockInfo(id);
+                if(cantidadInput) cantidadInput.style.borderColor = '#ddd';
             }
             
-            calcularSubtotal(id);
-        }
-        
-        function calcularSubtotal(id) {
-            const row = document.getElementById(`producto-${id}`);
-            const cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
-            const costo = parseFloat(row.querySelector('.costo-input').value) || 0;
+            // Calcular subtotal
             const subtotal = cantidad * costo;
+            const subtotalFormatted = `RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             
-            row.querySelector('.subtotal').textContent = `RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const subtotalElement = document.getElementById(`subtotal-${id}`);
+            if(subtotalElement) subtotalElement.textContent = subtotalFormatted;
+            
             actualizarResumen();
         }
         
@@ -504,11 +734,15 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById(`producto-${id}`).remove();
+                    const row = document.getElementById(`producto-${id}`);
+                    if(row) row.remove();
+                    
+                    delete productosData[id];
                     
                     const tbody = document.getElementById('productos-tbody');
                     if(tbody.children.length === 0) {
-                        document.getElementById('productos-table').style.display = 'none';
+                        document.getElementById('table-container').style.display = 'none';
+                        document.getElementById('scroll-indicator').style.display = 'none';
                         document.getElementById('empty-state').style.display = 'block';
                         document.getElementById('summary').style.display = 'none';
                     }
@@ -519,17 +753,18 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         function actualizarResumen() {
-            const rows = document.querySelectorAll('.producto-row');
-            let totalProductos = rows.length;
+            let totalProductos = 0;
             let totalUnidades = 0;
             let totalCosto = 0;
             
-            rows.forEach(row => {
-                const cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
-                const costo = parseFloat(row.querySelector('.costo-input').value) || 0;
-                totalUnidades += cantidad;
-                totalCosto += cantidad * costo;
-            });
+            for(let id in productosData) {
+                const data = productosData[id];
+                if(data && data.productoId) {
+                    totalProductos++;
+                    totalUnidades += data.cantidad;
+                    totalCosto += data.cantidad * data.costo;
+                }
+            }
             
             document.getElementById('total-productos').textContent = totalProductos;
             document.getElementById('total-unidades').textContent = totalUnidades.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -538,15 +773,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         function guardarSalida() {
             const razon = document.getElementById('razon').value;
-            const rows = document.querySelectorAll('.producto-row');
             
             if(!razon) {
                 Swal.fire('Advertencia', 'Debe seleccionar una razón para la salida', 'warning');
-                return;
-            }
-            
-            if(rows.length === 0) {
-                Swal.fire('Advertencia', 'Debe agregar al menos un producto', 'warning');
                 return;
             }
             
@@ -554,29 +783,35 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             let error = false;
             let errorMsg = '';
             
-            rows.forEach(row => {
-                const select = row.querySelector('.producto-select');
-                const cantidad = parseFloat(row.querySelector('.cantidad-input').value);
-                const costo = parseFloat(row.querySelector('.costo-input').value);
-                const existencia = parseFloat(select.options[select.selectedIndex].getAttribute('data-existencia'));
+            for(let id in productosData) {
+                const data = productosData[id];
                 
-                if(!select.value || cantidad <= 0) {
+                if(!data.productoId || data.cantidad <= 0) {
                     error = true;
                     errorMsg = 'Verifique que todos los productos tengan cantidad válida';
-                    return;
+                    break;
                 }
                 
-                if(cantidad > existencia) {
+                if(data.cantidad > data.existencia) {
+                    const row = document.getElementById(`producto-${id}`);
+                    const select = row ? row.querySelector('.producto-select') : null;
+                    const nombreProducto = select ? select.options[select.selectedIndex].text : 'producto';
+                    
                     error = true;
-                    errorMsg = `La cantidad de "${select.options[select.selectedIndex].text}" excede el stock disponible (${existencia.toFixed(2)})`;
-                    return;
+                    errorMsg = `La cantidad de "${nombreProducto}" excede el stock disponible (${data.existencia.toFixed(2)})`;
+                    break;
                 }
                 
                 productos.push({
-                    id_producto: select.value,
-                    cantidad: cantidad
+                    id_producto: data.productoId,
+                    cantidad: data.cantidad
                 });
-            });
+            }
+            
+            if(productos.length === 0) {
+                Swal.fire('Advertencia', 'Debe agregar al menos un producto', 'warning');
+                return;
+            }
             
             if(error) {
                 Swal.fire('Error', errorMsg, 'error');

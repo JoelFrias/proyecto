@@ -1,9 +1,8 @@
 <?php 
 
-require_once '../../core/verificar-sesion.php'; // Verificar Session
-require_once '../../core/conexion.php'; // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php';
+require_once '../../core/conexion.php';
 
-// Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'ALM004';
 $id_empleado = $_SESSION['idEmpleado'];
@@ -22,9 +21,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Registro Entradas</title>
     <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
+    <link rel="stylesheet" href="../../assets/css/menu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * {
             margin: 0;
@@ -35,7 +34,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
         }
         
         .container {
@@ -44,21 +42,26 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 30px;
+            padding: 20px;
         }
         
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             border-bottom: 2px solid #4CAF50;
             padding-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .header h2 {
             color: #333;
-            font-size: 28px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .btn {
@@ -72,15 +75,16 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            white-space: nowrap;
         }
         
         .btn-primary {
-            background: #546c77ff;
+            background: #4CAF50;
             color: white;
         }
         
         .btn-primary:hover {
-            background: #273339ff;
+            background: #37803aff;
         }
         
         .btn-info {
@@ -110,15 +114,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 25px;
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
         }
         
         .filter-group label {
@@ -141,7 +139,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 30px;
         }
         
@@ -151,23 +149,31 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border-left: 4px solid #598498ff;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
         }
         
         .stat-card h3 {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.9;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .stat-card .value {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
         }
         
+        /* TABLA PARA DESKTOP */
         .table-container {
             overflow-x: auto;
+            margin-bottom: 20px;
         }
         
         .entradas-table {
@@ -193,6 +199,81 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         .entradas-table tr:hover {
             background: #f8f9fa;
+        }
+        
+        /* CARDS PARA MÓVILES */
+        .entradas-cards {
+            display: none;
+        }
+        
+        .entrada-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .entrada-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .card-id {
+            font-size: 18px;
+            font-weight: bold;
+            color: #598498ff;
+        }
+        
+        .card-body {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .card-label {
+            font-weight: 500;
+            color: #666;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .card-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .card-actions .btn {
+            flex: 1;
+            justify-content: center;
         }
         
         .badge {
@@ -224,6 +305,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             gap: 10px;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
         
         .pagination button {
@@ -284,16 +366,107 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h2 {
+                font-size: 20px;
+                text-align: center;
+            }
+            
+            .header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .filters {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card h3 {
+                font-size: 12px;
+            }
+            
+            .stat-card .value {
+                font-size: 22px;
+            }
+            
+            /* Ocultar tabla y mostrar cards en móvil */
+            .entradas-table {
+                display: none !important;
+            }
+            
+            .entradas-cards {
+                display: block;
+            }
+            
+            .pagination button {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            
+            .pagination .page-info {
+                width: 100%;
+                text-align: center;
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h2 {
+                font-size: 18px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                font-size: 13px;
+                padding: 8px 15px;
+            }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+            
+            .card-actions .btn {
+                width: 100%;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .entradas-cards {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="navegator-nav">
-
-        <!-- Menu-->
         <?php include '../../app/layouts/menu.php'; ?>
 
         <div class="page-content">
-        <!-- TODO EL CONTENIDO DE LA PAGINA DEBE DE ESTAR DEBAJO DE ESTA LINEA -->
             <div class="container">
                 <div class="header">
                     <h2><i class="fas fa-list"></i> Entradas de Inventario</h2>
@@ -305,11 +478,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 <div class="filters">
                     <div class="filter-group">
                         <label for="fecha-desde"><i class="fas fa-calendar"></i> Fecha Desde</label>
-                        <input id="fecha-desde" type="date" id="fecha-desde">
+                        <input id="fecha-desde" type="date">
                     </div>
                     <div class="filter-group">
                         <label for="fecha-hasta"><i class="fas fa-calendar"></i> Fecha Hasta</label>
-                        <input id="fecha-hasta" type="date" id="fecha-hasta">
+                        <input id="fecha-hasta" type="date">
                     </div>
                     <div class="filter-group">
                         <label for="filtro-estado"><i class="fas fa-filter"></i> Estado</label>
@@ -320,7 +493,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label for="buscador">ㅤ</label>
+                        <label>ㅤ</label>
                         <button id="buscador" class="btn btn-primary" onclick="aplicarFiltros()" style="width: 100%;">
                             <i class="fas fa-search"></i> Buscar
                         </button>
@@ -328,15 +501,15 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 </div>
 
                 <div class="stats" id="stats-container">
-                    <div class="stat-card green">
+                    <div class="stat-card">
                         <h3><i class="fas fa-box-open"></i> Total Entradas</h3>
                         <div class="value" id="stat-total">0</div>
                     </div>
-                    <div class="stat-card blue">
+                    <div class="stat-card">
                         <h3><i class="fas fa-cubes"></i> Productos Ingresados</h3>
                         <div class="value" id="stat-productos">0</div>
                     </div>
-                    <div class="stat-card orange">
+                    <div class="stat-card">
                         <h3><i class="fas fa-dollar-sign"></i> Valor Total</h3>
                         <div class="value" id="stat-valor">RD$ 0</div>
                     </div>
@@ -346,12 +519,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </div>
                 </div>
                 
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando entradas...</p>
+                </div>
+                
+                <!-- TABLA PARA DESKTOP -->
                 <div class="table-container">
-                    <div class="loading" id="loading">
-                        <i class="fas fa-spinner"></i>
-                        <p>Cargando entradas...</p>
-                    </div>
-                    
                     <table class="entradas-table" id="entradas-table" style="display: none;">
                         <thead>
                             <tr>
@@ -364,19 +538,21 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="entradas-tbody">
-                        </tbody>
+                        <tbody id="entradas-tbody"></tbody>
                     </table>
-                    
-                    <div class="empty-state" id="empty-state" style="display: none;">
-                        <i class="fas fa-inbox"></i>
-                        <h3>No hay entradas registradas</h3>
-                        <p>Comienza agregando una nueva entrada de inventario</p>
-                        <br>
-                        <a href="inventario-entrada-nueva.php" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Nueva Entrada
-                        </a>
-                    </div>
+                </div>
+                
+                <!-- CARDS PARA MÓVILES -->
+                <div class="entradas-cards" id="entradas-cards"></div>
+                
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No hay entradas registradas</h3>
+                    <p>Comienza agregando una nueva entrada de inventario</p>
+                    <br>
+                    <a href="inventario-entrada-nueva.php" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Entrada
+                    </a>
                 </div>
                 
                 <div class="pagination" id="pagination" style="display: none;">
@@ -395,7 +571,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </button>
                 </div>
             </div>
-        <!-- TODO EL CONTENIDO DE LA PAGINA DEBAJO DE ESTA LINEA -->
         </div>
     </div>
 
@@ -405,11 +580,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         let entradasData = [];
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Establecer fecha actual en los filtros
             const hoy = new Date().toISOString().split('T')[0];
             document.getElementById('fecha-hasta').value = hoy;
             
-            // Fecha de hace 30 días
             const hace30Dias = new Date();
             hace30Dias.setDate(hace30Dias.getDate() - 30);
             document.getElementById('fecha-desde').value = hace30Dias.toISOString().split('T')[0];
@@ -420,6 +593,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         function cargarEntradas() {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('entradas-table').style.display = 'none';
+            document.getElementById('entradas-cards').style.display = 'none';
             document.getElementById('empty-state').style.display = 'none';
             
             const estado = document.getElementById('filtro-estado').value;
@@ -428,17 +602,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             
             let url = `../../api/inventario/inventario-entrada.php?accion=listar_entradas&pagina=${paginaActual}`;
             
-            if(estado) {
-                url += `&estado=${estado}`;
-            }
-            
-            if(fechaDesde) {
-                url += `&fecha_desde=${fechaDesde}`;
-            }
-            
-            if(fechaHasta) {
-                url += `&fecha_hasta=${fechaHasta}`;
-            }
+            if(estado) url += `&estado=${estado}`;
+            if(fechaDesde) url += `&fecha_desde=${fechaDesde}`;
+            if(fechaHasta) url += `&fecha_hasta=${fechaHasta}`;
             
             fetch(url)
                 .then(response => response.json())
@@ -467,8 +633,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         function mostrarEntradas() {
+            // Mostrar tabla (desktop)
             const tbody = document.getElementById('entradas-tbody');
             tbody.innerHTML = '';
+            
+            // Mostrar cards (móvil)
+            const cardsContainer = document.getElementById('entradas-cards');
+            cardsContainer.innerHTML = '';
             
             entradasData.forEach(entrada => {
                 const fecha = new Date(entrada.fecha).toLocaleString('es-DO', {
@@ -483,6 +654,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     ? '<span class="badge badge-success"><i class="fas fa-check"></i> Activo</span>'
                     : '<span class="badge badge-danger"><i class="fas fa-times"></i> Cancelado</span>';
                 
+                // Fila para tabla (desktop)
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>#${entrada.id}</td>
@@ -505,9 +677,49 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </td>
                 `;
                 tbody.appendChild(row);
+                
+                // Card para móviles
+                const card = document.createElement('div');
+                card.className = 'entrada-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-id">#${entrada.id}</div>
+                        ${estadoBadge}
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-calendar"></i> Fecha</span>
+                            <span class="card-value">${fecha}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-box"></i> Productos</span>
+                            <span class="card-value">${entrada.total_productos.toLocaleString('en-US') || 0}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-cubes"></i> Unidades</span>
+                            <span class="card-value">${parseFloat(entrada.total_cantidad || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-dollar-sign"></i> Costo Total</span>
+                            <span class="card-value">RD$ ${parseFloat(entrada.total_costo || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="inventario-entrada-detalle.php?id=${entrada.id}" class="btn btn-info">
+                            <i class="fas fa-eye"></i> Ver Detalles
+                        </a>
+                        ${entrada.estado === 'activo' ? `
+                            <button class="btn btn-danger" onclick="cancelarEntrada(${entrada.id})">
+                                <i class="fas fa-ban"></i> Cancelar
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
             });
             
             document.getElementById('entradas-table').style.display = 'table';
+            document.getElementById('entradas-cards').style.display = 'block';
             document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
         }
         
@@ -606,4 +818,3 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     </script>
 </body>
 </html>
-

@@ -1,15 +1,13 @@
 <?php 
 
-require_once '../../core/verificar-sesion.php'; // Verificar Session
-require_once '../../core/conexion.php'; // Conexión a la base de datos
+require_once '../../core/verificar-sesion.php';
+require_once '../../core/conexion.php';
 
-// Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
 $permiso_necesario = 'ALM004';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     header('location: ../errors/403.html');
-        
     exit(); 
 }
 
@@ -22,9 +20,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Entrada de Inventario</title>
     <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
+    <link rel="stylesheet" href="../../assets/css/menu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * {
             margin: 0;
@@ -35,7 +33,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
         }
         
         .container {
@@ -44,7 +41,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 30px;
+            padding: 20px;
         }
         
         .header {
@@ -53,11 +50,17 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             border-bottom: 2px solid #4CAF50;
             padding-bottom: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .header h1 {
             color: #333;
-            font-size: 28px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .btn {
@@ -70,6 +73,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
         
         .btn-primary {
@@ -107,6 +111,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             color: #555;
             margin-bottom: 15px;
             font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .form-group {
@@ -133,10 +140,38 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             border-color: #4CAF50;
         }
         
+        .info-badge {
+            display: block;
+            background: #cdfdd1ff;
+            color: #616161ff;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        
+        .info-badge i {
+            margin-right: 5px;
+        }
+        
+        .info-badge strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Contenedor con scroll para tabla */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
         .productos-table {
             width: 100%;
+            min-width: 700px;
             border-collapse: collapse;
-            margin-top: 20px;
         }
         
         .productos-table th,
@@ -150,24 +185,22 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: #f8f9fa;
             font-weight: 600;
             color: #555;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .productos-table tr:hover {
             background: #f8f9fa;
         }
         
-        .producto-row input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
+        .producto-row input,
         .producto-row select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 14px;
         }
         
         .btn-icon {
@@ -177,6 +210,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             font-size: 18px;
             color: #dc3545;
             transition: all 0.3s;
+            padding: 5px;
         }
         
         .btn-icon:hover {
@@ -185,25 +219,30 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .summary {
-            background: #f8f9fa;
+            background: #b8fcbcff;
             padding: 20px;
             border-radius: 8px;
             margin-top: 30px;
+            border-left: 4px solid #129e1bff;
         }
         
         .summary-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
-            font-size: 16px;
+            font-size: 15px;
+            padding: 8px 0;
+        }
+        
+        .summary-row strong {
+            font-weight: 600;
         }
         
         .summary-row.total {
             font-size: 20px;
             font-weight: bold;
-            color: #4CAF50;
-            border-top: 2px solid #ddd;
-            padding-top: 10px;
+            border-top: 2px solid rgba(255,255,255,0.3);
+            padding-top: 15px;
             margin-top: 10px;
         }
         
@@ -212,43 +251,156 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             gap: 15px;
             justify-content: flex-end;
             margin-top: 30px;
+            flex-wrap: wrap;
         }
         
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 40px 20px;
             color: #999;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
         }
         
         .empty-state i {
             font-size: 48px;
             margin-bottom: 15px;
+            opacity: 0.5;
         }
         
-        .info-badge {
-            display: inline-block;
-            background: #e3f2fd;
-            color: #1976d2;
+        /* Indicador de scroll en móvil */
+        .scroll-indicator {
+            display: none;
+            background: #fff3cd;
+            color: #856404;
             padding: 8px 12px;
             border-radius: 5px;
-            font-size: 13px;
+            font-size: 12px;
+            text-align: center;
             margin-top: 10px;
-            margin-bottom: 10px;
+            border-left: 4px solid #ffc107;
         }
         
-        .info-badge i {
-            margin-right: 5px;
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .info-badge {
+                font-size: 12px;
+                padding: 10px;
+            }
+            
+            .info-badge strong {
+                font-size: 13px;
+            }
+            
+            .form-section h3 {
+                font-size: 16px;
+            }
+            
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            /* Mostrar indicador de scroll */
+            .scroll-indicator {
+                display: block;
+            }
+            
+            .table-container {
+                border-radius: 5px;
+            }
+            
+            .productos-table {
+                font-size: 13px;
+            }
+            
+            .productos-table th,
+            .productos-table td {
+                padding: 8px;
+            }
+            
+            .producto-row input,
+            .producto-row select {
+                padding: 6px;
+                font-size: 13px;
+            }
+            
+            .summary {
+                padding: 15px;
+            }
+            
+            .summary-row {
+                font-size: 14px;
+            }
+            
+            .summary-row.total {
+                font-size: 18px;
+            }
+            
+            .actions {
+                flex-direction: column-reverse;
+            }
+            
+            .actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .btn {
+                font-size: 13px;
+                padding: 8px 15px;
+            }
+            
+            .summary-row.total {
+                font-size: 16px;
+            }
+            
+            .productos-table {
+                font-size: 12px;
+                min-width: 650px;
+            }
+            
+            .productos-table th,
+            .productos-table td {
+                padding: 6px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="navegator-nav">
-
-        <!-- Menu-->
         <?php include '../../app/layouts/menu.php'; ?>
 
         <div class="page-content">
-        <!-- TODO EL CONTENIDO DE LA PAGINA DEBE DE ESTAR DEBAJO DE ESTA LINEA -->
             <div class="container">
                 <div class="header">
                     <h1><i class="fas fa-box-open"></i> Nueva Entrada de Inventario</h1>
@@ -258,11 +410,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 </div>
                 
                 <div class="info-badge">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Cálculo automático:</strong> El costo se calcula con promedio ponderado: ∑ (cantidad×costo) / ∑ cantidad
-                    <br>
-                    <i class="fas fa-sync-alt"></i>
-                    <strong>Ajuste de precios:</strong> Si los precios de venta son menores al costo, se ajustarán automáticamente (Precio Venta 1: +25%, Precio Venta 2: +15% sobre el precio de compra)
+                    <strong><i class="fas fa-calculator"></i> Cálculo automático:</strong>
+                    El costo se calcula con promedio ponderado: ∑ (cantidad×costo) / ∑ cantidad
+                    <br><br>
+                    <strong><i class="fas fa-sync-alt"></i> Ajuste de precios:</strong>
+                    Si los precios de venta son menores al costo, se ajustarán automáticamente (Precio Venta 1: +25%, Precio Venta 2: +15% sobre el precio de compra)
                 </div>
                 
                 <div class="form-section">
@@ -279,24 +431,28 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </button>
                     
                     <div id="productos-container">
-                        <table class="productos-table" id="productos-table" style="display: none;">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%">Producto</th>
-                                    <th style="width: 15%">Cantidad</th>
-                                    <th style="width: 20%">Costo Unitario</th>
-                                    <th style="width: 20%">Subtotal</th>
-                                    <th style="width: 5%"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="productos-tbody">
-                            </tbody>
-                        </table>
-                        
-                        <div class="empty-state" id="empty-state">
-                            <i class="fas fa-inbox"></i>
-                            <p>No hay productos agregados. Haz clic en "Agregar Producto" para comenzar.</p>
+                        <div class="table-container" id="table-container" style="display: none;">
+                            <table class="productos-table" id="productos-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%">Producto</th>
+                                        <th style="width: 15%">Cantidad</th>
+                                        <th style="width: 20%">Costo Unitario</th>
+                                        <th style="width: 20%">Subtotal</th>
+                                        <th style="width: 5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productos-tbody"></tbody>
+                            </table>
                         </div>
+                        <div class="scroll-indicator" id="scroll-indicator">
+                            <i class="fas fa-arrows-alt-h"></i> Desliza horizontalmente para ver toda la tabla
+                        </div>
+                    </div>
+                    
+                    <div class="empty-state" id="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay productos agregados. Haz clic en "Agregar Producto" para comenzar.</p>
                     </div>
                 </div>
                 
@@ -324,16 +480,16 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </button>
                 </div>
             </div>
-        <!-- TODO EL CONTENIDO DE LA PAGINA DEBAJO DE ESTA LINEA -->
         </div>
     </div>
 
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">  <!-- Tom Select CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script> <!-- Tom Select JS -->
+
     <script>
         let productosDisponibles = [];
-        let productosAgregados = [];
         let contadorProductos = 0;
         
-        // Cargar productos al iniciar
         document.addEventListener('DOMContentLoaded', function() {
             cargarProductos();
         });
@@ -354,77 +510,132 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         function agregarProducto() {
-            if(productosDisponibles.length === 0) {
+            if (productosDisponibles.length === 0) {
                 Swal.fire('Advertencia', 'No hay productos disponibles', 'warning');
                 return;
             }
-            
+
             contadorProductos++;
-            const row = document.createElement('tr');
-            row.className = 'producto-row';
-            row.id = `producto-${contadorProductos}`;
-            
+            const id = contadorProductos;
+
+            // Generar opciones
             let optionsHTML = '<option value="">Seleccionar producto...</option>';
             productosDisponibles.forEach(prod => {
-                optionsHTML += `<option value="${prod.id}" 
-                    data-costo="${prod.precioCompra}"
-                    data-precio1="${prod.precioVenta1}"
-                    data-precio2="${prod.precioVenta2}">
-                    ${prod.descripcion} (Existencia: ${prod.existencia})
-                </option>`;
+                optionsHTML += `
+                    <option 
+                        value="${prod.id}"
+                        data-descripcion="${prod.descripcion}"
+                        data-costo="${prod.precioCompra}"
+                        data-precio1="${prod.precioVenta1}"
+                        data-precio2="${prod.precioVenta2}">
+                        ${prod.descripcion} (ID: ${prod.id})
+                    </option>
+                `;
             });
-            
+
+            // Crear fila
+            const row = document.createElement('tr');
+            row.className = 'producto-row';
+            row.id = `producto-${id}`;
+
             row.innerHTML = `
                 <td>
-                    <select class="producto-select" onchange="actualizarCosto(${contadorProductos})">
+                    <select id="producto-select-${id}" class="producto-select"
+                            onchange="actualizarCosto(${id})">
                         ${optionsHTML}
                     </select>
                 </td>
+
                 <td>
-                    <input type="number" class="cantidad-input" min="0.01" step="0.01" value="1" 
-                           onchange="calcularSubtotal(${contadorProductos})">
+                    <input type="number"
+                        class="cantidad-input"
+                        min="0.01"
+                        step="0.01"
+                        value="1"
+                        onchange="calcularSubtotal(${id})"
+                        onkeyup="calcularSubtotal(${id})">
                 </td>
+
                 <td>
-                    <input type="number" class="costo-input" min="0" step="0.01" value="0" 
-                           onchange="calcularSubtotal(${contadorProductos})">
+                    <input type="number"
+                        class="costo-input"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                        onchange="calcularSubtotal(${id})"
+                        onkeyup="calcularSubtotal(${id})">
                 </td>
+
                 <td>
-                    <span class="subtotal" id="subtotal-${contadorProductos}">RD$ 0.00</span>
+                    <span class="subtotal" id="subtotal-${id}">RD$ 0.00</span>
                 </td>
+
                 <td>
-                    <button class="btn-icon" onclick="eliminarProducto(${contadorProductos})">
+                    <button class="btn-icon" onclick="eliminarProducto(${id})" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
             `;
-            
+
+            // Agregar fila
             document.getElementById('productos-tbody').appendChild(row);
-            document.getElementById('productos-table').style.display = 'table';
+            document.getElementById('table-container').style.display = 'block';
             document.getElementById('empty-state').style.display = 'none';
             document.getElementById('summary').style.display = 'block';
+
+            // Mostrar scroll en móvil
+            if (window.innerWidth <= 768) {
+                document.getElementById('scroll-indicator').style.display = 'block';
+            }
+
+            // Inicializar TomSelect correctamente
+            new TomSelect(`#producto-select-${id}`, {
+                placeholder: "Seleccionar producto...",
+                onChange: function(value) {
+                    actualizarCosto(id);
+                }
+            });
         }
+
         
         function actualizarCosto(id) {
             const row = document.getElementById(`producto-${id}`);
-            const select = row.querySelector('.producto-select');
+            if (!row) return;
+
+            const input = row.querySelector('.producto-input'); // input del datalist
             const costoInput = row.querySelector('.costo-input');
-            
-            const selectedOption = select.options[select.selectedIndex];
+
+            // El datalist correspondiente
+            const datalist = row.querySelector(`#lista-productos-${id}`);
+            const valor = input.value;
+
+            // Buscar el option cuyo value coincida
+            const selectedOption = Array.from(datalist.options)
+                .find(opt => opt.value === valor);
+
+            if (!selectedOption) return;
+
             const costo = selectedOption.getAttribute('data-costo');
-            
-            if(costo) {
+
+            if (costo) {
                 costoInput.value = costo;
                 calcularSubtotal(id);
             }
         }
+
+
         
         function calcularSubtotal(id) {
             const row = document.getElementById(`producto-${id}`);
+            if(!row) return;
+            
             const cantidad = parseFloat(row.querySelector('.cantidad-input').value) || 0;
             const costo = parseFloat(row.querySelector('.costo-input').value) || 0;
             const subtotal = cantidad * costo;
             
-            row.querySelector('.subtotal').textContent = `RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const subtotalFormatted = `RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            row.querySelector('.subtotal').textContent = subtotalFormatted;
+            
             actualizarResumen();
         }
         
@@ -438,11 +649,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById(`producto-${id}`).remove();
+                    const row = document.getElementById(`producto-${id}`);
+                    if(row) row.remove();
                     
                     const tbody = document.getElementById('productos-tbody');
                     if(tbody.children.length === 0) {
-                        document.getElementById('productos-table').style.display = 'none';
+                        document.getElementById('table-container').style.display = 'none';
+                        document.getElementById('scroll-indicator').style.display = 'none';
                         document.getElementById('empty-state').style.display = 'block';
                         document.getElementById('summary').style.display = 'none';
                     }
@@ -542,9 +755,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 allowOutsideClick: () => !Swal.isLoading()
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Verificar si hubo ajustes de precios
                     if (result.value.precios_ajustados && result.value.ajustes) {
-                        // Construir mensaje con los ajustes realizados
                         let ajustesHTML = '<div style="text-align: left; max-height: 300px; overflow-y: auto;">';
                         ajustesHTML += '<p style="margin-bottom: 15px;"><strong>Se realizaron los siguientes ajustes automáticos:</strong></p>';
                         
@@ -588,7 +799,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                             window.location.href = `inventario-entrada-detalle.php?id=${result.value.id_entrada}`;
                         });
                     } else {
-                        // Sin ajustes, mensaje normal
                         Swal.fire({
                             title: '¡Entrada registrada!',
                             html: `

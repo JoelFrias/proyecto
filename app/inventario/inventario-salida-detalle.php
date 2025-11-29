@@ -34,7 +34,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            padding: 20px;
         }
         
         .container {
@@ -53,11 +52,24 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             margin-bottom: 30px;
             border-bottom: 2px solid #dc3545;
             padding-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .header h1 {
             color: #333;
-            font-size: 28px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         
         .btn {
@@ -71,6 +83,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            white-space: nowrap;
         }
         
         .btn-secondary {
@@ -102,15 +115,15 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         .info-card {
             background: #fff5f5;
-            padding: 25px;
+            padding: 20px;
             border-radius: 8px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             border-left: 4px solid #dc3545;
         }
         
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
         
@@ -121,22 +134,26 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         .info-item label {
             color: #666;
-            font-size: 13px;
+            font-size: 12px;
             margin-bottom: 5px;
             font-weight: 600;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
         .info-item .value {
             color: #333;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 500;
+            word-break: break-word;
         }
         
         .badge {
-            padding: 6px 15px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             display: inline-block;
             margin-top: 5px;
@@ -158,18 +175,24 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .section-title {
-            font-size: 20px;
+            font-size: 18px;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: 600;
+        }
+        
+        /* TABLA PARA DESKTOP */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
         }
         
         .productos-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
         
         .productos-table th,
@@ -183,6 +206,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             background: #f8f9fa;
             font-weight: 600;
             color: #555;
+            font-size: 14px;
         }
         
         .productos-table tr:hover {
@@ -200,6 +224,116 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             color: #dc3545;
         }
         
+        /* CARDS PARA MÓVILES */
+        .productos-cards {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .producto-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+            gap: 10px;
+        }
+        
+        .card-id {
+            font-size: 16px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+        
+        .card-body {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .card-label {
+            font-weight: 500;
+            color: #666;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .card-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        .card-total {
+            background: #fff5f5;
+            padding: 12px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            border-left: 3px solid #dc3545;
+        }
+        
+        .card-total-label {
+            font-weight: 600;
+            color: #dc3545;
+            font-size: 14px;
+        }
+        
+        .card-total-value {
+            font-weight: bold;
+            color: #dc3545;
+            font-size: 16px;
+        }
+        
+        .total-general-mobile {
+            display: none;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+        }
+        
+        .total-general-mobile .label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .total-general-mobile .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
         .actions-bar {
             display: flex;
             gap: 15px;
@@ -207,11 +341,12 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #ddd;
+            flex-wrap: wrap;
         }
         
         .loading {
             text-align: center;
-            padding: 60px;
+            padding: 60px 20px;
             color: #999;
         }
         
@@ -227,12 +362,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
         
         .alert {
-            padding: 15px 20px;
+            padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
             display: flex;
-            align-items: center;
+            align-items: start;
             gap: 12px;
+            line-height: 1.5;
         }
         
         .alert-warning {
@@ -243,6 +379,8 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         .alert i {
             font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
         }
         
         .cancelacion-info {
@@ -256,17 +394,19 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         .cancelacion-info h4 {
             color: #721c24;
             margin-bottom: 10px;
+            font-size: 16px;
         }
         
         .cancelacion-info p {
             color: #721c24;
             margin: 5px 0;
+            font-size: 14px;
         }
         
         .notas-box {
             background: #e9ecef;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-top: 20px;
             border-left: 3px solid #6c757d;
         }
@@ -275,6 +415,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             color: #495057;
             margin-bottom: 8px;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .notas-box p {
@@ -283,18 +426,143 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             line-height: 1.6;
         }
         
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .header-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .header-buttons .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .info-card {
+                padding: 15px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .info-item label {
+                font-size: 11px;
+            }
+            
+            .info-item .value {
+                font-size: 14px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+            }
+            
+            /* Ocultar tabla y mostrar cards en móvil */
+            .table-container {
+                display: none !important;
+            }
+            
+            .productos-cards {
+                display: block;
+            }
+            
+            .total-general-mobile {
+                display: block;
+            }
+            
+            .actions-bar {
+                flex-direction: column-reverse;
+            }
+            
+            .actions-bar .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .alert {
+                font-size: 13px;
+            }
+            
+            .cancelacion-info,
+            .notas-box {
+                padding: 12px;
+            }
+            
+            .cancelacion-info h4,
+            .notas-box h4 {
+                font-size: 14px;
+            }
+            
+            .cancelacion-info p,
+            .notas-box p {
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .btn {
+                font-size: 13px;
+                padding: 8px 15px;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: start;
+            }
+            
+            .total-general-mobile .value {
+                font-size: 20px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .productos-cards {
+                display: none !important;
+            }
+            
+            .total-general-mobile {
+                display: none !important;
+            }
+        }
+        
         @media print {
-            .btn, .actions-bar, .header button, .alert {
+            .btn, .actions-bar, .header button, .alert, .header-buttons {
                 display: none !important;
             }
             
             body {
                 background: white;
-                padding: 0;
             }
             
             .container {
                 box-shadow: none;
+                padding: 20px;
+            }
+            
+            .header {
+                border-bottom: 2px solid #000;
             }
         }
     </style>
@@ -307,7 +575,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             <div class="container">
                 <div class="header">
                     <h1><i class="fas fa-file-alt"></i> Detalle de Salida #<span id="salida-id">...</span></h1>
-                    <div style="display: flex; gap: 10px;">
+                    <div class="header-buttons">
                         <button class="btn btn-success" onclick="window.print()">
                             <i class="fas fa-print"></i> Imprimir
                         </button>
@@ -361,25 +629,36 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         <i class="fas fa-boxes"></i> Productos Retirados
                     </div>
                     
-                    <table class="productos-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 10%">ID</th>
-                                <th style="width: 40%">Producto</th>
-                                <th style="width: 15%">Cantidad</th>
-                                <th style="width: 17%">Costo Unit.</th>
-                                <th style="width: 18%">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productos-tbody">
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4" style="text-align: right;">COSTO TOTAL:</td>
-                                <td id="total-general">RD$ 0.00</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    <!-- TABLA PARA DESKTOP -->
+                    <div class="table-container">
+                        <table class="productos-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%">ID</th>
+                                    <th style="width: 40%">Producto</th>
+                                    <th style="width: 15%">Cantidad</th>
+                                    <th style="width: 17%">Costo Unit.</th>
+                                    <th style="width: 18%">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productos-tbody"></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" style="text-align: right;">COSTO TOTAL:</td>
+                                    <td id="total-general">RD$ 0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <!-- CARDS PARA MÓVILES -->
+                    <div class="productos-cards" id="productos-cards"></div>
+                    
+                    <!-- TOTAL PARA MÓVILES -->
+                    <div class="total-general-mobile" id="total-general-mobile">
+                        <div class="label">COSTO TOTAL</div>
+                        <div class="value" id="total-general-mobile-value">RD$ 0.00</div>
+                    </div>
                     
                     <div id="cancelacion-info" style="display: none;"></div>
                     
@@ -465,9 +744,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 cargarInfoCancelacion();
             }
             
-            // Mostrar productos
+            // Mostrar productos en tabla (desktop)
             const tbody = document.getElementById('productos-tbody');
             tbody.innerHTML = '';
+            
+            // Mostrar productos en cards (móvil)
+            const cardsContainer = document.getElementById('productos-cards');
+            cardsContainer.innerHTML = '';
             
             let totalGeneral = 0;
             
@@ -475,6 +758,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 const subtotal = prod.cantidad * prod.costo;
                 totalGeneral += subtotal;
                 
+                // Fila para tabla (desktop)
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><strong>${prod.id_producto}</strong></td>
@@ -487,9 +771,40 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     <td><strong>RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
                 `;
                 tbody.appendChild(row);
+                
+                // Card para móvil
+                const card = document.createElement('div');
+                card.className = 'producto-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div>
+                            <div class="card-id">#${prod.id_producto}</div>
+                            <div class="card-title">${prod.descripcion}</div>
+                            ${prod.tipo ? `<small style="color: #666; font-size: 12px;"><i class="fas fa-tag"></i> ${prod.tipo}</small>` : ''}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-cubes"></i> Cantidad</span>
+                            <span class="card-value">${parseFloat(prod.cantidad).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="card-row">
+                            <span class="card-label"><i class="fas fa-dollar-sign"></i> Costo Unitario</span>
+                            <span class="card-value">RD$ ${parseFloat(prod.costo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                    <div class="card-total">
+                        <span class="card-total-label">Subtotal</span>
+                        <span class="card-total-value">RD$ ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
             });
             
-            document.getElementById('total-general').textContent = `RD$ ${totalGeneral.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const totalFormatted = `RD$ ${totalGeneral.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('total-general').textContent = totalFormatted;
+            document.getElementById('total-general-mobile-value').textContent = totalFormatted;
+            
             document.getElementById('content').style.display = 'block';
         }
         
