@@ -1,6 +1,16 @@
 <?php
 
-require_once '../../core/conexion.php'; // Conexión a la base de datos
+require_once '../../core/conexion.php';		// Conexión a la base de datos
+
+// Verificar conexión a la base de datos
+if (!$conn || !$conn->connect_errno === 0) {
+    http_response_code(500);
+    die(json_encode([
+        "success" => false,
+        "error" => "Error de conexión a la base de datos",
+        "error_code" => "DATABASE_CONNECTION_ERROR"
+    ]));
+} // Conexión a la base de datos
 require_once '../../core/verificar-sesion.php'; // Verificar Session
 
 // Validar permisos de usuario
@@ -250,7 +260,17 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
 
                             <?php
 
-                            require_once '../../core/conexion.php';
+                            require_once '../../core/conexion.php';		// Conexión a la base de datos
+
+// Verificar conexión a la base de datos
+if (!$conn || !$conn->connect_errno === 0) {
+    http_response_code(500);
+    die(json_encode([
+        "success" => false,
+        "error" => "Error de conexión a la base de datos",
+        "error_code" => "DATABASE_CONNECTION_ERROR"
+    ]));
+}
 
                             // Obtener el id y la descripción de los tipos de producto
                             $sql = "SELECT id, descripcion FROM empleados_puestos ORDER BY descripcion ASC";

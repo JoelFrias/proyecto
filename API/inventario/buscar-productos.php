@@ -1,6 +1,16 @@
 <?php
 
-require_once '../../core/conexion.php';
+require_once '../../core/conexion.php';		// Conexión a la base de datos
+
+// Verificar conexión a la base de datos
+if (!$conn || !$conn->connect_errno === 0) {
+    http_response_code(500);
+    die(json_encode([
+        "success" => false,
+        "error" => "Error de conexión a la base de datos",
+        "error_code" => "DATABASE_CONNECTION_ERROR"
+    ]));
+}
 require_once '../../core/verificar-sesion.php';
 
 // Verificar que se recibió el parámetro de búsqueda
