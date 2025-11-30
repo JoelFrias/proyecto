@@ -91,7 +91,6 @@ $mapeoPermisos = [
     'PADM001' => 'pan-adm',
     'PADM002' => 'estadisticas',
     'PADM003' => 'bancos-destinos',
-    'USU001' => 'usuarios',
     'EMP001' => 'empleados',
     'FAC003' => 'inf-factura',
     'CUA001' => 'cuadres',
@@ -539,10 +538,6 @@ foreach ($permisos_activos as $codigo) {
                                     <span>Administrar Bancos y Destinos</span>
                                 </label>
                                 <label>
-                                    <input type="checkbox" name="permisos[usuarios]" id="usuarios">
-                                    <span>Administrar Usuarios</span>
-                                </label>
-                                <label>
                                     <input type="checkbox" name="permisos[empleados]" id="empleados">
                                     <span>Administrar Empleados</span>
                                 </label>
@@ -593,7 +588,7 @@ foreach ($permisos_activos as $codigo) {
                 'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
                 'avance-cuenta', 'cancel-avance', 'cancel-facturas', 'almacen',
                 'inv-empleados', 'facturacion', 'cot-accion', 'caja', 'pan-adm', 
-                'estadisticas', 'bancos-destinos', 'usuarios', 'empleados', 
+                'estadisticas', 'bancos-destinos', 'empleados', 
                 'inf-factura', 'cuadres', 'cuadres-accion', 'cot-registro', 'cot-cancelar',
                 'tran-inventario','entrada-inventario', 'salida-inventario'
             ];
@@ -706,7 +701,6 @@ foreach ($permisos_activos as $codigo) {
             'pan-adm': [
                 'estadisticas',
                 'bancos-destinos',
-                'usuarios',
                 'empleados',
                 'inf-factura',
                 'cot-registro',

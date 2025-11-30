@@ -448,10 +448,6 @@ if (!$conn || !$conn->connect_errno === 0) {
                                     <span>Administrar Bancos y Destinos</span>
                                 </label>
                                 <label>
-                                    <input type="checkbox" name="permisos[usuarios]" id="usuarios">
-                                    <span>Administrar Usuarios</span>
-                                </label>
-                                <label>
                                     <input type="checkbox" name="permisos[empleados]" id="empleados">
                                     <span>Administrar Empleados</span>
                                 </label>
@@ -491,7 +487,7 @@ if (!$conn || !$conn->connect_errno === 0) {
                                     'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
                                     'avance-cuenta', 'cancel-avance', 'cancel-facturas', 'almacen', 'inv-empleados',
                                     'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
-                                    'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
+                                    'bancos-destinos', 'empleados', 'inf-factura',
                                     'cuadres', 'cot-registro', 'cot-cancelar', 'tran-inventario',
                                     'entrada-inventario', 'salida-inventario'
                                 ];
@@ -614,7 +610,6 @@ if (!$conn || !$conn->connect_errno === 0) {
             'pan-adm': [
                 'estadisticas',
                 'bancos-destinos',
-                'usuarios',
                 'empleados',
                 'inf-factura',
                 'cot-registro',
@@ -737,7 +732,7 @@ if (!$conn || !$conn->connect_errno === 0) {
                 'clientes', 'clientes-reporte', 'productos', 'productos-reporte',
                 'avance-cuenta', 'cancel-avance', 'cancel-facturas', 'almacen', 'inv-empleados',
                 'facturacion', 'cot-accion', 'caja', 'pan-adm', 'estadisticas',
-                'bancos-destinos', 'usuarios', 'empleados', 'inf-factura',
+                'bancos-destinos', 'empleados', 'inf-factura',
                 'cuadres', 'cuadres-accion', 'cot-registro', 'cot-cancelar', 'tran-inventario',
                 'entrada-inventario', 'salida-inventario'
             ];

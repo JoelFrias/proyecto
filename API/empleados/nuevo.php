@@ -148,7 +148,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'pan-adm' => 'PADM001',
         'estadisticas' => 'PADM002',
         'bancos-destinos' => 'PADM003',
-        'usuarios' => 'USU001',
         'empleados' => 'EMP001',
         'inf-factura' => 'FAC003',
         'cuadres' => 'CUA001',
