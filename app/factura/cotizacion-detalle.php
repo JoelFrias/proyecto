@@ -10,7 +10,7 @@ if (!$conn || !$conn->connect_errno === 0) {
         "error" => "Error de conexión a la base de datos",
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
-} // Conexión a la base de datos
+}
 require_once '../../core/verificar-sesion.php'; // Verificar Session
 
 // Validar permisos de usuario
@@ -19,7 +19,6 @@ $permiso_necesario = 'COT002';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     header('location: ../errors/403.html');
-        
     exit(); 
 }
 
@@ -34,6 +33,7 @@ if ($noCotizacion === null) {
 // Consulta para obtener información general de la cotización
 $sqlInfo = "SELECT
                 ci.no AS no,
+                ci.registro AS registro,
                 DATE_FORMAT(ci.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
                 CONCAT(c.nombre, ' ', c.apellido) AS nombreCliente,
                 c.id AS idCliente,
@@ -58,6 +58,30 @@ if ($resultInfo->num_rows === 0) {
 }
 
 $cotizacionInfo = $resultInfo->fetch_assoc();
+
+// Si la cotización está cancelada, obtener información de cancelación
+$cancelacionInfo = null;
+if ($cotizacionInfo['estado'] === 'cancelada') {
+    $sqlCancelacion = "SELECT
+                        cc.notas AS motivo,
+                        DATE_FORMAT(cc.fecha, '%d/%m/%Y %l:%i %p') AS fecha_cancelacion,
+                        CONCAT(e.nombre, ' ', e.apellido) AS empleado_cancelo
+                    FROM
+                        cotizaciones_canceladas AS cc
+                    INNER JOIN empleados AS e ON e.id = cc.empleado
+                    WHERE cc.id_cotizacion = ?
+                    ORDER BY cc.fecha DESC
+                    LIMIT 1";
+    
+    $stmtCancelacion = $conn->prepare($sqlCancelacion);
+    $stmtCancelacion->bind_param("i", $noCotizacion);
+    $stmtCancelacion->execute();
+    $resultCancelacion = $stmtCancelacion->get_result();
+    
+    if ($resultCancelacion->num_rows > 0) {
+        $cancelacionInfo = $resultCancelacion->fetch_assoc();
+    }
+}
 
 // Consulta para obtener los productos de la cotización
 $sqlProductos = "SELECT
@@ -211,6 +235,91 @@ while ($producto = $resultProductos->fetch_assoc()) {
         .status.cancel {
             background: rgb(252, 206, 206);
             color: rgb(252, 85, 85);
+        }
+
+        /* Alerta de cancelación */
+        .cancellation-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #dc2626;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+        }
+
+        .cancellation-alert-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .cancellation-alert-icon {
+            background: #dc2626;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cancellation-alert-title {
+            font-weight: 600;
+            color: #991b1b;
+            font-size: 1.125rem;
+        }
+
+        .cancellation-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .cancellation-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .cancellation-detail-label {
+            font-size: 0.75rem;
+            color: #7f1d1d;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .cancellation-detail-value {
+            font-size: 0.875rem;
+            color: #450a0a;
+            font-weight: 600;
+        }
+
+        .cancellation-reason {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .cancellation-reason-label {
+            font-size: 0.75rem;
+            color: #7f1d1d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .cancellation-reason-text {
+            color: #1f2937;
+            line-height: 1.6;
+            font-size: 0.875rem;
         }
 
         /* Información del cliente */
@@ -474,6 +583,10 @@ while ($producto = $resultProductos->fetch_assoc()) {
                 gap: 1rem;
             }
 
+            .cancellation-details {
+                grid-template-columns: 1fr;
+            }
+
             .products-section {
                 margin: 1rem 0;
                 padding: 1rem 0;
@@ -489,6 +602,10 @@ while ($producto = $resultProductos->fetch_assoc()) {
                 order: 1;
             }
 
+            .notes-section {
+                width: 100%;
+            }
+
             .action-buttons {
                 flex-direction: column;
                 order: 2;
@@ -502,6 +619,15 @@ while ($producto = $resultProductos->fetch_assoc()) {
         }
 
         @media (max-width: 390px) {
+            .cancellation-alert {
+                padding: 1rem;
+            }
+
+            .cancellation-alert-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
             .products-section {
                 width: 100%;
                 padding: 1rem;
@@ -559,7 +685,6 @@ while ($producto = $resultProductos->fetch_assoc()) {
                         <div class="invoice-header">
                             <h1>Cotización #<?php echo $cotizacionInfo['no']; ?></h1>
                             <?php
-
                                 $estado = "";
                                 if ($cotizacionInfo['estado'] == 'pendiente') {
                                     $estado = "pending";
@@ -568,12 +693,49 @@ while ($producto = $resultProductos->fetch_assoc()) {
                                 } elseif ($cotizacionInfo['estado'] == 'cancelada') {
                                     $estado = "cancel";
                                 }
-
                             ?>
                             <span class="status <?php echo $estado; ?>">
                                 <?php echo $cotizacionInfo['estado']; ?>
                             </span>
                         </div>
+
+                        <?php if ($cancelacionInfo): ?>
+                        <!-- Alerta de Cancelación -->
+                        <div class="cancellation-alert">
+                            <div class="cancellation-alert-header">
+                                <div class="cancellation-alert-icon">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                                <div class="cancellation-alert-title">
+                                    Cotización Cancelada
+                                </div>
+                            </div>
+                            
+                            <div class="cancellation-details">
+                                <div class="cancellation-detail-item">
+                                    <span class="cancellation-detail-label">Fecha de Cancelación</span>
+                                    <span class="cancellation-detail-value">
+                                        <?php echo $cancelacionInfo['fecha_cancelacion']; ?>
+                                    </span>
+                                </div>
+                                <div class="cancellation-detail-item">
+                                    <span class="cancellation-detail-label">Cancelado Por</span>
+                                    <span class="cancellation-detail-value">
+                                        <?php echo $cancelacionInfo['empleado_cancelo']; ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="cancellation-reason">
+                                <span class="cancellation-reason-label">
+                                    <i class="fas fa-comment-alt"></i> Motivo de Cancelación
+                                </span>
+                                <div class="cancellation-reason-text">
+                                    <?php echo nl2br(htmlspecialchars($cancelacionInfo['motivo'])); ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
 
                         <div class="client-info">
                             <div class="info-column">
@@ -647,7 +809,6 @@ while ($producto = $resultProductos->fetch_assoc()) {
                         </div>
                         <div class="action-buttons">
                             <?php if ($cotizacionInfo['estado'] == 'pendiente'): ?>
-
                                 <button class="btn-secondary" onclick="imprimir()">
                                     <span class="printer-icon">🖨️</span>
                                     Re-Imprimir Reporte
@@ -655,7 +816,6 @@ while ($producto = $resultProductos->fetch_assoc()) {
                                 <button class="btn-cancel" onclick="cancelCoti()">
                                     Cancelar Cotización
                                 </button>
-
                             <?php endif; ?>
                         </div>
                     </div>
@@ -682,20 +842,68 @@ while ($producto = $resultProductos->fetch_assoc()) {
         function cancelCoti() {
             Swal.fire({
                 title: '¿Estás seguro?',
-                text: "Esta acción no se puede deshacer.",
+                html: `
+                    <p style="margin-bottom: 15px; color: #666;">Esta acción no se puede deshacer.</p>
+                    <div style="text-align: left;">
+                        <label for="motivo-cancelacion" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                            Motivo de cancelación: <span style="color: #d33;">*</span>
+                        </label>
+                        <textarea 
+                            id="motivo-cancelacion" 
+                            class="swal2-textarea" 
+                            placeholder="Escribe el motivo de la cancelación..."
+                            style="width: 80%; min-height: 100px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit;"
+                            maxlength="500"
+                        ></textarea>
+                        <small style="color: #6b7280; font-size: 12px; display: block; margin-top: 5px;">
+                            Máximo 500 caracteres
+                        </small>
+                    </div>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Sí, cancelar',
-                cancelButtonText: 'No, mantener'
+                cancelButtonText: 'No, mantener',
+                focusConfirm: false,
+                preConfirm: () => {
+                    const motivo = document.getElementById('motivo-cancelacion').value.trim();
+                    
+                    // Validar que el motivo no esté vacío
+                    if (!motivo) {
+                        Swal.showValidationMessage('El motivo de cancelación es obligatorio');
+                        return false;
+                    }
+                    
+                    // Validar longitud mínima
+                    if (motivo.length < 10) {
+                        Swal.showValidationMessage('El motivo debe tener al menos 10 caracteres');
+                        return false;
+                    }
+                    
+                    return motivo;
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
+                    const motivo = result.value;
 
                     // Datos a enviar
                     const datos = {
-                        noCotizacion: <?php echo $noCotizacion ?>
+                        noCotizacion: <?php echo $noCotizacion ?>,
+                        notas: motivo
                     };
+
+                    // Mostrar indicador de carga
+                    Swal.fire({
+                        title: 'Procesando...',
+                        html: 'Cancelando cotización, por favor espere.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
 
                     fetch("../../api/facturacion/cotizacion-cancelar.php", {
                         method: "POST",
@@ -711,7 +919,8 @@ while ($producto = $resultProductos->fetch_assoc()) {
                                 title: 'Éxito',
                                 text: 'Cotización cancelada exitosamente',
                                 showConfirmButton: true,
-                                confirmButtonText: 'Aceptar'
+                                confirmButtonText: 'Aceptar',
+                                timer: 2000
                             }).then(() => {
                                 location.reload();
                             });
@@ -719,7 +928,7 @@ while ($producto = $resultProductos->fetch_assoc()) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
-                                text: 'No se pudo cancelar la cotización. Por favor, contacte al administrador del sistema.',
+                                text: data.error || 'No se pudo cancelar la cotización. Por favor, contacte al administrador del sistema.',
                                 showConfirmButton: true,
                                 confirmButtonText: 'Aceptar'
                             });

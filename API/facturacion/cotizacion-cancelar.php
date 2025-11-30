@@ -21,12 +21,13 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Validar que se recibió el número de cotización
-if (!$data || !isset($data['noCotizacion']) || empty($data['noCotizacion'])) {
+if (!$data || !isset($data['noCotizacion']) || empty($data['noCotizacion']) || !isset($data['notas']) || empty($data['notas'])) {
     echo json_encode(['error' => 'Número de cotización no proporcionado']);
     exit();
 }
 
 $noCotizacion = $conn->real_escape_string($data['noCotizacion']);
+$notas = $conn->real_escape_string($data['notas']);
 
 // Iniciar transacción
 $conn->begin_transaction();
@@ -71,8 +72,16 @@ try {
     if (!$stmtInf->execute()) {
         throw new Exception('Error al eliminar la cotización');
     }
-    
     $stmtInf->close();
+
+    // Agregar en tabla cotizaciones_canceladas
+    $sqlCancelar = "INSERT INTO `cotizaciones_canceladas` (`id_cotizacion`, `empleado`, `notas`, `fecha`, `registro`) VALUES (?, ?, ?, NOW(), NULL)";
+    $stmtCancelar = $conn->prepare($sqlCancelar);
+    $stmtCancelar->bind_param('sis', $noCotizacion, $id_empleado, $notas);
+    if (!$stmtCancelar->execute()) {
+        throw new Exception('Error al registrar la cancelación de la cotización');
+    }
+    $stmtCancelar->close();
     
     // Confirmar transacción
     $conn->commit();

@@ -1015,7 +1015,7 @@ if ($permiso_info_factura) {
                 <div class="admin-btn config" id="manager-banks">
                     <i class="fas fa-university"></i>
                     <h3>Bancos</h3>
-                    <p>Administrar cuentas bancos</p>
+                    <p>Administrar bancos</p>
                 </div>
 
                 <div class="admin-btn config" id="manager-destinations">
@@ -1053,7 +1053,7 @@ if ($permiso_info_factura) {
                 <div class="admin-btn inventario" onclick="window.location.href='../../app/inventario/inventario-entrada-lista.php'">
                     <i class="fas fa-arrow-down"></i>
                     <h3>Entrada Inventario</h3>
-                    <p>Registrar nuevos productos y existencias</p>
+                    <p>Gestionar orden de entrada de productos</p>
                 </div>
                 <?php endif; ?>
 
@@ -1061,7 +1061,7 @@ if ($permiso_info_factura) {
                 <div class="admin-btn inventario" onclick="window.location.href='../../app/inventario/inventario-salida-lista.php'">
                     <i class="fas fa-arrow-up"></i>
                     <h3>Salida Inventario</h3>
-                    <p>Registrar bajas y salidas de productos</p>
+                    <p>Gesionar oden de salidas de productos</p>
                 </div>
                 <?php endif; ?>
 
@@ -1069,7 +1069,7 @@ if ($permiso_info_factura) {
                 <div class="admin-btn inventario" onclick="window.location.href='../../app/inventario/registro-transacciones.php'">
                     <i class="fas fa-exchange-alt"></i>
                     <h3>Transferencias</h3>
-                    <p>Movimientos entre almacenes</p>
+                    <p>Movimientos entre inventarios</p>
                 </div>
                 <?php endif; ?>
 
@@ -1093,7 +1093,7 @@ if ($permiso_info_factura) {
                 <div class="admin-btn reportes" onclick="window.location.href='../../app/factura/cotizacion-registro.php'">
                     <i class="fas fa-file-alt"></i>
                     <h3>Cotizaciones</h3>
-                    <p>Historial de cotizaciones realizadas</p>
+                    <p>Registro y gestión de cotizaciones</p>
                 </div>
                 <?php endif; ?>
 
@@ -1101,7 +1101,7 @@ if ($permiso_info_factura) {
                 <div class="admin-btn reportes" onclick="window.location.href='dashboard.php'">
                     <i class="fas fa-chart-line"></i>
                     <h3>Dashboard del Negocio</h3>
-                    <p>Visualizar métricas y estadísticas clave</p>
+                    <p>Visualizar métricas y estadísticas claves</p>
                 </div>
                 <?php endif; ?>
 

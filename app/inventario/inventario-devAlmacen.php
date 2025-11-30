@@ -221,6 +221,7 @@ $resultEmpleados = $stmtEmp->get_result();
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             position: relative;
             overflow: hidden;
+            height: 80px;
         }
 
         .btntop::before {
@@ -408,16 +409,15 @@ $resultEmpleados = $stmtEmp->get_result();
                     <h2 class="menu-title"><span>Procesar Transacción</span></h2>
                 </div>
                 <div class="menu-content">
-                    <div class="menu-footer">
-                        <button class="footer-button primary" id="btn-generar" onclick="guardarFactura()">Procesar Transaccion</button>
-                    </div>
-
                     <div class="order-list" id="orderList">
                         <h3 class="order-list-title">Productos Agregados</h3>
                         <!-- Los productos se agregarán aquí dinámicamente -->
                         <div class="order-list-empty" id="orderListEmpty">
                             <span>No hay productos agregados.</span>
                         </div>
+                    </div>
+                    <div class="menu-footer">
+                        <button class="footer-button primary" id="btn-generar" onclick="guardarFactura()">Procesar Transaccion</button>
                     </div>
                 </div>
             </div>
@@ -427,7 +427,7 @@ $resultEmpleados = $stmtEmp->get_result();
     </div>
 
 
-    <!-- Codigo de pasas los productos -->
+    <!-- Codigo de pasar los productos -->
     <script>
 
         let productos = []; // Array para almacenar los productos seleccionados
@@ -546,69 +546,81 @@ $resultEmpleados = $stmtEmp->get_result();
                 return;
             }
 
-            idEmpleado = <?php echo isset($_POST['seleccionar-empleado']) ? $_POST['seleccionar-empleado'] : null; ?>
+            idEmpleado = <?php echo isset($_POST['seleccionar-empleado']) ? $_POST['seleccionar-empleado'] : 'null'; ?>;
 
             const datos = {
                 idEmpleado,
                 productos
             };
 
-            // console.log("Enviando datos:", datos);
+            Swal.fire({
+                title: '¿Guardar transacción?',
+                text: "¿Estás seguro de que deseas guardar esta transacción?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
 
-            fetch("../../api/inventario/inventario_revAlmacen.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                console.log("Respuesta completa del servidor:", text);
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Transacción exitosa',
-                            text: 'La transacción se ha realizado exitósamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.open('../../reports/transacciones/reporte-transaccion.php?no=' + data.response.idtransaccion, '_blank');
-                            location.reload();
-                        });
-                        
-                    } else {
+                if (!result.isConfirmed) return; // Si canceló, no sigue
+
+                fetch("../../api/inventario/inventario_revAlmacen.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    console.log("Respuesta completa del servidor:", text);
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Transacción exitosa',
+                                text: 'La transacción se ha realizado exitósamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                window.open('../../reports/transacciones/reporte-transaccion.php?no=' + data.response.idtransaccion, '_blank');
+                                location.reload();
+                            });
+
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.error("Error: " + data.error);
+                        }
+                    } catch (error) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.error,
+                            text: 'Error inesperado en el servidor.',
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         });
-                        console.error("Error: " + data.error);
+                        console.error("Error: Respuesta no es JSON válido:", text);
                     }
-                } catch (error) {
+                })
+                .catch(error => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Error inesperado en el servidor.',
+                        text: 'No se pudo conectar con el servidor.',
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
                     });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudo conectar con el servidor.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
+                    console.error("Error de red o servidor:", error);
                 });
-                console.error("Error de red o servidor:", error);
+
             });
         }
+
 
     </script>
 

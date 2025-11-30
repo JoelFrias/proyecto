@@ -118,6 +118,7 @@ if ($result->num_rows > 0) {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             position: relative;
             overflow: hidden;
+            height: 80px;
         }
 
         .btntop::before {
@@ -519,7 +520,7 @@ if ($result->num_rows > 0) {
             // Convertir valores numéricos y validar
             idEmpleado = idEmpleado ? parseInt(idEmpleado) : null;
 
-            // Validacion de seleccion de cliente
+            // Validación de cliente
             if (!idEmpleado) {
                 Swal.fire({
                     icon: 'warning',
@@ -531,6 +532,7 @@ if ($result->num_rows > 0) {
                 return;
             }
 
+            // Validación de productos
             if (!productos || productos.length === 0) {
                 Swal.fire({
                     icon: 'warning',
@@ -547,60 +549,71 @@ if ($result->num_rows > 0) {
                 productos
             };
 
-            // console.log("Enviando datos:", datos);
+            Swal.fire({
+                title: '¿Guardar transacción?',
+                text: "¿Estás seguro de que deseas guardar esta transacción?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
 
-            fetch("../../api/inventario/inventario_guardarTransaccion.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
-            })
-            .then(response => response.text())
-            .then(text => {
-                console.log("Respuesta completa del servidor:", text);
-                try {
-                    let data = JSON.parse(text);
-                    if (data.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Transacción exitosa',
-                            text: 'La transacción se ha realizado exitósamente.',
-                            showConfirmButton: true,
-                            confirmButtonText: 'Aceptar'
-                        }).then(() => {
-                            window.open('../../reports/transacciones/reporte-transaccion.php?no=' + data.response.idtransaccion, '_blank');
-                            location.reload();
-                        });
-                        
-                    } else {
+                if (!result.isConfirmed) return; // Si canceló, no sigue
+
+                fetch("../../api/inventario/inventario_guardarTransaccion.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                })
+                .then(response => response.text())
+                .then(text => {
+                    console.log("Respuesta completa del servidor:", text);
+                    try {
+                        let data = JSON.parse(text);
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Transacción exitosa',
+                                text: 'La transacción se ha realizado exitósamente.',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                window.open('../../reports/transacciones/reporte-transaccion.php?no=' + data.response.idtransaccion, '_blank');
+                                location.reload();
+                            });
+
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar'
+                            });
+                            console.error("Error: " + data.error);
+                        }
+                    } catch (error) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: data.error,
+                            text: 'Error inesperado en el servidor.',
                             showConfirmButton: true,
                             confirmButtonText: 'Aceptar'
                         });
-                        console.error("Error: " + data.error);
+                        console.error("Error: Respuesta no es JSON válido:", text);
                     }
-                } catch (error) {
+                })
+                .catch(error => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'Error inesperado en el servidor.',
+                        text: 'No se pudo conectar con el servidor.',
                         showConfirmButton: true,
                         confirmButtonText: 'Aceptar'
                     });
-                    console.error("Error: Respuesta no es JSON válido:", text);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudo conectar con el servidor.',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
+                    console.error("Error de red o servidor:", error);
                 });
-                console.error("Error de red o servidor:", error);
+
             });
         }
 
