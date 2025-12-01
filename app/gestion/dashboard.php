@@ -47,6 +47,9 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         <button class="btn-refresh" onclick="refreshDashboard()">
                             <i class="fas fa-sync-alt"></i> Actualizar
                         </button>
+                        <button class="btn-download" onclick="generarReportePDF()">
+                            <i class="fas fa-file-pdf"></i> Descargar PDF
+                        </button>
                     </div>
                 </div>
             </header>

@@ -1,5 +1,7 @@
 <?php
 
+// empleados-nuevo.php
+
 require_once '../../core/conexion.php';		// Conexión a la base de datos
 
 // Verificar conexión a la base de datos
@@ -302,6 +304,8 @@ if (!$conn || !$conn->connect_errno === 0) {
 
                 <legend>Permisos de Usuario</legend>
                 <div class="permisos-container">
+
+                    <?php include 'layout-perfil-permisos.php'; ?>
                     
                     <!-- Sección: Clientes -->
                     <div class="permisos-seccion">
@@ -603,23 +607,9 @@ if (!$conn || !$conn->connect_errno === 0) {
 
     <script>
         // ---------- Configuración de dependencias de permisos ----------
-        const dependenciasPermisos = {
-            'avance-cuenta': ['cancel-avance'],
-            'facturacion': ['cot-accion'],
-            'cot-registro': ['cot-cancelar'],
-            'pan-adm': [
-                'estadisticas',
-                'bancos-destinos',
-                'empleados',
-                'inf-factura',
-                'cot-registro',
-                'tran-inventario',
-                'entrada-inventario',
-                'salida-inventario',
-                'cuadres'
-            ],
-            'cuadres' : ['cuadres-accion']
-        };
+        //const dependenciasPermisos = { 'avance-cuenta': ['cancel-avance'], 'facturacion': ['cot-accion'],'cot-registro': ['cot-cancelar'], 'pan-adm': ['estadisticas', 'bancos-destinos', 'empleados', 'inf-factura', 'cot-registro', 'tran-inventario', 'entrada-inventario', 'salida-inventario', 'cuadres' ], 'cuadres' : ['cuadres-accion'] };
+
+        const dependenciasPermisos = {}; // Dependencias vacías por conflicto en perfiles de permisos
 
         // ---------- Permisos activos desde PHP (asegurar un objeto por defecto) ----------
         // Si $permisos_checked no está definido en PHP, esto inyectará {}

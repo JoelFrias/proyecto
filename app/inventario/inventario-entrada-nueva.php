@@ -568,13 +568,25 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 </td>
 
                 <td>
-                    <input type="number"
-                        class="costo-input"
-                        min="0"
-                        step="0.01"
-                        value="0"
-                        onchange="calcularSubtotal(${id})"
-                        onkeyup="calcularSubtotal(${id})">
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <input type="number"
+                            class="costo-input"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                            onchange="calcularSubtotal(${id})"
+                            onkeyup="calcularSubtotal(${id})"
+                            id="costo-input-${id}">
+                        <label style="font-size: 11px; display: flex; align-items: center; gap: 5px; cursor: pointer; width: 100%;">
+                            <input type="checkbox" 
+                                class="auto-costo-checkbox" 
+                                id="auto-costo-${id}"
+                                checked
+                                onchange="toggleAutoCosto(${id})"
+                                style="min-width: 15px; width: 15px; margin: 0;">
+                            <span style="color: #666; flex: 1; word-wrap: break-word;">Calcular automático</span>
+                        </label>
+                    </div>
                 </td>
 
                 <td>
@@ -603,7 +615,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
             new TomSelect(`#producto-select-${id}`, {
                 placeholder: "Buscar producto...",
                 maxOptions: 200,
-                dropdownParent: 'body', // Esto renderiza el dropdown en el body
+                dropdownParent: 'body',
                 onChange: function(value) {
                     if (value) {
                         actualizarCosto(id);
@@ -613,12 +625,33 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         }
 
         
+        function toggleAutoCosto(id) {
+            const checkbox = document.getElementById(`auto-costo-${id}`);
+            const costoInput = document.getElementById(`costo-input-${id}`);
+            
+            if (checkbox.checked) {
+                // Si está activado, aplicar el costo automático
+                costoInput.style.backgroundColor = '#f0f0f0';
+                actualizarCosto(id);
+            } else {
+                // Si está desactivado, permitir edición manual
+                costoInput.style.backgroundColor = '#fff3cd';
+                costoInput.focus();
+            }
+        }
+
         function actualizarCosto(id) {
             const row = document.getElementById(`producto-${id}`);
             if (!row) return;
 
             const select = row.querySelector('.producto-select');
             const costoInput = row.querySelector('.costo-input');
+            const checkbox = document.getElementById(`auto-costo-${id}`);
+            
+            // Solo actualizar si el checkbox está activado
+            if (!checkbox || !checkbox.checked) {
+                return;
+            }
             
             // Obtener el option seleccionado
             const selectedOption = select.options[select.selectedIndex];
@@ -694,7 +727,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
         
         function guardarEntrada() {
             const rows = document.querySelectorAll('.producto-row');
-            
+
             if(rows.length === 0) {
                 Swal.fire('Advertencia', 'Debe agregar al menos un producto', 'warning');
                 return;
@@ -707,6 +740,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 const select = row.querySelector('.producto-select');
                 const cantidad = parseFloat(row.querySelector('.cantidad-input').value);
                 const costo = parseFloat(row.querySelector('.costo-input').value);
+                const checkbox = row.querySelector('.auto-costo-checkbox');
                 
                 if(!select.value || cantidad <= 0 || costo < 0) {
                     error = true;
@@ -716,7 +750,8 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                 productos.push({
                     id_producto: select.value,
                     cantidad: cantidad,
-                    costo: costo
+                    costo: costo,
+                    calcular_automatico: checkbox.checked
                 });
             });
             

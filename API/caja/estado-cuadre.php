@@ -50,16 +50,7 @@ if (!isset($_POST['numCaja']) || !isset($_POST['nuevoEstado']) || !isset($_POST[
 $numCaja = $_POST['numCaja'];
 $nuevoEstado = $_POST['nuevoEstado'];
 $notas = $_POST['notas'];
-$idEmpleado = $_SESSION['idEmpleado']; // ← CORREGIDO: era 'id_empleado'
-
-// Validar que la nota no esté vacía y tenga mínimo 10 caracteres
-if (empty(trim($notas)) || strlen(trim($notas)) < 10) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'La nota es obligatoria y debe tener al menos 10 caracteres'
-    ]);
-    exit();
-}
+$idEmpleado = $_SESSION['idEmpleado'];
 
 // Validar formato del número de caja
 if (!preg_match('/^[a-zA-Z0-9]{5}$/', $numCaja)) {

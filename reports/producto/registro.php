@@ -61,7 +61,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 $idPuesto = isset($_SESSION['idPuesto']) ? intval($_SESSION['idPuesto']) : 0;
-$ocultarPrecioCompra = ($idPuesto > 2);
+$ocultarPrecioCompra = (1 > 2);
 
 // Crear documento PDF
 $pdf = new PDF('P', 'mm', 'Letter');

@@ -1,4 +1,5 @@
 <?php
+// empleados-editar.php
 
 require_once '../../core/conexion.php';		// Conexión a la base de datos
 
@@ -392,6 +393,8 @@ foreach ($permisos_activos as $codigo) {
                 <legend>Permisos de Usuario</legend>
 
                 <div class="permisos-container">
+
+                    <?php include 'layout-perfil-permisos.php'; ?>
                     
                     <!-- Sección: Clientes -->
                     <div class="permisos-seccion">
@@ -694,23 +697,10 @@ foreach ($permisos_activos as $codigo) {
 
     <script>
         // Configuración de dependencias de permisos
-        const dependenciasPermisos = {
-            'avance-cuenta': ['cancel-avance'],
-            'facturacion': ['cot-accion'],
-            'cot-registro': ['cot-cancelar'],
-            'pan-adm': [
-                'estadisticas',
-                'bancos-destinos',
-                'empleados',
-                'inf-factura',
-                'cot-registro',
-                'tran-inventario',
-                'entrada-inventario',
-                'salida-inventario',
-                'cuadres'
-            ],
-            'cuadres' : ['cuadres-accion']
-        };
+        
+        //const dependenciasPermisos = { 'avance-cuenta': ['cancel-avance'], 'facturacion': ['cot-accion'],'cot-registro': ['cot-cancelar'], 'pan-adm': ['estadisticas', 'bancos-destinos', 'empleados', 'inf-factura', 'cot-registro', 'tran-inventario', 'entrada-inventario', 'salida-inventario', 'cuadres' ], 'cuadres' : ['cuadres-accion'] };
+
+        const dependenciasPermisos = {}; // Dependencias vacías por conflicto en perfiles de permisos
 
         // Permisos activos desde PHP
         const permisosActivos = <?php echo json_encode($permisos_checked); ?>;

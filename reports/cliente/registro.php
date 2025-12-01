@@ -8,7 +8,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 $idPuesto = isset($_SESSION['idPuesto']) ? intval($_SESSION['idPuesto']) : 0;
-$ocultarIdentificacion = ($idPuesto > 2);
+$ocultarIdentificacion = (1 > 2);
 
 // Clase extendida de FPDF para soportar caracteres especiales
 class PDF extends FPDF {

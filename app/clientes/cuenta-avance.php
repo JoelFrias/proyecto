@@ -20,7 +20,8 @@ $idCliente = $_GET["idCliente"];
 $sqlph = "SELECT
             DATE_FORMAT(chp.fecha, '%d/%m/%Y %l:%i %p') AS fechaph,
             chp.metodo AS metodoph,
-            chp.monto AS montoph
+            chp.monto AS montoph,
+            chp.estado AS estadoph
         FROM
             clientes_historialpagos AS chp
         WHERE
@@ -318,7 +319,68 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                 right: 15px;
             }
         }
-        
+
+        /* Estilos para pagos cancelados */
+        .payment-table tbody tr.cancelado {
+            background-color: #fff3cd;
+            opacity: 0.7;
+        }
+
+        .payment-table tbody tr.cancelado td {
+            color: #856404;
+        }
+
+        .estado-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .estado-badge.activo {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .estado-badge.cancelado {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Estilos personalizados para SweetAlert de cancelación */
+        .swal-custom-popup {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .swal-custom-confirm {
+            font-weight: 600;
+            padding: 0.75rem 1.5rem !important;
+        }
+
+        .swal-custom-cancel {
+            font-weight: 600;
+            padding: 0.75rem 1.5rem !important;
+        }
+
+        .swal2-textarea {
+            border: 2px solid #e3e6f0 !important;
+            font-size: 0.95rem !important;
+            transition: border-color 0.2s !important;
+        }
+
+        .swal2-textarea:focus {
+            border-color: #007bff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+
+        .swal2-validation-message {
+            background: #f8d7da !important;
+            border-left: 4px solid #dc3545 !important;
+            color: #721c24 !important;
+        }
     </style>
 
 </head>
@@ -497,11 +559,17 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                                         if($resultsph->num_rows > 0){
                                             while ($rowph = $resultsph->fetch_assoc()) {
                                                 $montoph = number_format($rowph['montoph'], 2, '.', ',');
+                                                $estilo_fila = $rowph['estadoph'] == 'cancelado' ? 'style="background-color: #fff3cd; opacity: 0.7;"' : '';
+                                                $estilo_monto = $rowph['estadoph'] == 'cancelado' ? 'style="text-decoration: line-through;"' : '';
+                                                $badge_estado = $rowph['estadoph'] == 'cancelado' 
+                                                    ? '<span style="color: #dc3545; font-weight: 600; font-size: 0.75rem;"><i class="fas fa-times-circle"></i> Cancelado</span>' 
+                                                    : '';
+                                                    
                                                 echo "
-                                                    <tr>
-                                                        <td>{$rowph['fechaph']}</td>
+                                                    <tr $estilo_fila>
+                                                        <td>{$rowph['fechaph']} $badge_estado</td>
                                                         <td>{$rowph['metodoph']}</td>
-                                                        <td>RD$ {$montoph}</td>
+                                                        <td $estilo_monto>RD$ {$montoph}</td>
                                                     </tr>
                                                 ";
                                             }
@@ -546,12 +614,17 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                                             chp.referencia AS tarjetachp,
                                             b.nombreBanco AS bancochp,
                                             d.descripcion AS destinochp,
-                                            CONCAT(e.nombre, ' ', e.apellido) AS nombree
+                                            CONCAT(e.nombre, ' ', e.apellido) AS nombree,
+                                            chp.estado AS estadochp,
+                                            DATE_FORMAT(chp.fecha_cancelacion, '%d/%m/%Y %l:%i %p') AS fecha_cancelacionchp,
+                                            CONCAT(e2.nombre, ' ', e2.apellido) AS cancelado_porchp,
+                                            chp.motivo_cancelacion AS motivochp
                                         FROM
                                             clientes_historialpagos AS chp
                                         JOIN bancos AS b ON chp.idBanco = b.id
                                         JOIN destinocuentas AS d ON chp.idDestino = d.id
                                         JOIN empleados AS e ON e.id = chp.idEmpleado
+                                        LEFT JOIN empleados AS e2 ON e2.id = chp.cancelado_por
                                         WHERE
                                             chp.idCliente = ?
                                         ORDER BY
@@ -573,20 +646,16 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                             <table class="payment-table">
                                 <thead>
                                     <tr>
-
                                         <?php 
-
                                         require_once '../../core/validar-permisos.php';
                                         $permiso_necesario = 'CLI004';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
-
                                         <th>Acción</th>
-
                                         <?php endif; ?>
-
+                                        
+                                        <th>Estado</th>
                                         <th>Fecha</th>
                                         <th>Método</th>
                                         <th>Monto</th>
@@ -599,29 +668,52 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                                 </thead>
                                 <tbody>
                                     <?php while($row = $result->fetch_assoc()): ?>
-                                        <tr>
+                                        <tr style="<?= $row['estadochp'] == 'cancelado' ? 'background-color: #fff3cd; opacity: 0.7;' : '' ?>">
                                             <?php 
-
                                             require_once '../../core/validar-permisos.php';
                                             $permiso_necesario = 'CLI004';
                                             $id_empleado = $_SESSION['idEmpleado'];
                                             if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                             ?>
-
-                                            <td><button onclick="cancelpayment(<?= $row['id'] ?>)" class="btn-cancel">Cancelar Pago</button></td>
-
+                                            <td>
+                                                <?php if($row['estadochp'] == 'activo'): ?>
+                                                    <button onclick="cancelpayment(<?= $row['id'] ?>)" class="btn-cancel">Cancelar Pago</button>
+                                                <?php else: ?>
+                                                    <span style="color: #dc3545; font-weight: 600;">CANCELADO</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <?php endif; ?>
                                             
+                                            <td>
+                                                <?php if($row['estadochp'] == 'activo'): ?>
+                                                    <span style="color: #28a745; font-weight: 600;">
+                                                        <i class="fas fa-check-circle"></i> Activo
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span style="color: #dc3545; font-weight: 600;" 
+                                                        title="Cancelado el <?= htmlspecialchars($row['fecha_cancelacionchp'] ?? 'N/A') ?> por <?= htmlspecialchars($row['cancelado_porchp'] ?? 'N/A') ?>">
+                                                        <i class="fas fa-times-circle"></i> Cancelado
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td><?php echo htmlspecialchars($row['fechachp']); ?></td>
                                             <td><?php echo htmlspecialchars($row['metodochp']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['montochp']); ?></td>
+                                            <td style="<?= $row['estadochp'] == 'cancelado' ? 'text-decoration: line-through;' : '' ?>">
+                                                <?php echo htmlspecialchars($row['montochp']); ?>
+                                            </td>
                                             <td><?php echo htmlspecialchars($row['nombree']); ?></td>
                                             <td><?php echo htmlspecialchars($row['autorizacionchp']); ?></td>
                                             <td><?php echo htmlspecialchars($row['tarjetachp']); ?></td>
                                             <td><?php echo htmlspecialchars($row['bancochp']); ?></td>
                                             <td><?php echo htmlspecialchars($row['destinochp']); ?></td>
                                         </tr>
+                                        <?php if($row['estadochp'] == 'cancelado' && !empty($row['motivochp'])): ?>
+                                        <tr style="background-color: #fff3cd;">
+                                            <td colspan="<?= validarPermiso($conn, 'CLI004', $id_empleado) ? '10' : '9' ?>" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                                <strong>Motivo de cancelación:</strong> <?= htmlspecialchars($row['motivochp']) ?>
+                                            </td>
+                                        </tr>
+                                        <?php endif; ?>
                                     <?php endwhile; ?>
                                 </tbody>
                             </table>
@@ -983,27 +1075,80 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
          */
 
         /**
-         * Función para cancelar un pago
+         * Función para cancelar un pago con motivo obligatorio
          * @param {number} idPago - ID del registro de pago a cancelar
          */
         function cancelpayment(idPago) {
-            // Usar SweetAlert para la confirmación
+            // Usar SweetAlert con campo de texto para el motivo
             Swal.fire({
-                title: '¿Está seguro?',
-                text: '¿Desea cancelar este pago? Esta acción no se puede deshacer.',
+                title: '¿Cancelar este pago?',
+                html: `
+                    <p style="margin-bottom: 1rem; color: #856404; background: #fff3cd; padding: 0.75rem; border-radius: 0.25rem; border-left: 4px solid #ffc107;">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer y se registrará un egreso en la caja.
+                    </p>
+                    <div style="text-align: left; margin-top: 1rem;">
+                        <label for="swal-motivo" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50;">
+                            Motivo de cancelación <span style="color: #dc3545;">*</span>
+                        </label>
+                        <textarea 
+                            id="swal-motivo" 
+                            class="swal2-textarea" 
+                            placeholder="Escriba el motivo de la cancelación (obligatorio)..." 
+                            style="width: 100%; min-height: 100px; resize: vertical; margin: 0; font-size: 0.95rem; border: 2px solid #e3e6f0;"
+                        ></textarea>
+                        <small style="color: #6c757d; font-size: 0.85rem;">
+                            <i class="fas fa-info-circle"></i> Máximo 500 caracteres
+                        </small>
+                    </div>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, cancelar pago',
-                cancelButtonText: 'No'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Mostrar indicador de carga si existe
-                    const loadingElement = document.getElementById('loading');
-                    if (loadingElement) {
-                        loadingElement.style.display = 'block';
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-times-circle"></i> Sí, cancelar pago',
+                cancelButtonText: '<i class="fas fa-arrow-left"></i> No, volver',
+                focusConfirm: false,
+                width: '600px',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                },
+                preConfirm: () => {
+                    const motivo = document.getElementById('swal-motivo').value.trim();
+                    
+                    // Validaciones
+                    if (!motivo) {
+                        Swal.showValidationMessage('El motivo de cancelación es obligatorio');
+                        return false;
                     }
+                    
+                    if (motivo.length < 10) {
+                        Swal.showValidationMessage('El motivo debe tener al menos 10 caracteres');
+                        return false;
+                    }
+                    
+                    if (motivo.length > 500) {
+                        Swal.showValidationMessage('El motivo no puede exceder 500 caracteres');
+                        return false;
+                    }
+                    
+                    return motivo;
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    // Mostrar loader
+                    Swal.fire({
+                        title: 'Procesando cancelación...',
+                        html: '<i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #007bff;"></i><br><br>Por favor espere',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
                     
                     // Realizar la petición al servidor
                     fetch('../../api/clientes/cancelar-pagos.php', {
@@ -1012,8 +1157,8 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            registro_pago: idPago
-                            // No es necesario enviar el empleado_id ya que se obtiene de la sesión en el backend
+                            registro_pago: idPago,
+                            motivo: result.value  // <-- Enviar el motivo ingresado
                         })
                     })
                     .then(response => {
@@ -1023,43 +1168,43 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                         return response.json();
                     })
                     .then(data => {
-                        // Ocultar indicador de carga
-                        if (loadingElement) {
-                            loadingElement.style.display = 'none';
-                        }
-                        
                         if (data.success) {
-                            // Mostrar mensaje de éxito
+                            // Mostrar mensaje de éxito con detalles
                             Swal.fire({
-                                title: 'Éxito',
-                                text: data.message,
+                                title: '¡Pago Cancelado!',
+                                html: `
+                                    <div style="text-align: left; background: #d4edda; padding: 1rem; border-radius: 0.25rem; margin-top: 1rem;">
+                                        <p style="margin: 0.5rem 0;"><strong>✓ Pago #${idPago} cancelado exitosamente</strong></p>
+                                        <p style="margin: 0.5rem 0;"><i class="fas fa-money-bill-wave"></i> Monto devuelto: $${parseFloat(data.data?.monto_devuelto || 0).toFixed(2)}</p>
+                                        <p style="margin: 0.5rem 0;"><i class="fas fa-cash-register"></i> Caja: ${data.data?.numCaja || 'N/A'}</p>
+                                        <p style="margin: 0.5rem 0;"><i class="fas fa-sticky-note"></i> Motivo: ${result.value}</p>
+                                    </div>
+                                `,
                                 icon: 'success',
-                                confirmButtonText: 'Aceptar'
+                                confirmButtonColor: '#28a745',
+                                confirmButtonText: '<i class="fas fa-check"></i> Aceptar'
                             }).then(() => {
-                                // Recargar la página después de hacer clic en Aceptar
+                                // Recargar la página
                                 location.reload();
                             });
                         } else {
                             // Mostrar mensaje de error
                             Swal.fire({
-                                title: 'Error',
+                                title: 'Error al Cancelar',
                                 text: data.message,
                                 icon: 'error',
+                                confirmButtonColor: '#dc3545',
                                 confirmButtonText: 'Aceptar'
                             });
                         }
                     })
                     .catch(error => {
-                        // Ocultar indicador de carga
-                        if (loadingElement) {
-                            loadingElement.style.display = 'none';
-                        }
-                        
-                        // Mostrar mensaje de error
+                        // Mostrar mensaje de error de conexión
                         Swal.fire({
-                            title: 'Error',
-                            text: 'Error de conexión con el servidor',
+                            title: 'Error de Conexión',
+                            text: 'No se pudo conectar con el servidor. Por favor, verifique su conexión e intente nuevamente.',
                             icon: 'error',
+                            confirmButtonColor: '#dc3545',
                             confirmButtonText: 'Aceptar'
                         });
                         console.error('Error:', error);

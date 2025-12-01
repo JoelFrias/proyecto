@@ -1,17 +1,18 @@
 <?php
 
-require_once '../../core/conexion.php';		// Conexión a la base de datos
+require_once '../../core/conexion.php';
 
 // Verificar conexión a la base de datos
-if (!$conn || !$conn->connect_errno === 0) {
+if (!$conn || $conn->connect_errno !== 0) {
     http_response_code(500);
     die(json_encode([
         "success" => false,
         "error" => "Error de conexión a la base de datos",
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
-}             // Conexión a la base de datos
-require_once '../../core/verificar-sesion.php';     // Verificar sesión de usuario
+}
+
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -45,14 +46,54 @@ if (!isset($data['registro_pago']) || empty($data['registro_pago'])) {
 }
 
 $registro_pago = intval($data['registro_pago']);
-$empleado_id = $_SESSION['idEmpleado'] ?? null;
+$empleado_cancela = $_SESSION['idEmpleado'] ?? null;
+
+// Obtener el motivo (OBLIGATORIO)
+if (!isset($data['motivo']) || empty(trim($data['motivo']))) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'El motivo de cancelación es obligatorio'
+    ]);
+    exit;
+}
+
+$motivo_cancelacion = trim($data['motivo']);
+
+// Validar longitud del motivo
+if (strlen($motivo_cancelacion) < 10) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'El motivo debe tener al menos 10 caracteres'
+    ]);
+    exit;
+}
+
+if (strlen($motivo_cancelacion) > 500) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'El motivo no puede exceder 500 caracteres'
+    ]);
+    exit;
+}
 
 try {
     // Iniciar transacción
     $conn->autocommit(false);
     
-    // 1. Obtener información del pago antes de eliminarlo
-    $stmt = $conn->prepare("SELECT idCliente, monto, metodo, numCaja, fecha FROM clientes_historialpagos WHERE registro = ?");
+    // 1. Obtener información del pago antes de cancelarlo
+    $stmt = $conn->prepare("
+        SELECT 
+            idCliente, 
+            monto, 
+            metodo, 
+            numCaja, 
+            fecha,
+            idEmpleado,
+            estado
+        FROM clientes_historialpagos 
+        WHERE registro = ?
+    ");
+    
     if (!$stmt) {
         throw new Exception("Error preparando consulta del historial de pagos: " . $conn->error);
     }
@@ -67,14 +108,19 @@ try {
         throw new Exception("No se encontró el pago con ID: " . $registro_pago);
     }
     
+    // Verificar que el pago no esté ya cancelado
+    if ($pago['estado'] === 'cancelado') {
+        throw new Exception("Este pago ya fue cancelado anteriormente");
+    }
+    
     $idCliente = $pago['idCliente'];
     $monto_pago = $pago['monto'];
     $metodo_pago = $pago['metodo'];
     $numCaja = $pago['numCaja'];
     $fecha_pago = $pago['fecha'];
+    $empleado_pago = $pago['idEmpleado'];
     
-    // NUEVO: Verificar que el pago no tenga más de 24 horas (usando zona horaria de Santo Domingo, RD)
-    // Establecer zona horaria de Santo Domingo
+    // 2. VALIDACIÓN: Verificar que el pago no tenga más de 24 horas
     date_default_timezone_set('America/Santo_Domingo');
     
     $fecha_pago_timestamp = strtotime($fecha_pago);
@@ -85,32 +131,85 @@ try {
         throw new Exception("No se puede cancelar el pago porque han pasado más de 24 horas desde que se realizó");
     }
     
-    // 2. Borrar el registro en historial de pago
-    $stmt = $conn->prepare("DELETE FROM clientes_historialpagos WHERE registro = ?");
+    // 3. VALIDACIÓN: Verificar que la caja donde se hizo el pago esté abierta
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) as esta_abierta 
+        FROM cajasabiertas 
+        WHERE numCaja = ? AND idEmpleado = ?
+    ");
+    
     if (!$stmt) {
-        throw new Exception("Error preparando eliminación de historial de pagos: " . $conn->error);
+        throw new Exception("Error preparando consulta de caja abierta: " . $conn->error);
     }
     
-    $stmt->bind_param('i', $registro_pago);
-    if (!$stmt->execute()) {
-        throw new Exception("Error eliminando el registro de historial de pagos: " . $stmt->error);
-    }
-    $stmt->close();
-    
-    // 3. Borrar el registro de ingreso en la caja
-    // Buscar el registro correspondiente en cajaingresos basado en información del pago
-    $stmt = $conn->prepare("DELETE FROM cajaingresos WHERE IdEmpleado = ? AND numCaja = ? AND monto = ? AND razon LIKE ? AND fecha = ?");
-    if (!$stmt) {
-        throw new Exception("Error preparando eliminación de ingreso en caja: " . $conn->error);
-    }
-    
-    $razon_like = "%Pago a cuenta del cliente: $idCliente%";
-    $stmt->bind_param('issss', $empleado_id, $numCaja, $monto_pago, $razon_like, $fecha_pago);
+    $stmt->bind_param('si', $numCaja, $empleado_pago);
     $stmt->execute();
+    $result = $stmt->get_result();
+    $caja_estado = $result->fetch_assoc();
     $stmt->close();
     
-    // 4. Obtener todas las facturas del cliente ordenadas por fecha (más reciente primero)
-    $stmt = $conn->prepare("SELECT registro, balance, total_ajuste AS total, estado, fecha FROM facturas WHERE idCliente = ? AND tipoFactura = 'credito' ORDER BY fecha DESC");
+    if ($caja_estado['esta_abierta'] == 0) {
+        throw new Exception("No se puede cancelar el pago porque la caja " . $numCaja . " ya fue cerrada");
+    }
+    
+    // 4. Marcar el pago como cancelado (NO eliminarlo)
+    $fecha_cancelacion = date('Y-m-d H:i:s');
+    
+    $stmt = $conn->prepare("
+        UPDATE clientes_historialpagos 
+        SET 
+            estado = 'cancelado',
+            fecha_cancelacion = ?,
+            cancelado_por = ?,
+            motivo_cancelacion = ?
+        WHERE registro = ?
+    ");
+    
+    if (!$stmt) {
+        throw new Exception("Error preparando actualización de pago: " . $conn->error);
+    }
+    
+    $stmt->bind_param('sisi', $fecha_cancelacion, $empleado_cancela, $motivo_cancelacion, $registro_pago);
+    
+    if (!$stmt->execute()) {
+        throw new Exception("Error marcando el pago como cancelado: " . $stmt->error);
+    }
+    
+    $stmt->close();
+    
+    // 5. Registrar EGRESO en la caja (devolución del dinero)
+    $razon_egreso = "Cancelación de pago #$registro_pago - Cliente: $idCliente";
+    
+    $stmt = $conn->prepare("
+        INSERT INTO cajaegresos (metodo, monto, IdEmpleado, numCaja, razon, fecha)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    
+    if (!$stmt) {
+        throw new Exception("Error preparando inserción de egreso: " . $conn->error);
+    }
+    
+    $stmt->bind_param('sdisss', $metodo_pago, $monto_pago, $empleado_cancela, $numCaja, $razon_egreso, $fecha_cancelacion);
+    
+    if (!$stmt->execute()) {
+        throw new Exception("Error registrando egreso en caja: " . $stmt->error);
+    }
+    
+    $stmt->close();
+    
+    // 6. Obtener todas las facturas del cliente ordenadas por fecha (más antigua primero para revertir)
+    $stmt = $conn->prepare("
+        SELECT 
+            registro, 
+            balance, 
+            total_ajuste AS total, 
+            estado, 
+            fecha 
+        FROM facturas 
+        WHERE idCliente = ? AND tipoFactura = 'credito' 
+        ORDER BY fecha ASC
+    ");
+    
     if (!$stmt) {
         throw new Exception("Error preparando consulta de facturas: " . $conn->error);
     }
@@ -129,27 +228,40 @@ try {
         throw new Exception("No se encontraron facturas para el cliente ID: " . $idCliente);
     }
     
-    // 5. Distribuir el monto del pago cancelado entre las facturas
+    // 7. Revertir el pago: Aumentar el balance de las facturas
+    // Empezamos desde la más antigua (donde primero se aplicó el pago)
     $monto_restante = $monto_pago;
     
     foreach ($facturas as $factura) {
         if ($monto_restante <= 0) {
-            break; // Ya se distribuyó todo el monto
+            break;
         }
         
         $registro_factura = $factura['registro'];
         $balance_actual = $factura['balance'];
         $total_factura = $factura['total'];
         
-        // Calcular cuánto se puede aplicar a esta factura
-        $monto_a_aplicar = min($monto_restante, $total_factura - $balance_actual);
+        // Calcular cuánto podemos revertir en esta factura
+        // No podemos aumentar el balance más allá del total de la factura
+        $espacio_disponible = $total_factura - $balance_actual;
+        $monto_a_revertir = min($monto_restante, $espacio_disponible);
         
-        if ($monto_a_aplicar > 0) {
-            // Actualizar el balance de la factura
-            $nuevo_balance = $balance_actual + $monto_a_aplicar;
-            $estado_factura = "Pendiente";
+        if ($monto_a_revertir > 0) {
+            // Aumentar el balance de la factura
+            $nuevo_balance = $balance_actual + $monto_a_revertir;
             
-            $stmt = $conn->prepare("UPDATE facturas SET balance = ?, estado = ? WHERE registro = ?");
+            // Determinar el nuevo estado de la factura
+            $estado_factura = "Pendiente";
+            if ($nuevo_balance >= $total_factura) {
+                $estado_factura = "Pendiente"; // Totalmente pendiente de nuevo
+            }
+            
+            $stmt = $conn->prepare("
+                UPDATE facturas 
+                SET balance = ?, estado = ? 
+                WHERE registro = ?
+            ");
+            
             if (!$stmt) {
                 throw new Exception("Error preparando actualización de factura: " . $conn->error);
             }
@@ -163,19 +275,25 @@ try {
             $stmt->close();
             
             // Reducir el monto restante
-            $monto_restante -= $monto_a_aplicar;
+            $monto_restante -= $monto_a_revertir;
         }
     }
     
-    // 7. Actualizar el balance del cliente
+    // 8. Actualizar el balance del cliente
     actualizarBalanceCliente($conn, $idCliente);
     
-    // Confirmar la transacción
+    // 9. Confirmar la transacción
     $conn->commit();
     
     echo json_encode([
         'success' => true,
-        'message' => 'Pago cancelado correctamente'
+        'message' => 'Pago cancelado correctamente',
+        'data' => [
+            'registro_pago' => $registro_pago,
+            'monto_devuelto' => $monto_pago,
+            'numCaja' => $numCaja,
+            'fecha_cancelacion' => $fecha_cancelacion
+        ]
     ]);
     
 } catch (Exception $e) {
@@ -184,7 +302,7 @@ try {
     
     echo json_encode([
         'success' => false,
-        'message' => 'Error al cancelar el pago: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }
 

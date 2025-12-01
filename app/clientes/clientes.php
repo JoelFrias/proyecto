@@ -357,7 +357,7 @@ function construirQueryFiltros($filtros) {
 
                                         // Validar permisos
                                         require_once '../../core/validar-permisos.php';
-                                        $permiso_necesario = 'CLI003';
+                                        $permiso_necesario = 'CLI001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
 
@@ -375,7 +375,7 @@ function construirQueryFiltros($filtros) {
 
                                         // Validar permisos para acciones
                                         require_once '../../core/validar-permisos.php';
-                                        $permiso_necesario = 'CLI002';
+                                        $permiso_necesario = 'CLI001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
 
@@ -433,7 +433,7 @@ function construirQueryFiltros($filtros) {
 
                                         // Validar permisos
                                         require_once '../../core/validar-permisos.php';
-                                        $permiso_necesario = 'CLI003';
+                                        $permiso_necesario = 'CLI001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
 
@@ -456,7 +456,7 @@ function construirQueryFiltros($filtros) {
 
                                         // Validar permisos para imprimir reporte
                                         require_once '../../core/validar-permisos.php';
-                                        $permiso_necesario = 'CLI002';
+                                        $permiso_necesario = 'CLI001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
 
@@ -539,7 +539,7 @@ function construirQueryFiltros($filtros) {
 
                                 // Validar permisos
                                 require_once '../../core/validar-permisos.php';
-                                $permiso_necesario = 'CLI003';
+                                $permiso_necesario = 'CLI001';
                                 $id_empleado = $_SESSION['idEmpleado'];
                                 if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
 
@@ -573,7 +573,7 @@ function construirQueryFiltros($filtros) {
 
                                     // Validar permisos
                                     require_once '../../core/validar-permisos.php';
-                                    $permiso_necesario = 'CLI002';
+                                    $permiso_necesario = 'CLI003';
                                     $id_empleado = $_SESSION['idEmpleado'];
                                     if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
 

@@ -76,7 +76,7 @@ $sql_ingresos = "WITH
                         SELECT metodo, monto FROM facturas_metodopago JOIN facturas ON facturas.numFactura = facturas_metodopago.numFactura WHERE facturas_metodopago.noCaja = ? AND facturas.estado != 'Cancelada'
                     ),
                     ch AS (
-                        SELECT metodo, monto FROM clientes_historialpagos WHERE numCaja = ?
+                        SELECT metodo, monto FROM clientes_historialpagos WHERE numCaja = ? AND estado = 'activo'
                     )
                     SELECT
                         COALESCE((SELECT SUM(monto) FROM fm WHERE metodo = 'efectivo'), 0) AS Fefectivo,
@@ -120,17 +120,50 @@ $result_FacturasCredito = $stmt->get_result();
 $totalEfectivo = 0; $totalTransferencia = 0; $totalTarjeta = 0;
 $totalEfectivoCredito = 0; $totalTransferenciaCredito = 0; $totalTarjetaCredito = 0;
 
-$sql_pagos = "SELECT ch.registro AS id, DATE_FORMAT(ch.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
-                CONCAT(c.nombre,' ',c.apellido) AS nombre, ch.metodo AS metodo, ch.monto AS monto
+$sql_pagos = "SELECT 
+                ch.registro AS id, 
+                DATE_FORMAT(ch.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                CONCAT(c.nombre,' ',c.apellido) AS nombre, 
+                ch.metodo AS metodo, 
+                ch.monto AS monto,
+                ch.estado AS estado,
+                DATE_FORMAT(ch.fecha_cancelacion, '%d/%m/%Y %l:%i %p') AS fecha_cancelacion,
+                CONCAT(e.nombre, ' ', e.apellido) AS cancelado_por,
+                ch.motivo_cancelacion AS motivo
             FROM clientes_historialpagos ch
             JOIN clientes c ON c.id = ch.idCliente
-            WHERE ch.numCaja = ?;";
+            LEFT JOIN empleados e ON e.id = ch.cancelado_por
+            WHERE ch.numCaja = ?
+            ORDER BY ch.fecha DESC;";
 $stmt = $conn->prepare($sql_pagos);
 $stmt->bind_param("s", $numCaja);
 $stmt->execute();
 $result_pagos = $stmt->get_result();
 
 $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
+
+// Consulta para obtener egresos de caja
+$sql_egresos = "SELECT 
+                ce.id AS id,
+                DATE_FORMAT(ce.fecha, '%d/%m/%Y %l:%i %p') AS fecha,
+                ce.metodo AS metodo,
+                ce.monto AS monto,
+                ce.razon AS razon,
+                CONCAT(e.nombre, ' ', e.apellido) AS empleado
+            FROM cajaegresos ce
+            LEFT JOIN empleados e ON e.id = ce.IdEmpleado
+            WHERE ce.numCaja = ?
+            ORDER BY ce.fecha DESC;";
+
+$stmt = $conn->prepare($sql_egresos);
+$stmt->bind_param("s", $numCaja);
+$stmt->execute();
+$result_egresos = $stmt->get_result();
+
+$totalEfectivoEgresos = 0;
+$totalTransferenciaEgresos = 0;
+$totalTarjetaEgresos = 0;
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -511,6 +544,34 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                 column-count: 1;
             }
         }
+
+        /* Estilos para pagos cancelados en cuadre */
+        table tbody tr[style*="background-color: #fff3cd"] {
+            transition: opacity 0.2s;
+        }
+
+        table tbody tr[style*="background-color: #fff3cd"]:hover {
+            opacity: 1 !important;
+        }
+
+        table tbody td [title] {
+            cursor: help;
+        }
+
+        /* Tooltip mejorado para estados */
+        table tbody td span[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-top: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
@@ -613,10 +674,10 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                 </div>
 
                 <div class="grid-container">
-                    <!-- RESUMEN DE INGRESOS -->
+                    <!-- RESUMEN DE INGRESOS Y EGRESOS -->
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-chart-line"></i> Resumen de Ingresos</h2>
+                            <h2><i class="fas fa-chart-line"></i> Resumen de Movimientos</h2>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -630,25 +691,163 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        <tr style="background-color: #d4edda;">
+                                            <td colspan="4" style="text-align: center; font-weight: 700; color: #155724;">
+                                                <i class="fas fa-arrow-down"></i> INGRESOS
+                                            </td>
+                                        </tr>
                                         <tr>
                                             <td><strong>Facturas</strong></td>
-                                            <td>$<?= number_format($row['Fefectivo']) ?></td>
-                                            <td>$<?= number_format($row['Ftransferencia']) ?></td>
-                                            <td>$<?= number_format($row['Ftarjeta']) ?></td>
+                                            <td>$<?= number_format($row['Fefectivo'], 2) ?></td>
+                                            <td>$<?= number_format($row['Ftransferencia'], 2) ?></td>
+                                            <td>$<?= number_format($row['Ftarjeta'], 2) ?></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Pagos de Clientes</strong></td>
-                                            <td>$<?= number_format($row['CPefectivo']) ?></td>
-                                            <td>$<?= number_format($row['CPtransferencia']) ?></td>
-                                            <td>$<?= number_format($row['CPtarjeta']) ?></td>
+                                            <td>$<?= number_format($row['CPefectivo'], 2) ?></td>
+                                            <td>$<?= number_format($row['CPtransferencia'], 2) ?></td>
+                                            <td>$<?= number_format($row['CPtarjeta'], 2) ?></td>
                                         </tr>
+                                        <tr style="background-color: #f8f9fa; font-weight: 600;">
+                                            <td>Subtotal Ingresos</td>
+                                            <td>$<?= number_format($ItotalE, 2) ?></td>
+                                            <td>$<?= number_format($ItotalT, 2) ?></td>
+                                            <td>$<?= number_format($ItotalC, 2) ?></td>
+                                        </tr>
+                                        <?php
+                                        // Calcular egresos por método
+                                        $stmt_egresos_resumen = $conn->prepare("
+                                            SELECT 
+                                                metodo,
+                                                SUM(monto) as total
+                                            FROM cajaegresos
+                                            WHERE numCaja = ?
+                                            GROUP BY metodo
+                                        ");
+                                        $stmt_egresos_resumen->bind_param("s", $numCaja);
+                                        $stmt_egresos_resumen->execute();
+                                        $result_egresos_resumen = $stmt_egresos_resumen->get_result();
+                                        
+                                        $egresosEfectivo = 0;
+                                        $egresosTransferencia = 0;
+                                        $egresosTarjeta = 0;
+                                        
+                                        while($egreso = $result_egresos_resumen->fetch_assoc()) {
+                                            if($egreso['metodo'] == 'efectivo') $egresosEfectivo = $egreso['total'];
+                                            elseif($egreso['metodo'] == 'transferencia') $egresosTransferencia = $egreso['total'];
+                                            elseif($egreso['metodo'] == 'tarjeta') $egresosTarjeta = $egreso['total'];
+                                        }
+                                        
+                                        // Si hay egresos, mostrarlos
+                                        if($egresosEfectivo > 0 || $egresosTransferencia > 0 || $egresosTarjeta > 0):
+                                        ?>
+                                        <tr style="background-color: #f8d7da;">
+                                            <td colspan="4" style="text-align: center; font-weight: 700; color: #721c24;">
+                                                <i class="fas fa-arrow-up"></i> EGRESOS (Devoluciones)
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Cancelaciones</strong></td>
+                                            <td style="color: #dc3545;">-$<?= number_format($egresosEfectivo, 2) ?></td>
+                                            <td style="color: #dc3545;">-$<?= number_format($egresosTransferencia, 2) ?></td>
+                                            <td style="color: #dc3545;">-$<?= number_format($egresosTarjeta, 2) ?></td>
+                                        </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="border-top: 3px solid #2c3e50;">
+                                            <td><strong>TOTAL NETO</strong></td>
+                                            <td>$<?= number_format($ItotalE - $egresosEfectivo, 2) ?></td>
+                                            <td>$<?= number_format($ItotalT - $egresosTransferencia, 2) ?></td>
+                                            <td>$<?= number_format($ItotalC - $egresosTarjeta, 2) ?></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EGRESOS DE CAJA -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-money-bill-wave"></i> Egresos de Caja</h2>
+                            <span style="font-size: 0.85rem; color: var(--gray);">Devoluciones por cancelaciones</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Fecha</th>
+                                            <th>Razón</th>
+                                            <th>Empleado</th>
+                                            <th>Método</th>
+                                            <th>Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        if ($result_egresos->num_rows > 0) {
+                                            while ($row = $result_egresos->fetch_assoc()) {
+                                                // Determinar el tipo de cancelación por la razón
+                                                $es_pago_cancelado = strpos($row['razon'], 'Cancelación de pago') !== false;
+                                                $es_factura_cancelada = strpos($row['razon'], 'Devolución por cancelación de factura') !== false;
+                                                
+                                                // Icono y color según el tipo
+                                                if($es_pago_cancelado) {
+                                                    $icono = '<i class="fas fa-hand-holding-usd" style="color: #f39c12;"></i>';
+                                                    $tipo_badge = '<span style="background: #fff3cd; color: #856404; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">PAGO</span>';
+                                                } elseif($es_factura_cancelada) {
+                                                    $icono = '<i class="fas fa-file-invoice" style="color: #e74c3c;"></i>';
+                                                    $tipo_badge = '<span style="background: #f8d7da; color: #721c24; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">FACTURA</span>';
+                                                } else {
+                                                    $icono = '<i class="fas fa-minus-circle" style="color: #6c757d;"></i>';
+                                                    $tipo_badge = '<span style="background: #e9ecef; color: #495057; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">OTRO</span>';
+                                                }
+                                                
+                                                echo "<tr style='background-color: #fff5f5;'>
+                                                        <td>$icono {$row['id']}</td>
+                                                        <td>{$row['fecha']}</td>
+                                                        <td>
+                                                            $tipo_badge<br>
+                                                            <small style='color: #6c757d;'>" . htmlspecialchars($row['razon']) . "</small>
+                                                        </td>
+                                                        <td>" . htmlspecialchars($row['empleado']) . "</td>
+                                                        <td>{$row['metodo']}</td>
+                                                        <td style='color: #dc3545; font-weight: 600;'>-$" . number_format($row['monto'], 2) . "</td>
+                                                    </tr>";
+                                                
+                                                // Sumar totales
+                                                if($row['metodo'] == 'efectivo') $totalEfectivoEgresos += $row['monto'];
+                                                elseif($row['metodo'] == 'transferencia') $totalTransferenciaEgresos += $row['monto'];
+                                                elseif($row['metodo'] == 'tarjeta') $totalTarjetaEgresos += $row['monto'];
+                                            }
+                                        } else {
+                                            echo "<tr><td colspan='6' style='text-align: center; color: #28a745; padding: 1.5rem;'>
+                                                    <i class='fas fa-check-circle' style='font-size: 1.5rem;'></i><br>
+                                                    <strong>No hay egresos registrados</strong><br>
+                                                    <small>No se realizaron devoluciones en esta caja</small>
+                                                </td></tr>";
+                                        }
+                                        ?>
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td>Total</td>
-                                            <td>$<?= number_format($ItotalE) ?></td>
-                                            <td>$<?= number_format($ItotalT) ?></td>
-                                            <td>$<?= number_format($ItotalC) ?></td>
+                                            <td colspan="5">Total Efectivo:</td>
+                                            <td>-$<?= number_format($totalEfectivoEgresos, 2) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="5">Total Transferencia:</td>
+                                            <td>-$<?= number_format($totalTransferenciaEgresos, 2) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="5">Total Tarjeta:</td>
+                                            <td>-$<?= number_format($totalTarjetaEgresos, 2) ?></td>
+                                        </tr>
+                                        <tr style="border-top: 2px solid #dc3545; background-color: #f8d7da;">
+                                            <td colspan="5"><strong style="color: #721c24;">TOTAL EGRESOS:</td>
+                                            <td><strong style="color: #721c24;">-$<?= number_format($totalEfectivoEgresos + $totalTransferenciaEgresos + $totalTarjetaEgresos, 2) ?></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -766,6 +965,7 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                                 <table>
                                     <thead>
                                         <tr>
+                                            <th>Estado</th>
                                             <th>No.</th>
                                             <th>Fecha</th>
                                             <th>Cliente</th>
@@ -777,27 +977,58 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                                         <?php
                                         if ($result_pagos->num_rows > 0) {
                                             while ($row = $result_pagos->fetch_assoc()) {
-                                                echo "<tr><td>{$row['id']}</td><td>{$row['fecha']}</td><td>{$row['nombre']}</td><td>{$row['metodo']}</td><td>$" . number_format($row['monto']) . "</td></tr>";
-                                                if($row['metodo'] == 'efectivo') $totalEfectivoPagos += $row['monto'];
-                                                elseif($row['metodo'] == 'transferencia') $totalTransferenciaPagos += $row['monto'];
-                                                elseif($row['metodo'] == 'tarjeta') $totalTarjetaPagos += $row['monto'];
+                                                $estilo_fila = $row['estado'] == 'cancelado' ? 'style="background-color: #fff3cd; opacity: 0.7;"' : '';
+                                                $estilo_monto = $row['estado'] == 'cancelado' ? 'style="text-decoration: line-through;"' : '';
+                                                
+                                                // Badge de estado
+                                                if($row['estado'] == 'activo') {
+                                                    $badge_estado = '<span style="color: #28a745; font-weight: 600; font-size: 0.85rem;" title="Pago activo"><i class="fas fa-check-circle"></i></span>';
+                                                } else {
+                                                    $tooltip = "Cancelado el " . ($row['fecha_cancelacion'] ?? 'N/A') . " por " . ($row['cancelado_por'] ?? 'N/A');
+                                                    $badge_estado = '<span style="color: #dc3545; font-weight: 600; font-size: 0.85rem;" title="' . htmlspecialchars($tooltip) . '"><i class="fas fa-times-circle"></i></span>';
+                                                }
+                                                
+                                                echo "<tr $estilo_fila>
+                                                        <td style='text-align: center;'>$badge_estado</td>
+                                                        <td>{$row['id']}</td>
+                                                        <td>{$row['fecha']}</td>
+                                                        <td>{$row['nombre']}</td>
+                                                        <td>{$row['metodo']}</td>
+                                                        <td $estilo_monto>$" . number_format($row['monto']) . "</td>
+                                                    </tr>";
+                                                
+                                                // Mostrar fila con motivo de cancelación si existe
+                                                if($row['estado'] == 'cancelado' && !empty($row['motivo'])) {
+                                                    echo "<tr style='background-color: #fff3cd;'>
+                                                            <td colspan='6' style='padding: 0.5rem 1rem; font-size: 0.85rem; border-top: none;'>
+                                                                <strong><i class='fas fa-info-circle'></i> Motivo:</strong> " . htmlspecialchars($row['motivo']) . "
+                                                            </td>
+                                                        </tr>";
+                                                }
+                                                
+                                                // Solo sumar al total si el pago está activo
+                                                if($row['estado'] == 'activo') {
+                                                    if($row['metodo'] == 'efectivo') $totalEfectivoPagos += $row['monto'];
+                                                    elseif($row['metodo'] == 'transferencia') $totalTransferenciaPagos += $row['monto'];
+                                                    elseif($row['metodo'] == 'tarjeta') $totalTarjetaPagos += $row['monto'];
+                                                }
                                             }
                                         } else {
-                                            echo "<tr><td colspan='5'>No hay pagos de clientes</td></tr>";
+                                            echo "<tr><td colspan='6'>No hay pagos de clientes</td></tr>";
                                         }
                                         ?>
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="4">Total Efectivo:</td>
+                                            <td colspan="5">Total Efectivo (Solo pagos activos):</td>
                                             <td>$<?= number_format($totalEfectivoPagos) ?></td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4">Total Transferencia:</td>
+                                            <td colspan="5">Total Transferencia (Solo pagos activos):</td>
                                             <td>$<?= number_format($totalTransferenciaPagos) ?></td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4">Total Tarjeta:</td>
+                                            <td colspan="5">Total Tarjeta (Solo pagos activos):</td>
                                             <td>$<?= number_format($totalTarjetaPagos) ?></td>
                                         </tr>
                                     </tfoot>
@@ -805,6 +1036,7 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -831,7 +1063,6 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                         </label>
                         <textarea id="swal-nota" class="swal2-textarea" placeholder="Escriba una nota obligatoria para ${estadoTexto} el cuadre..." 
                             style="width: 100%; min-height: 100px; resize: vertical; margin: 0; font-size: 0.95rem;"></textarea>
-                        <small style="color: #636e72; font-size: 0.8rem;">Mínimo 10 caracteres</small>
                     </div>
                 `,
                 icon: 'warning',
@@ -845,10 +1076,6 @@ $totalEfectivoPagos = 0; $totalTransferenciaPagos = 0; $totalTarjetaPagos = 0;
                     const nota = document.getElementById('swal-nota').value.trim();
                     if (!nota) {
                         Swal.showValidationMessage('La nota es obligatoria');
-                        return false;
-                    }
-                    if (nota.length < 10) {
-                        Swal.showValidationMessage('La nota debe tener al menos 10 caracteres');
                         return false;
                     }
                     if (nota.length > 500) {

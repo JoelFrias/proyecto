@@ -583,3 +583,45 @@ function toggleChartType(chartId, type) {
         chartsInstances[chartId].update();
     }
 }
+
+// ====================================
+// GENERAR REPORTE PDF
+// ====================================
+
+function generarReportePDF() {
+    const periodo = document.getElementById('periodo').value;
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+    
+    // Construir URL con parámetros
+    let url = '../../reports/gestion/dashboard.php?periodo=' + periodo;
+    
+    if(periodo === 'personalizado') {
+        if(!fechaInicio || !fechaFin) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fechas requeridas',
+                text: 'Por favor selecciona las fechas de inicio y fin',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+        url += '&fechaInicio=' + fechaInicio + '&fechaFin=' + fechaFin;
+    }
+    
+    // Mostrar mensaje de carga
+    Swal.fire({
+        title: 'Generando reporte...',
+        html: 'Por favor espera mientras se genera el PDF',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Abrir PDF en nueva ventana
+    setTimeout(() => {
+        window.open(url, '_blank');
+        Swal.close();
+    }, 500);
+}

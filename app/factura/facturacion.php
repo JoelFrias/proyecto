@@ -468,33 +468,37 @@ if (!$result) {
                 <div class="search-container">
                     <input type="text" id="searchInput" class="search-input" placeholder="Buscar productos...">
                 </div>
-                <div class="products-grid" id="productsGrid">
                     <?php
                         if ($result->num_rows > 0) {
-                            while ($row = $result->fetch_assoc()) {
-                                echo '<div class="product-card">';
-                                echo '    <div class="product-info">';
-                                echo '        <div>';
-                                echo '            <div class="product-name">'  . $row["id"] .'   '. $row["descripcion"] . '</div>';
-                                echo '            <div class="product-quantity">Existencia: ' . $row["existencia"] . '</div>';
-                                echo '        </div>';
-                                echo '        <div class="product-total"></div>';
-                                echo '    </div>';
-                                echo '    <div class="product-inputs">';
-                                echo '        <input type="number" class="product-input" id="input1-' . $row["id"] . '" value="' . $row["precioVenta2"] . '" readonly>';
-                                echo '        <input type="number" class="product-input" id="input2-' . $row["id"] . '" value="' . $row["precioVenta1"] . '" readonly>';
-                                echo '        <button class="product-button" id="button1-' . $row["id"] . '" onclick="handleButton2(' . $row["id"] . ', ' . $row["precioVenta2"] . ')">Precio 2</button>';
-                                echo '        <button class="product-button" id="button2-' . $row["id"] . '" onclick="handleButton1(' . $row["id"] . ', ' . $row["precioVenta1"] . ')">Precio 1</button>';
-                                echo '    </div>';
-                                echo '    <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
-                                echo '    <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["precioVenta1"] . ', ' . $row["precioCompra"] . ', ' . $row["existencia"] . ')">Agregar Producto</button>';
-                                echo '</div>';
-                            }
+
+                            echo '<div class="products-grid" id="productsGrid">';
+
+                                while ($row = $result->fetch_assoc()) {
+                                    echo '<div class="product-card">';
+                                    echo '    <div class="product-info">';
+                                    echo '        <div>';
+                                    echo '            <div class="product-name">'  . $row["id"] .'   '. $row["descripcion"] . '</div>';
+                                    echo '            <div class="product-quantity">Existencia: ' . $row["existencia"] . '</div>';
+                                    echo '        </div>';
+                                    echo '        <div class="product-total"></div>';
+                                    echo '    </div>';
+                                    echo '    <div class="product-inputs">';
+                                    echo '        <input type="number" class="product-input" id="input1-' . $row["id"] . '" value="' . $row["precioVenta2"] . '" readonly>';
+                                    echo '        <input type="number" class="product-input" id="input2-' . $row["id"] . '" value="' . $row["precioVenta1"] . '" readonly>';
+                                    echo '        <button class="product-button" id="button1-' . $row["id"] . '" onclick="handleButton2(' . $row["id"] . ', ' . $row["precioVenta2"] . ')">Precio 2</button>';
+                                    echo '        <button class="product-button" id="button2-' . $row["id"] . '" onclick="handleButton1(' . $row["id"] . ', ' . $row["precioVenta1"] . ')">Precio 1</button>';
+                                    echo '    </div>';
+                                    echo '    <input type="number" class="quantity-input" id="quantity-' . $row["id"] . '" placeholder="Cantidad a llevar" min="1">';
+                                    echo '    <button class="quantity-button" onclick="addToCart(' . $row["id"] . ', \'' . addslashes($row["descripcion"]) . '\', ' . $row["precioVenta1"] . ', ' . $row["precioCompra"] . ', ' . $row["existencia"] . ')">Agregar Producto</button>';
+                                    echo '</div>';
+                                }
+
+                            echo '</div>';
+                            
                         } else {
                             echo "No existe ningun producto en tu inventario personal";
                         }
                     ?>
-                </div>
             </div>
 
             <!-- Modal Selección Cliente -->
