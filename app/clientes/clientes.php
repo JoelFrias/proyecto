@@ -132,9 +132,9 @@ function construirQueryFiltros($filtros) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Clientes</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/cliente_tabla.css">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/cliente_tabla.css">
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
     
@@ -251,7 +251,7 @@ function construirQueryFiltros($filtros) {
                             ?>
 
                                 <!-- Botón para imprimir reporte -->
-                                <a href="../../reports/cliente/registro.php"
+                                <a href="../reports/cliente/registro.php"
                                 class="btn btn-print" 
                                 target="_blank">
                                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -680,7 +680,7 @@ function construirQueryFiltros($filtros) {
     </div>
 
     <!-- Scripts adicionales -->
-    <script src="../../assets/js/deslizar.js"></script>
+    <script src="../assets/js/deslizar.js"></script>
 
 </body>
 </html>

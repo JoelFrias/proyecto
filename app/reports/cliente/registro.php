@@ -1,7 +1,7 @@
 <?php
 // Incluir librería FPDF y conexión a la base de datos
-require('../../libs/fpdf/fpdf.php');
-require('../../core/conexion.php');
+require('../../../libs/fpdf/fpdf.php');
+require('../../../core/conexion.php');
 
 // Verificar y validar la existencia de la variable de sesión
 if (session_status() == PHP_SESSION_NONE) {
@@ -15,7 +15,7 @@ class PDF extends FPDF {
     // Cabecera de página
     function Header() {
         // Logo (opcional)
-        $this->Image('../../assets/img/logo.png', 10, 8, 10);
+        $this->Image('../assets/img/logo.png', 10, 8, 10);
         
         // Título
         $this->SetFont('Arial', 'B', 15);

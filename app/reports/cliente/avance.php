@@ -1,5 +1,5 @@
 <?php
-require('../../libs/fpdf/fpdf.php');
+require('../../../libs/fpdf/fpdf.php');
 
 // Clase personalizada para el recibo con altura automática
 class PDF_Receipt extends FPDF {
@@ -56,7 +56,7 @@ class PDF_Receipt extends FPDF {
 }
 
 // Database connection
-require('../../core/conexion.php');
+require('../../../core/conexion.php');
 
 // Validate and sanitize input
 $registro = isset($_GET['registro']) ? $_GET['registro'] : '';

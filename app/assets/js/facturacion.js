@@ -496,7 +496,7 @@ fetch("../../api/facturacion/facturacion_guardar.php", {
 
             } else {
                 // Redirigir la ventana ya abierta al reporte
-                const invoiceUrl = `../../reports/factura/factura.php?factura=${data.numFactura}`;
+                const invoiceUrl = `../reports/factura/factura.php?factura=${data.numFactura}`;
                 invoiceWindow.location.href = invoiceUrl;
 
                 setTimeout(() => {

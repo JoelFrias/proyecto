@@ -21,12 +21,12 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Dashboard - Estadisticas</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../../assets/css/menu.css">
-    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/menu.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
 <body>
         
@@ -346,7 +346,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     </div>
 
     <!-- Scripts -->
-    <script src="../../assets/js/dashboard.js"></script>
+    <script src="../assets/js/dashboard.js"></script>
     
 </body>
 </html>

@@ -2,8 +2,8 @@
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-require('../../libs/fpdf/fpdf.php');
-require('../../core/conexion.php');
+require('../../../libs/fpdf/fpdf.php');
+require('../../../core/conexion.php');
 
 // Verificar que se recibió el número de cotización
 if (!isset($_GET['cotizacion']) || empty($_GET['cotizacion'])) {
@@ -81,8 +81,8 @@ class PDF extends FPDF
     function Header()
     {
         // Logo (ajusta la ruta según tu estructura)
-        if (file_exists('../../assets/img/logo.png')) {
-            $this->Image('../../assets/img/logo.png', 10, 10, 40);
+        if (file_exists('../assets/img/logo.png')) {
+            $this->Image('../assets/img/logo.png', 10, 10, 40);
         }
         
         // Información de la empresa (ajusta según tus datos)

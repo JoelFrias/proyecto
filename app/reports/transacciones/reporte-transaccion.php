@@ -1,12 +1,7 @@
 <?php
 
-// Activar reporte de errores para debug
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-require_once '../../libs/fpdf/fpdf.php';
-require_once '../../core/conexion.php';		// Conexión a la base de datos
+require_once '../../../libs/fpdf/fpdf.php';
+require_once '../../../core/conexion.php';		// Conexión a la base de datos
 
 // Verificar conexión a la base de datos
 if (!$conn || !$conn->connect_errno === 0) {
@@ -80,10 +75,10 @@ while ($row = $result_prod->fetch_assoc()) {
 }
 
 // ============================================
-// CLASE PERSONALIZADA DE PDF CON MARCA DE AGUA
+// CLASE PERSONALIZADA DE PDF
 // ============================================
 
-class PDF_Reimpresion extends FPDF
+class PDF_Transaccion extends FPDF
 {
     private $transaccion;
     
@@ -136,62 +131,14 @@ class PDF_Reimpresion extends FPDF
         return $nl;
     }
     
-    // Marca de agua de reimpresión (versión simple y confiable)
-    function MarcaAgua()
-    {
-        // Marca de agua diagonal en el centro
-        $this->SetFont('Arial', 'B', 50);
-        $this->SetTextColor(260, 200, 200); // Rosa claro para simular transparencia
-        
-        // Rotar y posicionar texto
-        $this->Rotate(45, 105, 148.5);
-        $this->Text(45, 155, 'REIMPRESION');
-        $this->Rotate(0);
-        
-        // Resetear color
-        $this->SetTextColor(0, 0, 0);
-    }
-    
-    // Función auxiliar para rotación
-    function Rotate($angle, $x = -1, $y = -1){
-
-        if ($x == -1)
-            $x = $this->x;
-        if ($y == -1)
-            $y = $this->y;
-        if ($this->angle != 0)
-            $this->_out('Q');
-        $this->angle = $angle;
-        if ($angle != 0) {
-            $angle *= M_PI / 180;
-            $c = cos($angle);
-            $s = sin($angle);
-            $cx = $x * $this->k;
-            $cy = ($this->h - $y) * $this->k;
-            $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
-        }
-    }
-    
     // Encabezado
-    function Header(){
-
-        // Marca de agua en cada página
-        $this->MarcaAgua();
-        
+    function Header()
+    {
         // Logo
-        $logo_path = '../../assets/img/logo.png';
+        $logo_path = '../assets/img/logo.png';
         if (file_exists($logo_path)) {
             $this->Image($logo_path, 15, 10, 20);
         }
-        
-        // Indicador de REIMPRESIÓN en esquina superior derecha
-        $this->SetFont('Arial', 'B', 10);
-        $this->SetTextColor(220, 53, 69); // Rojo
-        $this->SetXY(140, 10);
-        $this->Cell(55, 37, 'REIMPRESION FECHA', 0, 1, 'C');
-        $this->SetX(140);
-        $this->SetFont('Arial', '', 8);
-        $this->Cell(55, -30, date('d/m/Y H:i:s'), 0, 1, 'C');
         
         // Espacio después del logo
         $this->SetY(15);
@@ -203,7 +150,7 @@ class PDF_Reimpresion extends FPDF
         $this->Cell(0, 8, 'REPORTE DE TRANSACCION DE INVENTARIO', 0, 1, 'C');
         
         // Fecha actual
-        $dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        $dias = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
         $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -216,7 +163,7 @@ class PDF_Reimpresion extends FPDF
         
         $this->SetFont('Arial', 'I', 10);
         $this->SetTextColor(127, 140, 141);
-        $this->Cell(0, 6, '', 0, 1, 'C');
+        $this->Cell(0, 6, $fecha_actual, 0, 1, 'C');
         
         // Línea decorativa
         $this->SetDrawColor(52, 152, 219);
@@ -229,35 +176,18 @@ class PDF_Reimpresion extends FPDF
     // Pie de página
     function Footer()
     {
-        $this->SetY(-20);
-        
-        // Nota de reimpresión
-        $this->SetFont('Arial', 'I', 8);
-        $this->SetTextColor(220, 53, 69);
-        $this->Cell(0, 4, 'DOCUMENTO REIMPRESO - NO ES EL ORIGINAL', 0, 1, 'C');
-        
+        $this->SetY(-15);
         $this->SetFont('Arial', 'I', 8);
         $this->SetTextColor(149, 165, 166);
         $this->Cell(0, 10, 'Pagina ' . $this->PageNo() . ' de {nb}', 0, 0, 'C');
     }
-    
-    // Inicializar propiedades
-    var $angle = 0;
 }
 
 // ============================================
 // CREAR DOCUMENTO PDF
 // ============================================
 
-$pdf = new PDF_Reimpresion('P', 'mm', 'Letter');
-
-// Metadatos del documento
-$pdf->SetTitle('REIMPRESION - Transaccion ' . $transaccion['NO']);
-$pdf->SetAuthor('JFSystems');
-$pdf->SetSubject('Reimpresion de Transaccion de Inventario No. ' . $transaccion['NO']);
-$pdf->SetKeywords('Reimpresion, Transaccion, Inventario, ' . $transaccion['tipo']);
-$pdf->SetCreator('Sistema de Gestion de Inventario - JFSystems');
-
+$pdf = new PDF_Transaccion('P', 'mm', 'Letter'); // 8.5 x 11 pulgadas
 $pdf->AliasNbPages();
 $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, 40);
@@ -439,7 +369,7 @@ $pdf->Cell(0, 5, 'Este documento es valido como comprobante de transaccion de in
 // GENERAR PDF
 // ============================================
 
-$pdf->Output('I', 'REIMPRESION_Transaccion_' . $transaccion['NO'] . '.pdf');
+$pdf->Output('I', 'Transaccion_' . $transaccion['NO'] . '.pdf');
 
 // Cerrar conexiones
 $stmt_trans->close();

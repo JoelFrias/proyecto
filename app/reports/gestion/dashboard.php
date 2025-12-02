@@ -2,11 +2,11 @@
 // Evitar cualquier output antes del PDF
 ob_start();
 
-require_once '../../core/conexion.php';
-require_once '../../core/verificar-sesion.php';
+require_once '../../../core/conexion.php';
+require_once '../../../core/verificar-sesion.php';
 
 // Validar permisos
-require_once '../../core/validar-permisos.php';
+require_once '../../../core/validar-permisos.php';
 $permiso_necesario = 'PADM002';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
@@ -18,7 +18,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
 // Limpiar cualquier output acumulado
 ob_end_clean();
 
-require_once '../../libs/fpdf/fpdf.php';
+require_once '../../../libs/fpdf/fpdf.php';
 
 // Obtener parámetros del período
 $periodo = isset($_GET['periodo']) ? $_GET['periodo'] : 'mes';
@@ -105,8 +105,8 @@ class DashboardPDF extends FPDF {
     
     function Header() {
         // Logo (ajusta la ruta según tu estructura)
-        if(file_exists('../../assets/img/logo.png')) {
-            $this->Image('../../assets/img/logo.png', 10, 6, 30);
+        if(file_exists('../assets/img/logo.png')) {
+            $this->Image('../assets/img/logo.png', 10, 6, 30);
         }
         
         // Título
@@ -532,7 +532,7 @@ if(count($stockBajo) > 0) {
 
 // Facturas Pendientes
 $facturasPendientes = obtenerFacturasPendientes($conn);
-if(count($facturasPendientes) > 0) {
+if(count($facturasPendientes) > 0) {    
     if($pdf->GetY() > 180) {
         $pdf->AddPage();
     }

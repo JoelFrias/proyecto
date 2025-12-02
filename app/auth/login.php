@@ -17,7 +17,7 @@ if (isset($_SESSION['username'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>EasyPOS - Iniciar Sesión</title>
-    <link rel="shortcut icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
     <style>
         * {
             margin: 0;
@@ -45,7 +45,7 @@ if (isset($_SESSION['username'])) {
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: url("../../assets/img/fondo-login.webp") center/cover no-repeat;
+            background: url("../assets/img/fondo-login.webp") center/cover no-repeat;
             filter: blur(10px);         /* Nivel de desenfoque */
             transform: scale(1.1);      /* Evita bordes feos al aplicar blur */
             z-index: -1;                /* Se coloca detrás del contenido */
@@ -376,7 +376,7 @@ if (isset($_SESSION['username'])) {
     <div class="container">
 
         <div class="logo">
-            <img src="../../assets/img/logo.png" alt="EasyPOS Logo" class="logo-img">
+            <img src="../assets/img/logo.png" alt="EasyPOS Logo" class="logo-img">
             <div class="logo-text">EasyPOS</div>
         </div>
 

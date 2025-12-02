@@ -11,8 +11,8 @@ require_once '../core/verificar-sesion.php'; // Verificar Session
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>EasyPOS</title>
-    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../assets/css/menu.css">
+    <link rel="icon" href="assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="assets/css/menu.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -532,7 +532,7 @@ require_once '../core/verificar-sesion.php'; // Verificar Session
     <!-- scripts de gráficos -->
     <script>
         function cargarVentasPorDia(periodo) {
-            fetch(`../assets/graphics/index/no-ventas.php?periodo=${periodo}`)
+            fetch(`assets/graphics/index/no-ventas.php?periodo=${periodo}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
@@ -620,7 +620,7 @@ require_once '../core/verificar-sesion.php'; // Verificar Session
 
         // Función para obtener los datos del total de ventas por día
         function cargarTotalVentasPorDia(periodo) {
-            fetch(`../assets/graphics/index/total-ventas.php?periodo=${periodo}`)
+            fetch(`assets/graphics/index/total-ventas.php?periodo=${periodo}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
@@ -707,7 +707,7 @@ require_once '../core/verificar-sesion.php'; // Verificar Session
 
         // Función para obtener los datos de clientes más populares
         function cargarClientesPopulares(periodo) {
-            fetch(`../assets/graphics/index/clientes-popular.php?periodo=${periodo}`)
+            fetch(`assets/graphics/index/clientes-popular.php?periodo=${periodo}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
@@ -795,7 +795,7 @@ require_once '../core/verificar-sesion.php'; // Verificar Session
 
         // Función para obtener los datos de productos más vendidos
         function cargarProductosMasVendidos(periodo) {
-            fetch(`../assets/graphics/index/mas-vendidos.php?periodo=${periodo}`)
+            fetch(`assets/graphics/index/mas-vendidos.php?periodo=${periodo}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {

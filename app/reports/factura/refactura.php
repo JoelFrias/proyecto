@@ -3,7 +3,7 @@
 header('Content-Type: application/pdf');
 header('Content-Disposition: inline; filename="factura_EasyPOS.pdf"');
 
-require('../../libs/fpdf/fpdf.php');
+require('../../../libs/fpdf/fpdf.php');
 
 // Custom PDF class for narrow receipts (3 inches = 76.2mm)
 class ReceiptPDF extends FPDF {
@@ -58,7 +58,7 @@ class ReceiptPDF extends FPDF {
 }
 
 // Database connection
-require('../../core/conexion.php');
+require('../../../core/conexion.php');
 
 // Ensure database connection is UTF-8
 if (method_exists($conn, 'set_charset')) {

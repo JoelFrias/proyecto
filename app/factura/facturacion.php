@@ -56,9 +56,9 @@ if (!$result) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Facturacion</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/facturacion.css">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/facturacion.css">
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
     <style>
@@ -668,7 +668,7 @@ if (!$result) {
         </div>
     </div>
 
-    <script src="../../assets/js/facturacion.js"></script>
+    <script src="../assets/js/facturacion.js"></script>
     
     <!-- Script para guardar como cotización -->
     <script>
@@ -806,7 +806,7 @@ if (!$result) {
                                 }).then((result) => {
                                     if (result.isConfirmed) {
                                         // Abrir PDF en nueva ventana
-                                        window.open(`../../reports/factura/cotizacion.php?cotizacion=${data.noCotizacion}`, '_blank');
+                                        window.open(`../reports/factura/cotizacion.php?cotizacion=${data.noCotizacion}`, '_blank');
                                         setTimeout(() => {
                                             location.reload();
                                         }, 500);

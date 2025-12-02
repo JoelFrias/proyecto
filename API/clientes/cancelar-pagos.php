@@ -197,63 +197,73 @@ try {
     
     $stmt->close();
     
-    // 6. Obtener todas las facturas del cliente ordenadas por fecha (más antigua primero para revertir)
+    // 6. Obtener todas las facturas del cliente ordenadas por fecha (más reciente primero para revertir)
     $stmt = $conn->prepare("
         SELECT 
-            registro, 
-            balance, 
-            total_ajuste AS total, 
-            estado, 
-            fecha 
-        FROM facturas 
-        WHERE idCliente = ? AND tipoFactura = 'credito' 
-        ORDER BY fecha ASC
+            f.registro, 
+            f.balance, 
+            f.total_ajuste AS total,
+            COALESCE(fm.monto, 0) AS pago_inicial,
+            f.estado, 
+            f.fecha,
+            f.numFactura
+        FROM facturas f
+        LEFT JOIN facturas_metodopago fm ON f.numFactura = fm.numFactura
+        WHERE f.idCliente = ? AND f.tipoFactura = 'credito' 
+        ORDER BY f.fecha DESC
     ");
-    
+
     if (!$stmt) {
         throw new Exception("Error preparando consulta de facturas: " . $conn->error);
     }
-    
+
     $stmt->bind_param('i', $idCliente);
     $stmt->execute();
     $result = $stmt->get_result();
     $facturas = [];
-    
+
     while ($row = $result->fetch_assoc()) {
         $facturas[] = $row;
     }
     $stmt->close();
-    
+
     if (empty($facturas)) {
         throw new Exception("No se encontraron facturas para el cliente ID: " . $idCliente);
     }
-    
-    // 7. Revertir el pago: Aumentar el balance de las facturas
-    // Empezamos desde la más antigua (donde primero se aplicó el pago)
+
+    // 7. Revertir el pago: AUMENTAR el balance (deuda) de las facturas
+    // Empezamos desde la más reciente (orden inverso al pago original)
     $monto_restante = $monto_pago;
-    
+
     foreach ($facturas as $factura) {
         if ($monto_restante <= 0) {
             break;
         }
         
         $registro_factura = $factura['registro'];
-        $balance_actual = $factura['balance'];
+        $balance_actual = $factura['balance'];  // Deuda actual
         $total_factura = $factura['total'];
+        $pago_inicial = $factura['pago_inicial'];
         
-        // Calcular cuánto podemos revertir en esta factura
-        // No podemos aumentar el balance más allá del total de la factura
-        $espacio_disponible = $total_factura - $balance_actual;
+        // Calcular el máximo balance (deuda máxima) que puede tener esta factura
+        // Es el total menos lo que se pagó inicialmente
+        $balance_maximo = $total_factura - $pago_inicial;
+        
+        // Calcular cuánto espacio hay para AUMENTAR la deuda
+        $espacio_disponible = $balance_maximo - $balance_actual;
+        
+        // No podemos aumentar más deuda de la que originalmente tenía
         $monto_a_revertir = min($monto_restante, $espacio_disponible);
         
         if ($monto_a_revertir > 0) {
-            // Aumentar el balance de la factura
+            // AUMENTAR el balance (aumentar la deuda)
             $nuevo_balance = $balance_actual + $monto_a_revertir;
             
             // Determinar el nuevo estado de la factura
-            $estado_factura = "Pendiente";
-            if ($nuevo_balance >= $total_factura) {
-                $estado_factura = "Pendiente"; // Totalmente pendiente de nuevo
+            if ($nuevo_balance > 0) {
+                $estado_factura = "Pendiente";  // Ahora tiene deuda
+            } else {
+                $estado_factura = "Pagada";  // Sigue sin deuda (no debería pasar)
             }
             
             $stmt = $conn->prepare("
@@ -277,6 +287,11 @@ try {
             // Reducir el monto restante
             $monto_restante -= $monto_a_revertir;
         }
+    }
+    
+    // Verificar que se haya revertido todo el monto
+    if ($monto_restante > 0) {
+        throw new Exception("No se pudo revertir completamente el pago. Monto restante: $" . number_format($monto_restante, 2));
     }
     
     // 8. Actualizar el balance del cliente

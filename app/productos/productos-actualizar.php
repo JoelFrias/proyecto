@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Actualizar Producto</title>
-    <link rel="stylesheet" href="../../assets/css/producto_modal.css">
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/producto_modal.css">
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
 </head>
 <body>
     <!-- Modal de actualización de producto -->

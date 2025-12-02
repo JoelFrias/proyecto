@@ -95,9 +95,9 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Avance de Cuenta</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/avance-cuenta.css">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/avance-cuenta.css">
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
 
@@ -393,10 +393,37 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
 
         <div class="page-content">
         <!-- TODO EL CONTENIDO DE LA PAGINA DEBE DE ESTAR DEBAJO DE ESTA LINEA -->
-
-        
-
             <div class="contenedor">
+
+                <style>
+                    .tittle {
+                        padding: 10px 10px;    
+                        border-bottom: 1px solid #e5e5e5;
+                    }
+
+                    .tittle h2 {
+                        font-size: 1.5rem;
+                        font-weight: 600;
+                        color: #333;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        margin: 0;
+                    }
+
+                    .tittle i {
+                        font-size: 1.3rem;
+                        color: #555;
+                    }
+
+                </style>
+
+                <div class="tittle">
+                    <h2>
+                        <i class="fa-solid fa-wallet"></i>
+                        Avance de Cuenta
+                    </h2>
+                </div>
                 
                 <div class="flex-container">
                     <!-- Client Data Section -->
@@ -948,7 +975,7 @@ $adeudadoc = number_format($rowc['adeudadoc'], 2, '.', ',');
                     if (data.success) {
 
                         if(print) {
-                            const invoiceUrl = `../../reports/cliente/avance.php?registro=${data.data.idRegistro}`;
+                            const invoiceUrl = `../reports/cliente/avance.php?registro=${data.data.idRegistro}`;
                             window.open(invoiceUrl, '_blank');
                             
                             location.reload();

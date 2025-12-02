@@ -11,6 +11,7 @@ if (!$conn || !$conn->connect_errno === 0) {
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
 }
+
 require_once '../../core/verificar-sesion.php'; // Verificar Session
 
 // Validar permisos de usuario
@@ -19,381 +20,10 @@ $permiso_necesario = 'CAJ001';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     header('location: ../errors/403.html');
+        
     exit(); 
 }
 
-// Configuración de la zona horaria
-date_default_timezone_set('America/Santo_Domingo');
-
-// Denominaciones de moneda dominicana
-$denominaciones = [
-    'monedas' => [
-        1 => 'RD$1',
-        5 => 'RD$5',
-        10 => 'RD$10',
-        25 => 'RD$25'
-    ],
-    'billetes' => [
-        50 => 'RD$50',
-        100 => 'RD$100',
-        200 => 'RD$200',
-        500 => 'RD$500',
-        1000 => 'RD$1,000',
-        2000 => 'RD$2,000'
-    ]
-];
-
-// Variables
-$mensaje = null;
-$id_empleado = $_SESSION['idEmpleado'];
-$nombre_empleado = $_SESSION['nombre'];
-
-// Verificar si el empleado tiene una caja abierta 
-$sql_verificar = "SELECT
-                    numCaja,
-                    idEmpleado,
-                    fechaApertura AS fechaApertura,
-                    saldoApertura,
-                    registro
-                FROM
-                    cajasabiertas
-                WHERE
-                    idEmpleado = ?";
-
-$stmt = $conn->prepare($sql_verificar);
-$stmt->bind_param("i", $id_empleado);
-$stmt->execute();
-$resultado = $stmt->get_result();
-$caja_abierta = false;
-$datos_caja = null;
-
-if ($resultado->num_rows > 0) {
-    $caja_abierta = true;
-    $datos_caja = $resultado->fetch_assoc();
-
-    // Almacenar datos de la caja abierta
-    $_SESSION['numCaja'] = $datos_caja['numCaja'];
-    $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
-    $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
-    $_SESSION['registro'] = $datos_caja['registro'];
-}
-$stmt->close();
-
-// Consultar totales para caja actual (si está abierta)
-$total_ingresos = 0;
-$total_egresos = 0;
-
-if ($caja_abierta) {
-    $num_caja = $datos_caja['numCaja'];
-    
-    // Calcular total de ingresos EN EFECTIVO
-    $sql_ingresos = "SELECT SUM(monto) as total FROM cajaingresos WHERE metodo = 'efectivo' AND numCaja = ?";
-    $stmt = $conn->prepare($sql_ingresos);
-    $stmt->bind_param("s", $num_caja);
-    $stmt->execute();
-    $result_ingresos = $stmt->get_result();
-    if ($result_ingresos->num_rows > 0) {
-        $row_ingresos = $result_ingresos->fetch_assoc();
-        $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
-    }
-    $stmt->close();
-    
-    // Calcular total de egresos EN EFECTIVO
-    $sql_egresos = "SELECT SUM(monto) as total FROM cajaegresos WHERE metodo = 'efectivo' AND numCaja = ?";
-    $stmt = $conn->prepare($sql_egresos);
-    $stmt->bind_param("s", $num_caja);
-    $stmt->execute();
-    $result_egresos = $stmt->get_result();
-    if ($result_egresos->num_rows > 0) {
-        $row_egresos = $result_egresos->fetch_assoc();
-        $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
-    }
-    $stmt->close();
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Abrir caja con transacción
-    if (isset($_POST['abrir_caja']) && !$caja_abierta) {
-        $metodo_apertura = $_POST['metodo_apertura'] ?? 'manual';
-        
-        if ($metodo_apertura === 'conteo') {
-            // Calcular saldo desde el conteo de denominaciones
-            $saldo_apertura = 0;
-            
-            // Sumar monedas
-            foreach ([1, 5, 10, 25] as $valor) {
-                $cantidad = intval($_POST["moneda_$valor"] ?? 0);
-                $saldo_apertura += $cantidad * $valor;
-            }
-            
-            // Sumar billetes
-            foreach ([50, 100, 200, 500, 1000, 2000] as $valor) {
-                $cantidad = intval($_POST["billete_$valor"] ?? 0);
-                $saldo_apertura += $cantidad * $valor;
-            }
-        } else {
-            $saldo_apertura = filter_input(INPUT_POST, 'saldo_apertura', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        }
-        
-        if ($saldo_apertura === false || $saldo_apertura < 0) {
-            $mensaje = "Error: Saldo inicial no válido";
-        } else {
-            $conn->autocommit(FALSE);
-            $error = false;
-            
-            try {
-                // Obtener y bloquear el contador
-                $sql_contador = "SELECT contador FROM cajacontador LIMIT 1 FOR UPDATE";
-                $stmt = $conn->prepare($sql_contador);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al obtener número de caja");
-                }
-                
-                $result_contador = $stmt->get_result();
-                $contador_row = $result_contador->fetch_assoc();
-                $contador_num = intval($contador_row['contador']);
-                $num_caja = str_pad($contador_num, 5, '0', STR_PAD_LEFT);
-                $nuevo_contador = $contador_num + 1;
-                
-                // Actualizar el contador
-                $sql_update_contador = "UPDATE cajacontador SET contador = ?";
-                $stmt = $conn->prepare($sql_update_contador);
-                $stmt->bind_param("i", $nuevo_contador);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al actualizar contador");
-                }
-                
-                // Insertar caja abierta
-                $sql = "INSERT INTO cajasabiertas (numCaja, idEmpleado, fechaApertura, saldoApertura) 
-                        VALUES (?, ?, NOW(), ?)";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("sid", $num_caja, $id_empleado, $saldo_apertura);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al abrir caja en sistema");
-                }
-                
-                $conn->commit();
-                $mensaje = "Caja abierta exitosamente con saldo inicial de RD$" . number_format($saldo_apertura, 2);
-                $caja_abierta = true;
-                
-                // Refrescar datos
-                $sql_verificar = "SELECT * FROM cajasabiertas WHERE idEmpleado = ?";
-                $stmt = $conn->prepare($sql_verificar);
-                $stmt->bind_param("i", $id_empleado);
-                $stmt->execute();
-                $resultado = $stmt->get_result();
-                $datos_caja = $resultado->fetch_assoc();
-
-                $_SESSION['numCaja'] = $num_caja;
-                $_SESSION['fechaApertura'] = $datos_caja['fechaApertura'];
-                $_SESSION['saldoApertura'] = $datos_caja['saldoApertura'];
-                $_SESSION['registro'] = $datos_caja['registro'];
-                
-            } catch (Exception $e) {
-                $conn->rollback();
-                $mensaje = "Error en transacción: " . $e->getMessage();
-                $error = true;
-            }
-            
-            $conn->autocommit(TRUE);
-        }
-    }
-    
-    // Cerrar caja con transacción
-    if (isset($_POST['cerrar_caja']) && $caja_abierta) {
-        $metodo_cierre = $_POST['metodo_cierre'] ?? 'manual';
-        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $registro = filter_input(INPUT_POST, 'registro', FILTER_SANITIZE_NUMBER_INT);
-        $fecha_apertura = filter_input(INPUT_POST, 'fecha_apertura', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $saldo_inicial = filter_input(INPUT_POST, 'saldo_inicial', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        
-        if ($metodo_cierre === 'conteo') {
-            // Calcular saldo final desde el conteo
-            $saldo_final = 0;
-            
-            // Sumar monedas
-            foreach ([1, 5, 10, 25] as $valor) {
-                $cantidad = intval($_POST["moneda_cierre_$valor"] ?? 0);
-                $saldo_final += $cantidad * $valor;
-            }
-            
-            // Sumar billetes
-            foreach ([50, 100, 200, 500, 1000, 2000] as $valor) {
-                $cantidad = intval($_POST["billete_cierre_$valor"] ?? 0);
-                $saldo_final += $cantidad * $valor;
-            }
-        } else {
-            $saldo_final = filter_input(INPUT_POST, 'saldo_final', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        }
-        
-        if ($saldo_final === false || $saldo_final < 0) {
-            $mensaje = "Error: Saldo final no válido";
-        } else {
-            $conn->autocommit(FALSE);
-            $error = false;
-            
-            try {
-                // Calcular saldo esperado: Saldo Inicial + Ingresos - Egresos
-                $saldo_esperado = $saldo_inicial + $total_ingresos - $total_egresos;
-                
-                // Calcular diferencia: Saldo Real - Saldo Esperado
-                $diferencia = $saldo_final - $saldo_esperado;
-                
-                // Insertar en cajas cerradas
-                $sql = "INSERT INTO cajascerradas (numCaja, idEmpleado, fechaApertura, fechaCierre, 
-                        saldoInicial, saldoFinal, estado, diferencia) 
-                        VALUES (?, ?, ?, NOW(), ?, ?, 'pendiente', ?)";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("sisddd", $num_caja, $id_empleado, $fecha_apertura, $saldo_inicial, $saldo_final, $diferencia);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al registrar cierre de caja");
-                }
-                
-                // Eliminar de cajas abiertas
-                $sql_delete = "DELETE FROM cajasabiertas WHERE registro = ?";
-                $stmt = $conn->prepare($sql_delete);
-                $stmt->bind_param("i", $registro);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al eliminar caja abierta");
-                }
-                
-                $conn->commit();
-                
-                // Mensaje detallado
-                $mensaje = "Caja cerrada exitosamente.<br>";
-                $mensaje .= "Saldo Esperado: RD$" . number_format($saldo_esperado, 2) . "<br>";
-                $mensaje .= "Saldo Final: RD$" . number_format($saldo_final, 2) . "<br>";
-                $mensaje .= "Diferencia: RD$" . number_format($diferencia, 2);
-                
-                if ($diferencia > 0) {
-                    $mensaje .= " (Sobrante)";
-                } elseif ($diferencia < 0) {
-                    $mensaje .= " (Faltante)";
-                }
-                
-                $caja_abierta = false;
-                
-                // Limpiar variables de caja
-                unset($_SESSION['numCaja']);
-                unset($_SESSION['fechaApertura']);
-                unset($_SESSION['saldoApertura']);
-                unset($_SESSION['registro']);
-                
-            } catch (Exception $e) {
-                $conn->rollback();
-                $mensaje = "Error en transacción de cierre: " . $e->getMessage();
-                $error = true;
-            }
-            
-            $conn->autocommit(TRUE);
-        }
-    }
-    
-    // Registrar ingreso con transacción
-    if (isset($_POST['registrar_ingreso']) && $caja_abierta) {
-        $monto = filter_input(INPUT_POST, 'monto_ingreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        $metodo = $_POST['metodo_ingreso'];
-        $metodo = filter_var($metodo, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $razon = filter_input(INPUT_POST, 'razon_ingreso', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
-        if ($monto === false || $monto <= 0) {
-            $mensaje = "Error: Monto no válido";
-        } elseif (empty($razon)) {
-            $mensaje = "Error: Razón no puede estar vacía";
-        } else {
-            $conn->autocommit(FALSE);
-            $error = false;
-            
-            try {
-                // Insertar ingreso
-                $sql = "INSERT INTO cajaingresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
-                        VALUES (?, ?, ?, ?, ?, NOW())";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("sdiss", $metodo, $monto, $id_empleado, $num_caja, $razon);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al registrar ingreso");
-                }
-                
-                // Actualizar total de ingresos
-                $sql_ingresos = "SELECT SUM(monto) as total FROM cajaingresos WHERE metodo = 'efectivo' AND numCaja = ?";
-                $stmt = $conn->prepare($sql_ingresos);
-                $stmt->bind_param("s", $num_caja);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al actualizar total de ingresos");
-                }
-                
-                $result_ingresos = $stmt->get_result();
-                if ($result_ingresos->num_rows > 0) {
-                    $row_ingresos = $result_ingresos->fetch_assoc();
-                    $total_ingresos = $row_ingresos['total'] ? $row_ingresos['total'] : 0;
-                }
-                
-                $conn->commit();
-                $mensaje = "Ingreso registrado exitosamente";
-                
-            } catch (Exception $e) {
-                $conn->rollback();
-                $mensaje = "Error en transacción de ingreso: " . $e->getMessage();
-                $error = true;
-            }
-            
-            $conn->autocommit(TRUE);
-        }
-    }
-    
-    // Registrar egreso con transacción
-    if (isset($_POST['registrar_egreso']) && $caja_abierta) {
-        $monto = filter_input(INPUT_POST, 'monto_egreso', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        $metodo = $_POST['metodo_egreso'];
-        $razon = filter_input(INPUT_POST, 'razon_egreso', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $num_caja = filter_input(INPUT_POST, 'num_caja', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        
-        if ($monto === false || $monto <= 0) {
-            $mensaje = "Error: Monto no válido";
-        } elseif (empty($razon)) {
-            $mensaje = "Error: Razón no puede estar vacía";
-        } else {
-            $conn->autocommit(FALSE);
-            $error = false;
-            
-            try {
-                // Insertar egreso
-                $sql = "INSERT INTO cajaegresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
-                        VALUES (?, ?, ?, ?, ?, NOW())";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("sdiss", $metodo, $monto, $id_empleado, $num_caja, $razon);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al registrar egreso");
-                }
-                
-                // Actualizar total de egresos
-                $sql_egresos = "SELECT SUM(monto) as total FROM cajaegresos WHERE metodo = 'efectivo' AND numCaja = ?";
-                $stmt = $conn->prepare($sql_egresos);
-                $stmt->bind_param("s", $num_caja);
-                if (!$stmt->execute()) {
-                    throw new Exception("Error al actualizar total de egresos");
-                }
-                
-                $result_egresos = $stmt->get_result();
-                if ($result_egresos->num_rows > 0) {
-                    $row_egresos = $result_egresos->fetch_assoc();
-                    $total_egresos = $row_egresos['total'] ? $row_egresos['total'] : 0;
-                }
-
-                $conn->commit();
-                $mensaje = "Egreso registrado exitosamente";
-                
-            } catch (Exception $e) {
-                $conn->rollback();
-                $mensaje = "Error en transacción de egreso: " . $e->getMessage();
-                $error = true;
-            }
-            
-            $conn->autocommit(TRUE);
-        }
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -402,11 +32,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Sistema de Caja</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css">
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/menu.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
         /* Estilos generales */
         .page-content .container {
@@ -509,13 +138,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             background-color: rgb(57, 79, 102);
         }
 
-        .page-content .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
         .page-content .info-caja {
             background-color: #e8f4fd;
             padding: 15px;
@@ -564,14 +186,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .page-content .resumen-item:last-child {
             border-bottom: none;
-            margin-top: 10px;
-            font-weight: bold;
-            color: #2c3e50;
-            font-size: 16px;
-            background-color: #e9f7ef;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 0;
         }
 
         .page-content .resumen-item .etiqueta {
@@ -677,6 +291,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border-bottom: 2px solid #3498db;
         }
 
+        .swal-wide {
+            width: 600px !important;
+            max-width: 90% !important;
+        }
+
+        .swal-wide .swal2-html-container {
+            text-align: left;
+        }
+
         @media (max-width: 768px) {
             .page-content .header {
                 flex-direction: column;
@@ -686,10 +309,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             .page-content .empleado-info {
                 margin-top: 15px;
                 width: 100%;
-            }
-            
-            .page-content .grid {
-                grid-template-columns: 1fr;
             }
 
             .denominaciones-grid {
@@ -710,71 +329,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 grid-template-columns: 1fr;
             }
         }
-        
-        /* Estilos para SweetAlert más ancho */
-        .swal-wide {
-            width: 600px !important;
-            max-width: 90% !important;
-        }
-
-        .swal-wide .swal2-html-container {
-            text-align: left;
-        }
     </style>
 </head>
 <body>
-
-    <?php
-        if (isset($mensaje)) {
-            $icon = strpos($mensaje, 'Error') !== false ? 'error' : 'success';
-            $title = strpos($mensaje, 'Error') !== false ? 'ERROR' : 'Éxito';
-
-            echo "
-            <script>
-                Swal.fire({
-                    icon: '$icon',
-                    title: '$title',
-                    html: '$mensaje',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Aceptar'
-                }).then(() => {
-                    window.location.href = 'caja.php';
-                });
-            </script>
-            ";
-        }
-    ?>
-
     <div class="navegator-nav">
         <?php include '../../app/layouts/menu.php'; ?>
 
         <div class="page-content">
             <div class="container">
+                <!-- Header -->
                 <div class="header">
                     <h1>Sistema de Caja</h1>
                     <div class="empleado-info">
-                        <p>ID Empleado: <?php echo $id_empleado; ?></p>
-                        <p>Empleado: <?php echo $nombre_empleado; ?></p>
-                        <p>Fecha: <?php echo date('j/n/Y h:i A'); ?></p>
+                        <p>ID Empleado: <span id="empleado-id"></span></p>
+                        <p>Empleado: <span id="empleado-nombre"></span></p>
+                        <p>Fecha: <span id="empleado-fecha"></span></p>
                     </div>
                 </div>
-                
-                <?php if(!$caja_abierta): ?>
-                    <!-- Panel para abrir caja -->
-                    <div class="panel">
-                        <h2>Abrir Caja</h2>
-                        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" id="formAbrirCaja">
-                            
-                            <div class="metodo-selector">
-                                <label>
-                                    <input type="radio" name="metodo_apertura" value="manual" checked onchange="toggleAperturaMetodo()">
-                                    Monto Manual
-                                </label>
-                                <label>
-                                    <input type="radio" name="metodo_apertura" value="conteo" onchange="toggleAperturaMetodo()">
-                                    Conteo de Denominaciones
-                                </label>
-                            </div>
+
+                <!-- Panel Abrir Caja -->
+                <div id="panel-abrir-caja" class="panel" style="display: none;">
+                    <h2>Abrir Caja</h2>
+                    <form id="formAbrirCaja">
+                        <div class="metodo-selector">
+                            <label>
+                                <input type="radio" name="metodo_apertura" value="manual" checked onchange="toggleAperturaMetodo()">
+                                Monto Manual
+                            </label>
+                            <label>
+                                <input type="radio" name="metodo_apertura" value="conteo" onchange="toggleAperturaMetodo()">
+                                Conteo de Denominaciones
+                            </label>
+                        </div>
+
                         <!-- Monto manual -->
                         <div id="apertura-manual">
                             <label for="saldo_apertura">Saldo Inicial:</label>
@@ -784,116 +371,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <!-- Conteo de denominaciones -->
                         <div id="apertura-conteo" class="denominaciones-container">
                             <h3 class="section-title">Monedas</h3>
-                            <div class="denominaciones-grid">
-                                <?php foreach ($denominaciones['monedas'] as $valor => $label): ?>
-                                    <div class="denominacion-item">
-                                        <label><?php echo $label; ?></label>
-                                        <input type="number" name="moneda_<?php echo $valor; ?>" 
-                                               value="0" min="0" step="1" 
-                                               onchange="calcularTotalApertura()">
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                            <div class="denominaciones-grid" id="monedas-apertura"></div>
 
                             <h3 class="section-title">Billetes</h3>
-                            <div class="denominaciones-grid">
-                                <?php foreach ($denominaciones['billetes'] as $valor => $label): ?>
-                                    <div class="denominacion-item">
-                                        <label><?php echo $label; ?></label>
-                                        <input type="number" name="billete_<?php echo $valor; ?>" 
-                                               value="0" min="0" step="1" 
-                                               onchange="calcularTotalApertura()">
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                            <div class="denominaciones-grid" id="billetes-apertura"></div>
 
                             <div class="denominacion-total">
                                 Total: RD$ <span id="total-apertura">0.00</span>
                             </div>
                         </div>
 
-                        <button type="submit" name="abrir_caja">Abrir Caja</button>
+                        <button type="submit">Abrir Caja</button>
                     </form>
                 </div>
-            <?php else: ?>
-                <!-- Información de caja abierta -->
-                <div class="info-caja">
+
+                <!-- Info Caja Abierta -->
+                <div id="info-caja-abierta" class="info-caja" style="display: none;">
                     <h2>Usted presenta una caja abierta</h2>
-                    <p>Caja #: <?php echo $datos_caja['numCaja']; ?></p>
-                    <p>Fecha de apertura: <?php echo date('j/n/Y h:i A', strtotime($datos_caja['fechaApertura'])); ?></p>
-                    <p>Saldo inicial: RD$<?php echo number_format($datos_caja['saldoApertura'], 2); ?></p>
+                    <p>Caja #: <span id="caja-numero"></span></p>
+                    <p>Fecha de apertura: <span id="caja-fecha-apertura"></span></p>
+                    <p>Saldo inicial: <span id="caja-saldo-inicial"></span></p>
                 </div>
 
-                <?php
-                // Calcular saldo esperado
-                $saldo_esperado = $datos_caja['saldoApertura'] + $total_ingresos - $total_egresos;
-
-                $sqlFacturas = "SELECT COUNT(*) AS totalFacturas FROM facturas_metodopago WHERE noCaja = ?";
-                $stmt = $conn->prepare($sqlFacturas);
-                $stmt->bind_param("s", $_SESSION['numCaja']);
-                $stmt->execute();
-                $resultFacturas = $stmt->get_result();
-                $rowFacturas = $resultFacturas->fetch_assoc();
-                $totalFacturas = $rowFacturas['totalFacturas'] ? $rowFacturas['totalFacturas'] : 0;
-                $stmt->close();
-
-                $sqlPagos = "SELECT COUNT(*) AS totalPagos FROM clientes_historialpagos WHERE numCaja = ?";
-                $stmt = $conn->prepare($sqlPagos);
-                $stmt->bind_param("s", $_SESSION['numCaja']);
-                $stmt->execute();
-                $resultPagos = $stmt->get_result();
-                $rowPagos = $resultPagos->fetch_assoc();
-                $totalPagos = $rowPagos['totalPagos'] ? $rowPagos['totalPagos'] : 0;
-                $stmt->close();
-
-                $totalTransacciones = $totalFacturas + $totalPagos;
-                ?>
-                
-                <!-- Resumen de caja -->
-                <div class="panel">
+                <!-- Panel Resumen y Cierre -->
+                <div id="panel-caja-abierta" class="panel" style="display: none;">
                     <h2>Resumen de Caja</h2>
                     <div class="resumen">
-                        <h3>Movimientos de Caja #<?php echo $datos_caja['numCaja']; ?></h3>
+                        <h3>Movimientos de Caja #<span id="resumen-num-caja"></span></h3>
                         
                         <div class="resumen-item">
                             <span class="etiqueta">Saldo Inicial:</span>
-                            <span class="valor">RD$<?php echo number_format($datos_caja['saldoApertura'], 2) ?></span>
+                            <span class="valor" id="resumen-saldo-inicial"></span>
                         </div>
 
                         <div class="resumen-item ingreso">
                             <span class="etiqueta">Total Ingresos (Efectivo):</span>
-                            <span class="valor">+ RD$<?php echo number_format($total_ingresos, 2) ?></span>
+                            <span class="valor" id="resumen-ingresos"></span>
                         </div>
 
                         <div class="resumen-item egreso">
                             <span class="etiqueta">Total Egresos (Efectivo):</span>
-                            <span class="valor">- RD$<?php echo number_format($total_egresos, 2) ?></span>
+                            <span class="valor" id="resumen-egresos"></span>
                         </div>
 
                         <div class="resumen-item destacado">
                             <span class="etiqueta">Saldo Esperado en Efectivo:</span>
-                            <span class="valor">RD$<?php echo number_format($saldo_esperado, 2) ?></span>
+                            <span class="valor" id="resumen-saldo-esperado"></span>
                         </div>
 
                         <div class="resumen-item">
                             <span class="etiqueta">Número de Facturas:</span>
-                            <span class="valor"><?php echo number_format($totalFacturas) ?></span>
+                            <span class="valor" id="resumen-facturas"></span>
                         </div>
                         
                         <div class="resumen-item">
                             <span class="etiqueta">Número de Pagos:</span>
-                            <span class="valor"><?php echo number_format($totalPagos) ?></span>
+                            <span class="valor" id="resumen-pagos"></span>
                         </div>
 
                         <div class="resumen-item">
                             <span class="etiqueta">Total de Transacciones:</span>
-                            <span class="valor"><?php echo $totalTransacciones ?></span>
+                            <span class="valor" id="resumen-transacciones"></span>
                         </div>
                     </div>
-                
+
                     <h2>Cerrar Caja</h2>
-                    <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" id="formCerrarCaja">
-                        
+                    <form id="formCerrarCaja">
                         <div class="metodo-selector">
                             <label>
                                 <input type="radio" name="metodo_cierre" value="manual" checked onchange="toggleCierreMetodo()">
@@ -915,28 +458,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <!-- Conteo de denominaciones -->
                         <div id="cierre-conteo" class="denominaciones-container">
                             <h3 class="section-title">Monedas</h3>
-                            <div class="denominaciones-grid">
-                                <?php foreach ($denominaciones['monedas'] as $valor => $label): ?>
-                                    <div class="denominacion-item">
-                                        <label><?php echo $label; ?></label>
-                                        <input type="number" name="moneda_cierre_<?php echo $valor; ?>" 
-                                               value="0" min="0" step="1" 
-                                               onchange="calcularTotalCierre()">
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                            <div class="denominaciones-grid" id="monedas-cierre"></div>
 
                             <h3 class="section-title">Billetes</h3>
-                            <div class="denominaciones-grid">
-                                <?php foreach ($denominaciones['billetes'] as $valor => $label): ?>
-                                    <div class="denominacion-item">
-                                        <label><?php echo $label; ?></label>
-                                        <input type="number" name="billete_cierre_<?php echo $valor; ?>" 
-                                               value="0" min="0" step="1" 
-                                               onchange="calcularTotalCierre()">
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                            <div class="denominaciones-grid" id="billetes-cierre"></div>
 
                             <div class="denominacion-total">
                                 Total Contado: RD$ <span id="total-cierre">0.00</span>
@@ -946,161 +471,296 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 Diferencia: RD$ <span id="diferencia-cierre">0.00</span>
                             </div>
                         </div>
-                        
-                        <input type="hidden" name="num_caja" value="<?php echo $datos_caja['numCaja']; ?>">
-                        <input type="hidden" name="registro" value="<?php echo $datos_caja['registro']; ?>">
-                        <input type="hidden" name="fecha_apertura" value="<?php echo $_SESSION['fechaApertura']; ?>">
-                        <input type="hidden" name="saldo_inicial" value="<?php echo $_SESSION['saldoApertura']; ?>">
-                        
-                        <button type="submit" name="cerrar_caja">Cerrar Caja</button>
+
+                        <button type="submit">Cerrar Caja</button>
                     </form>
                 </div>
-            <?php endif; ?>
+
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const saldoEsperado = <?php echo $caja_abierta ? $saldo_esperado : 0; ?>;
+    <script>
+        // Variables globales
+        let datosGlobales = null;
+        const API_URL = '../../api/caja/caja.php';
 
-    function toggleAperturaMetodo() {
-        const metodo = document.querySelector('input[name="metodo_apertura"]:checked').value;
-        const manual = document.getElementById('apertura-manual');
-        const conteo = document.getElementById('apertura-conteo');
-        
-        if (metodo === 'manual') {
-            manual.style.display = 'block';
-            conteo.classList.remove('active');
-            document.getElementById('saldo_apertura').required = true;
-        } else {
-            manual.style.display = 'none';
-            conteo.classList.add('active');
-            document.getElementById('saldo_apertura').required = false;
-            calcularTotalApertura();
-        }
-    }
-
-    // Toggle método de cierre
-    function toggleCierreMetodo() {
-        const metodo = document.querySelector('input[name="metodo_cierre"]:checked').value;
-        const manual = document.getElementById('cierre-manual');
-        const conteo = document.getElementById('cierre-conteo');
-        
-        if (metodo === 'manual') {
-            manual.style.display = 'block';
-            conteo.classList.remove('active');
-            document.getElementById('saldo_final').required = true;
-        } else {
-            manual.style.display = 'none';
-            conteo.classList.add('active');
-            document.getElementById('saldo_final').required = false;
-            calcularTotalCierre();
-        }
-    }
-
-    // Confirmación para abrir caja
-    document.getElementById('formAbrirCaja')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const metodo = document.querySelector('input[name="metodo_apertura"]:checked').value;
-        let saldoInicial = 0;
-        
-        if (metodo === 'manual') {
-            saldoInicial = parseFloat(document.getElementById('saldo_apertura').value) || 0;
-        } else {
-            saldoInicial = parseFloat(document.getElementById('total-apertura').textContent) || 0;
-        }
-        
-        if (saldoInicial < 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'El saldo inicial no puede ser negativo'
-            });
-            return;
-        }
-        
-        Swal.fire({
-            title: '¿Abrir Caja?',
-            html: `
-                <div style="text-align: left; padding: 10px;">
-                    <p><strong>Saldo Inicial:</strong> RD$${saldoInicial.toFixed(2)}</p>
-                    <p style="margin-top: 10px;">¿Está seguro de que desea abrir la caja con este monto?</p>
-                </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#2c3e50',
-            cancelButtonColor: '#95a5a6',
-            confirmButtonText: 'Sí, abrir caja',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.submit();
-            }
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarDatosIniciales();
+            configurarEventListeners();
         });
-    });
 
-    // Confirmación para cerrar caja
-    document.getElementById('formCerrarCaja')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const metodo = document.querySelector('input[name="metodo_cierre"]:checked').value;
-        let saldoFinal = 0;
-        
-        if (metodo === 'manual') {
-            saldoFinal = parseFloat(document.getElementById('saldo_final').value) || 0;
-        } else {
-            saldoFinal = parseFloat(document.getElementById('total-cierre').textContent) || 0;
-        }
-        
-        if (saldoFinal < 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'El saldo final no puede ser negativo'
-            });
-            return;
-        }
-        
-        const diferencia = saldoFinal - saldoEsperado;
-        let estadoDiferencia = '';
-        let iconColor = '';
-        
-        if (diferencia > 0) {
-            estadoDiferencia = `<span style="color: #27ae60; font-weight: bold;">+RD$${diferencia.toFixed(2)} (Sobrante)</span>`;
-            iconColor = 'warning';
-        } else if (diferencia < 0) {
-            estadoDiferencia = `<span style="color: #e74c3c; font-weight: bold;">RD$${diferencia.toFixed(2)} (Faltante)</span>`;
-            iconColor = 'warning';
-        } else {
-            estadoDiferencia = `<span style="color: #3498db; font-weight: bold;">RD$0.00 (Cuadrado)</span>`;
-            iconColor = 'success';
-        }
-        
-        Swal.fire({
-            title: '¿Cerrar Caja?',
-            html: `
-                <div style="text-align: left; padding: 10px;">
-                    <p><strong>Saldo Esperado:</strong> RD$${saldoEsperado.toFixed(2)}</p>
-                    <p><strong>Saldo Final Contado:</strong> RD$${saldoFinal.toFixed(2)}</p>
-                    <p style="margin-top: 10px;"><strong>Diferencia:</strong> ${estadoDiferencia}</p>
-                    <hr style="margin: 15px 0;">
-                    <p style="color: #e74c3c; font-weight: bold;">⚠️ Esta acción no se puede deshacer</p>
-                </div>
-            `,
-            icon: iconColor,
-            showCancelButton: true,
-            confirmButtonColor: '#2c3e50',
-            cancelButtonColor: '#95a5a6',
-            confirmButtonText: 'Sí, cerrar caja',
-            cancelButtonText: 'Cancelar',
-            customClass: {
-                popup: 'swal-wide'
+        // Cargar datos iniciales desde la API
+        async function cargarDatosIniciales() {
+            try {
+                mostrarCargando();
+                
+                const response = await fetch(`${API_URL}?accion=obtener_datos_iniciales`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    datosGlobales = result.data;
+                    actualizarInterfaz();
+                    Swal.close();
+                } else {
+                    Swal.close();
+                    mostrarError(result.message);
+                }
+            } catch (error) {
+                Swal.close();
+                mostrarError('Error al cargar datos: ' + error.message);
             }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Mostrar loading mientras se procesa
+        }
+
+        // Actualizar la interfaz con los datos cargados
+        function actualizarInterfaz() {
+            const datos = datosGlobales;
+            
+            // Actualizar info del empleado
+            document.getElementById('empleado-id').textContent = datos.empleado.id;
+            document.getElementById('empleado-nombre').textContent = datos.empleado.nombre;
+            document.getElementById('empleado-fecha').textContent = datos.empleado.fecha;
+            
+            if (datos.caja_abierta) {
+                // Mostrar info de caja abierta
+                document.getElementById('panel-abrir-caja').style.display = 'none';
+                document.getElementById('info-caja-abierta').style.display = 'block';
+                document.getElementById('panel-caja-abierta').style.display = 'block';
+                
+                // Llenar datos de la caja
+                const caja = datos.datos_caja;
+                document.getElementById('caja-numero').textContent = caja.numCaja;
+                document.getElementById('caja-fecha-apertura').textContent = formatearFecha(caja.fechaApertura);
+                document.getElementById('caja-saldo-inicial').textContent = formatearMoneda(caja.saldoApertura);
+                
+                // Llenar resumen
+                document.getElementById('resumen-num-caja').textContent = caja.numCaja;
+                document.getElementById('resumen-saldo-inicial').textContent = formatearMoneda(caja.saldoApertura);
+                document.getElementById('resumen-ingresos').textContent = '+ ' + formatearMoneda(datos.total_ingresos);
+                document.getElementById('resumen-egresos').textContent = '- ' + formatearMoneda(datos.total_egresos);
+                document.getElementById('resumen-saldo-esperado').textContent = formatearMoneda(datos.saldo_esperado);
+                document.getElementById('resumen-facturas').textContent = formatearNumero(datos.total_facturas);
+                document.getElementById('resumen-pagos').textContent = formatearNumero(datos.total_pagos);
+                document.getElementById('resumen-transacciones').textContent = datos.total_facturas + datos.total_pagos;
+                
+                // Generar campos de denominaciones para cierre
+                generarCamposDenominaciones('cierre', datos.denominaciones);
+            } else {
+                // Mostrar panel para abrir caja
+                document.getElementById('panel-abrir-caja').style.display = 'block';
+                document.getElementById('info-caja-abierta').style.display = 'none';
+                document.getElementById('panel-caja-abierta').style.display = 'none';
+                
+                // Generar campos de denominaciones para apertura
+                generarCamposDenominaciones('apertura', datos.denominaciones);
+            }
+            
+            toggleAperturaMetodo();
+            toggleCierreMetodo();
+        }
+
+        // Generar campos de denominaciones dinámicamente
+        function generarCamposDenominaciones(tipo, denominaciones) {
+            const monedasContainer = document.getElementById(`monedas-${tipo}`);
+            const billetesContainer = document.getElementById(`billetes-${tipo}`);
+            
+            if (!monedasContainer || !billetesContainer) return;
+            
+            monedasContainer.innerHTML = '';
+            billetesContainer.innerHTML = '';
+            
+            // Generar monedas
+            Object.entries(denominaciones.monedas).forEach(([valor, label]) => {
+                const item = crearCampoDenominacion(valor, label, `moneda_${tipo}_${valor}`, tipo);
+                monedasContainer.appendChild(item);
+            });
+            
+            // Generar billetes
+            Object.entries(denominaciones.billetes).forEach(([valor, label]) => {
+                const item = crearCampoDenominacion(valor, label, `billete_${tipo}_${valor}`, tipo);
+                billetesContainer.appendChild(item);
+            });
+        }
+
+        // Crear un campo de denominación individual
+        function crearCampoDenominacion(valor, label, name, tipo) {
+            const div = document.createElement('div');
+            div.className = 'denominacion-item';
+            
+            const labelEl = document.createElement('label');
+            labelEl.textContent = label;
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.name = name;
+            input.value = '0';
+            input.min = '0';
+            input.step = '1';
+            input.onchange = () => tipo === 'apertura' ? calcularTotalApertura() : calcularTotalCierre();
+            
+            div.appendChild(labelEl);
+            div.appendChild(input);
+            
+            return div;
+        }
+
+        // Configurar event listeners
+        function configurarEventListeners() {
+            // Formulario abrir caja
+            document.getElementById('formAbrirCaja')?.addEventListener('submit', manejarAbrirCaja);
+            
+            // Formulario cerrar caja
+            document.getElementById('formCerrarCaja')?.addEventListener('submit', manejarCerrarCaja);
+        }
+
+        // Manejar apertura de caja
+        async function manejarAbrirCaja(e) {
+            e.preventDefault();
+            
+            const metodo = document.querySelector('input[name="metodo_apertura"]:checked').value;
+            let saldoInicial = 0;
+            const formData = {};
+            
+            if (metodo === 'manual') {
+                saldoInicial = parseFloat(document.getElementById('saldo_apertura').value) || 0;
+                formData.saldo_apertura = saldoInicial;
+            } else {
+                saldoInicial = parseFloat(document.getElementById('total-apertura').textContent) || 0;
+                // Obtener todos los valores de denominaciones
+                document.querySelectorAll('#apertura-conteo input[type="number"]').forEach(input => {
+                    formData[input.name] = input.value;
+                });
+            }
+            
+            if (saldoInicial < 0) {
+                mostrarError('El saldo inicial no puede ser negativo');
+                return;
+            }
+            
+            formData.metodo_apertura = metodo;
+            formData.accion = 'abrir_caja';
+            
+            // Confirmar con el usuario
+            const result = await Swal.fire({
+                title: '¿Abrir Caja?',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p><strong>Saldo Inicial:</strong> ${formatearMoneda(saldoInicial)}</p>
+                        <p style="margin-top: 10px;">¿Está seguro de que desea abrir la caja con este monto?</p>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2c3e50',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'Sí, abrir caja',
+                cancelButtonText: 'Cancelar'
+            });
+            
+            if (!result.isConfirmed) return;
+            
+            try {
+                mostrarCargando();
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: resultado.message,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    cargarDatosIniciales();
+                } else {
+                    mostrarError(resultado.message);
+                }
+            } catch (error) {
+                mostrarError('Error al abrir caja: ' + error.message);
+            }
+        }
+
+        // Manejar cierre de caja
+        async function manejarCerrarCaja(e) {
+            e.preventDefault();
+            
+            const metodo = document.querySelector('input[name="metodo_cierre"]:checked').value;
+            let saldoFinal = 0;
+            const formData = {};
+            
+            if (metodo === 'manual') {
+                saldoFinal = parseFloat(document.getElementById('saldo_final').value) || 0;
+                formData.saldo_final = saldoFinal;
+            } else {
+                saldoFinal = parseFloat(document.getElementById('total-cierre').textContent) || 0;
+                // Obtener todos los valores de denominaciones
+                document.querySelectorAll('#cierre-conteo input[type="number"]').forEach(input => {
+                    formData[input.name] = input.value;
+                });
+            }
+            
+            if (saldoFinal < 0) {
+                mostrarError('El saldo final no puede ser negativo');
+                return;
+            }
+            
+            const saldoEsperado = datosGlobales.saldo_esperado;
+            const diferencia = saldoFinal - saldoEsperado;
+            
+            let estadoDiferencia = '';
+            let iconColor = '';
+            
+            if (diferencia > 0) {
+                estadoDiferencia = `<span style="color: #27ae60; font-weight: bold;">+${formatearMoneda(diferencia)} (Sobrante)</span>`;
+                iconColor = 'warning';
+            } else if (diferencia < 0) {
+                estadoDiferencia = `<span style="color: #e74c3c; font-weight: bold;">${formatearMoneda(diferencia)} (Faltante)</span>`;
+                iconColor = 'warning';
+            } else {
+                estadoDiferencia = `<span style="color: #3498db; font-weight: bold;">${formatearMoneda(0)} (Cuadrado)</span>`;
+                iconColor = 'success';
+            }
+            
+            formData.metodo_cierre = metodo;
+            formData.accion = 'cerrar_caja';
+            formData.num_caja = datosGlobales.datos_caja.numCaja;
+            formData.registro = datosGlobales.datos_caja.registro;
+            formData.fecha_apertura = datosGlobales.datos_caja.fechaApertura;
+            formData.saldo_inicial = datosGlobales.datos_caja.saldoApertura;
+            
+            // Confirmar con el usuario
+            const result = await Swal.fire({
+                title: '¿Cerrar Caja?',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p><strong>Saldo Esperado:</strong> ${formatearMoneda(saldoEsperado)}</p>
+                        <p><strong>Saldo Final Contado:</strong> ${formatearMoneda(saldoFinal)}</p>
+                        <p style="margin-top: 10px;"><strong>Diferencia:</strong> ${estadoDiferencia}</p>
+                        <hr style="margin: 15px 0;">
+                        <p style="color: #e74c3c; font-weight: bold;">⚠️ Esta acción no se puede deshacer</p>
+                    </div>
+                `,
+                icon: iconColor,
+                showCancelButton: true,
+                confirmButtonColor: '#2c3e50',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'Sí, cerrar caja',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    popup: 'swal-wide'
+                }
+            });
+            
+            if (!result.isConfirmed) return;
+            
+            try {
                 Swal.fire({
                     title: 'Cerrando caja...',
                     html: 'Por favor espere',
@@ -1110,74 +770,184 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         Swal.showLoading();
                     }
                 });
-                this.submit();
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        html: `
+                            <div style="text-align: left;">
+                                <p>${resultado.message}</p>
+                                <hr>
+                                <p><strong>Saldo Esperado:</strong> ${formatearMoneda(resultado.data.saldo_esperado)}</p>
+                                <p><strong>Saldo Final:</strong> ${formatearMoneda(resultado.data.saldo_final)}</p>
+                                <p><strong>Diferencia:</strong> ${formatearMoneda(resultado.data.diferencia)}</p>
+                            </div>
+                        `,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    cargarDatosIniciales();
+                } else {
+                    mostrarError(resultado.message);
+                }
+            } catch (error) {
+                mostrarError('Error al cerrar caja: ' + error.message);
             }
-        });
-    });
-
-    // Calcular total de apertura
-    function calcularTotalApertura() {
-        let total = 0;
-        
-        // Monedas
-        [1, 5, 10, 25].forEach(valor => {
-            const cantidad = parseInt(document.querySelector(`input[name="moneda_${valor}"]`).value) || 0;
-            total += cantidad * valor;
-        });
-        
-        // Billetes
-        [50, 100, 200, 500, 1000, 2000].forEach(valor => {
-            const cantidad = parseInt(document.querySelector(`input[name="billete_${valor}"]`).value) || 0;
-            total += cantidad * valor;
-        });
-        
-        document.getElementById('total-apertura').textContent = total.toFixed(2);
-    }
-
-    // Calcular total de cierre
-    function calcularTotalCierre() {
-        let total = 0;
-        
-        // Monedas
-        [1, 5, 10, 25].forEach(valor => {
-            const cantidad = parseInt(document.querySelector(`input[name="moneda_cierre_${valor}"]`).value) || 0;
-            total += cantidad * valor;
-        });
-        
-        // Billetes
-        [50, 100, 200, 500, 1000, 2000].forEach(valor => {
-            const cantidad = parseInt(document.querySelector(`input[name="billete_cierre_${valor}"]`).value) || 0;
-            total += cantidad * valor;
-        });
-        
-        document.getElementById('total-cierre').textContent = total.toFixed(2);
-        
-        // Calcular diferencia
-        const diferencia = total - saldoEsperado;
-        const difElement = document.getElementById('diferencia-cierre');
-        difElement.textContent = diferencia.toFixed(2);
-        
-        // Cambiar color según diferencia
-        const container = difElement.parentElement;
-        if (diferencia > 0) {
-            container.style.backgroundColor = '#d4edda';
-            container.style.color = '#155724';
-        } else if (diferencia < 0) {
-            container.style.backgroundColor = '#f8d7da';
-            container.style.color = '#721c24';
-        } else {
-            container.style.backgroundColor = '#d1ecf1';
-            container.style.color = '#0c5460';
         }
-    }
 
-    // Inicializar estado
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleAperturaMetodo();
-        if (document.getElementById('formCerrarCaja')) {
-            toggleCierreMetodo();
+        // Toggle método de apertura
+        function toggleAperturaMetodo() {
+            const metodo = document.querySelector('input[name="metodo_apertura"]:checked')?.value;
+            const manual = document.getElementById('apertura-manual');
+            const conteo = document.getElementById('apertura-conteo');
+            
+            if (!manual || !conteo) return;
+            
+            if (metodo === 'manual') {
+                manual.style.display = 'block';
+                conteo.classList.remove('active');
+                const input = document.getElementById('saldo_apertura');
+
+                if (input) input.required = true;
+            } else {
+                manual.style.display = 'none';
+                conteo.classList.add('active');
+                const input = document.getElementById('saldo_apertura');
+            if (input) input.required = false;
+                calcularTotalApertura();
+            }
         }
-    });
-</script>
+        
+        // Toggle método de cierre
+        function toggleCierreMetodo() {
+            const metodo = document.querySelector('input[name="metodo_cierre"]:checked')?.value;
+            const manual = document.getElementById('cierre-manual');
+            const conteo = document.getElementById('cierre-conteo');
+            
+            if (!manual || !conteo) return;
+
+            if (metodo === 'manual') {
+                manual.style.display = 'block';
+                conteo.classList.remove('active');
+                const input = document.getElementById('saldo_final');
+                if (input) input.required = true;
+            } else {
+                manual.style.display = 'none';
+                conteo.classList.add('active');
+                const input = document.getElementById('saldo_final');
+                if (input) input.required = false;
+                calcularTotalCierre();
+            }
+        }
+
+        // Calcular total de apertura
+        function calcularTotalApertura() {
+            let total = 0;
+            document.querySelectorAll('#apertura-conteo input[type="number"]').forEach(input => {
+                const name = input.name;
+                const cantidad = parseInt(input.value) || 0;
+                
+                // Extraer valor de la denominación del nombre
+                const valor = parseInt(name.split('_').pop());
+                total += cantidad * valor;
+            });
+
+            const totalEl = document.getElementById('total-apertura');
+            
+            if (totalEl) totalEl.textContent = total.toFixed(2);
+        }
+
+        // Calcular total de cierre
+        function calcularTotalCierre() {
+            let total = 0;
+            document.querySelectorAll('#cierre-conteo input[type="number"]').forEach(input => {
+                const name = input.name;
+                const cantidad = parseInt(input.value) || 0;
+                
+                // Extraer valor de la denominación del nombre
+                const valor = parseInt(name.split('_').pop());
+                total += cantidad * valor;
+            });
+
+            const totalEl = document.getElementById('total-cierre');
+            if (totalEl) totalEl.textContent = total.toFixed(2);
+
+            // Calcular diferencia
+            const saldoEsperado = datosGlobales?.saldo_esperado || 0;
+            const diferencia = total - saldoEsperado;
+            const difElement = document.getElementById('diferencia-cierre');
+
+            if (difElement) {
+                difElement.textContent = diferencia.toFixed(2);
+                
+                // Cambiar color según diferencia
+                const container = difElement.parentElement;
+                if (diferencia > 0) {
+                    container.style.backgroundColor = '#d4edda';
+                    container.style.color = '#155724';
+                } else if (diferencia < 0) {
+                    container.style.backgroundColor = '#f8d7da';
+                    container.style.color = '#721c24';
+                } else {
+                    container.style.backgroundColor = '#d1ecf1';
+                    container.style.color = '#0c5460';
+                }
+            }
+
+            }
+
+        // Utilidades
+        function formatearMoneda(valor) {
+            let numero = parseFloat(valor);
+
+            if (isNaN(numero)) return "RD$ 0.00";
+
+            return "RD$ " + numero.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function formatearNumero(valor) {
+            return parseInt(valor).toLocaleString();
+        }
+
+        function formatearFecha(fecha) {
+            const d = new Date(fecha);
+            return d.toLocaleString('es-DO', {
+                day: 'numeric',
+                month: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function mostrarCargando() {
+            Swal.fire({
+                title: 'Cargando...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+
+        function mostrarError(mensaje) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: mensaje,
+                confirmButtonText: 'Aceptar'
+            });
+        }
+    </script>
 </body>
 </html>

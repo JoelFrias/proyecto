@@ -171,8 +171,8 @@ $totalTarjetaEgresos = 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Cuadre de Caja #<?= $row_caja['numCaja'] ?></title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css">
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/menu.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -1046,7 +1046,7 @@ $totalTarjetaEgresos = 0;
     <script>
         function imprimirReporte() {
             const numCaja = '<?php echo $numCaja; ?>';
-            window.open(`../../reports/cuadre/cuadre.php?numCaja=${numCaja}`, '_blank');
+            window.open(`../reports/cuadre/cuadre.php?numCaja=${numCaja}`, '_blank');
         }
 
         function cambiarEstado(nuevoEstado) {

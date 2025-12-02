@@ -168,8 +168,8 @@ function construirQueryFiltros($filtros) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Facturas</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
 
@@ -792,7 +792,7 @@ function construirQueryFiltros($filtros) {
                                                 <td>{$row['destinatario']}</td>
                                                 <td><span class='status status-{$estadoClass}'>{$tipotexto}</span></td>
                                                 <td>
-                                                    <button class='btn btn-secondary' onclick=\"window.open('../../reports/transacciones/reporte-transaccion-reimpresion.php?no={$row['no']}', '_blank')\">
+                                                    <button class='btn btn-secondary' onclick=\"window.open('../reports/transacciones/reporte-transaccion-reimpresion.php?no={$row['no']}', '_blank')\">
                                                         Ver Reporte
                                                     </button>
                                                 </td>
@@ -852,7 +852,7 @@ function construirQueryFiltros($filtros) {
                                             <span class="detail-value"><?php echo $row1['destinatario']; ?></span>
                                         </div>
                                         <div class="">
-                                            <button class="btn btn-secondary" onclick="window.open('../../reports/transacciones/reporte-transaccion-reimpresion.php?no=<?php echo $row1['no']; ?>', '_blank')">Ver Reporte</button>
+                                            <button class="btn btn-secondary" onclick="window.open('../reports/transacciones/reporte-transaccion-reimpresion.php?no=<?php echo $row1['no']; ?>', '_blank')">Ver Reporte</button>
                                         </div>
                                     </div>
                                 </div>

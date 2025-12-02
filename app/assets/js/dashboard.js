@@ -594,7 +594,7 @@ function generarReportePDF() {
     const fechaFin = document.getElementById('fechaFin').value;
     
     // Construir URL con parámetros
-    let url = '../../reports/gestion/dashboard.php?periodo=' + periodo;
+    let url = '../reports/gestion/dashboard.php?periodo=' + periodo;
     
     if(periodo === 'personalizado') {
         if(!fechaInicio || !fechaFin) {

@@ -42,7 +42,7 @@ $permisoPanelAdmin = validarPermiso($conn, 'PADM001', $id_empleado);
     </div>
 
     <?php
-    $jsUrl = $baseUrl . '/assets/js/menu.js';
+    $jsUrl = $baseUrl . '/app/assets/js/menu.js';
     $indexUrl = $baseUrl . '/';
     $clientesUrl = $baseUrl . '/app/clientes/clientes.php';
     $productosUrl = $baseUrl . '/app/productos/productos.php';

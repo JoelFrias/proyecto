@@ -131,10 +131,10 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Productos</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/cliente_tabla.css">         <!--------tabla de cliente--------->
-    <link rel="stylesheet" href="../../assets/css/producto_modal.css">      <!------actualizar modal de producto-->
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/cliente_tabla.css">         <!--------tabla de cliente--------->
+    <link rel="stylesheet" href="../assets/css/producto_modal.css">      <!------actualizar modal de producto-->
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
     <style>
@@ -251,7 +251,7 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                             ?>
 
                             <!-- Botón para imprimir reporte -->
-                            <a href="../../reports/producto/registro.php" class="btn btn-print" target="_blank">
+                            <a href="../reports/producto/registro.php" class="btn btn-print" target="_blank">
                                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M6 9V2h12v7"></path>
                                     <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path>
@@ -789,7 +789,7 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
         };
     </script>
 
-    <script src="../../assets/js/deslizar.js"></script>
+    <script src="../assets/js/deslizar.js"></script>
        
 </body>
 </html>

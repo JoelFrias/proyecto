@@ -1,6 +1,6 @@
 <?php
-require_once '../../core/verificar-sesion.php';
-require_once '../../core/conexion.php';		// Conexión a la base de datos
+require_once '../../../core/verificar-sesion.php';
+require_once '../../../core/conexion.php';		// Conexión a la base de datos
 
 // Verificar conexión a la base de datos
 if (!$conn || !$conn->connect_errno === 0) {
@@ -11,7 +11,7 @@ if (!$conn || !$conn->connect_errno === 0) {
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
 }
-require_once '../../libs/fpdf/fpdf.php';
+require_once '../../../libs/fpdf/fpdf.php';
 
 $numCaja = '';
 if (isset($_GET['numCaja'])) {
@@ -139,7 +139,7 @@ class PDF extends FPDF
     function Header()
     {
         // Logo (ajusta la ruta según tu estructura)
-        // $this->Image('../../assets/img/logo.png', 10, 6, 30);
+        // $this->Image('../assets/img/logo.png', 10, 6, 30);
         
         // Título
         $this->SetFont('Arial', 'B', 16);

@@ -31,10 +31,10 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Nuevo Producto</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/mant_producto.css">
-    <link rel="stylesheet" href="../../assets/css/producto_modal.css">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/mant_producto.css">
+    <link rel="stylesheet" href="../assets/css/producto_modal.css">
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
 
@@ -491,7 +491,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     ?>
 
     <!-- Scripts adicionales -->
-    <script src="../../assets/js/producto_modal.js"></script>
+    <script src="../assets/js/producto_modal.js"></script>
 
     <!-- Script para manejar el formulario de registro de productos -->
     <script>

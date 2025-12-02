@@ -162,8 +162,8 @@ $filtro_estado = isset($_GET['estado']) ? $_GET['estado'] : '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Cuadres de Caja</title>
-    <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
+    <link rel="icon" href="../assets/img/logo-ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="../assets/css/menu.css"> <!-- CSS menu -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Librería de iconos -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
     <style>
@@ -1009,7 +1009,7 @@ $filtro_estado = isset($_GET['estado']) ? $_GET['estado'] : '';
         }
 
         function imprimirReporte(id) {
-            const invoiceUrl = `../../reports/cuadre/cuadre.php?numCaja=${id}`;
+            const invoiceUrl = `../reports/cuadre/cuadre.php?numCaja=${id}`;
             window.open(invoiceUrl, '_blank');
         }
 
