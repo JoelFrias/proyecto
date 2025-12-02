@@ -58,7 +58,7 @@ if (isset($_SESSION['username'])) {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             padding: 48px 40px;
             width: 100%;
-            max-width: 525px;
+            max-width: 450px;
             animation: fadeIn 0.3s ease-out;
         }
 
