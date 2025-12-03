@@ -50,6 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Validar que los precios, monto y cantidad sean numeros y sean positivos
+    if (!is_numeric($precioVenta1) || $precioVenta1 < 0 ||
+        !is_numeric($precioVenta2) || $precioVenta2 < 0 ||
+        !is_numeric($reorden)) {
+        $_SESSION['errors'][] = "Los precios, monto y cantidad deben ser números positivos.";
+        header("Location: ../../app/productos/productos.php");
+        exit;
+    }   
+
     // Validar que los precios de venta sean mayores al costo
     if ($precioVenta1 <= $precioCompra) {
         $_SESSION['errors'][] = "El Precio de Venta 1 debe ser mayor al costo de compra (RD$ " . number_format($precioCompra, 2) . ").";

@@ -242,8 +242,8 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     <div class="form-group">
                         <label for="tipo_identificacion">Tipo de Identificación:</label>
                         <select id="tipo_identificacion" name="tipo_identificacion" required>
-                            <option value="Cedula">Cédula</option>
-                            <option value="Pasaporte">Pasaporte</option>
+                            <option value="cedula">Cédula</option>
+                            <option value="pasaporte">Pasaporte</option>
                         </select>
                     </div>
                     <div class="form-group">

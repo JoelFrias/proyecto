@@ -93,8 +93,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "El precio 2 no puede ser igual o menor a cero";
     }
     
-    if (empty($reorden) | $reorden <= 0) {
-        $errors[] = "El reorden no puede ser igual o menor a cero" . $reorden . "-";
+    if (empty($reorden) | $reorden < 0) {
+        $errors[] = "El reorden no puede ser menor a cero" . $reorden . "-";
+    }
+
+    // Validar que cantidad, precios y reorden sean numéricos y mayores a cero
+    if (!is_numeric($precioCompra)) {
+        $errors[] = "El precio de compra debe ser un número válido.";
+    }
+    if (!is_numeric($precio1)) {
+        $errors[] = "El precio 1 debe ser un número válido.";
+    }
+    if (!is_numeric($precio2)) {
+        $errors[] = "El precio 2 debe ser un número válido.";
+    }
+    if (!is_numeric($reorden)) {
+        $errors[] = "El reorden debe ser un número válido.";
+    }
+    if (!is_numeric($cantidad)) {
+        $errors[] = "La cantidad debe ser un número válido.";
     }
 
     if ($precio1 <= $precioCompra) {

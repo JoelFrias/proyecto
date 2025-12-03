@@ -85,21 +85,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     if (empty($tipo_identificacion)) {
         $errors[] = "El tipo identificación es obligatorio.";
     }
+
+    // Verificar que la forma de pago es válida
+    $validID = ['cedula', 'pasaporte'];
+    if (!in_array($tipo_identificacion, $validID)) {
+        throw new Exception("Tipo de identificacion invalido: " . $tipo_identificacion);
+    }
     
     if (empty($identificacion)) {
         $errors[] = "La identificación es obligatoria.";
+    }
+
+    if (is_numeric($identificacion) == false && $tipo_identificacion != 'pasaporte') {
+        $errors[] = "Este tipo de identificación no puede contener letras.";
     }
     
     if (empty($telefono)) {
         $errors[] = "El teléfono es obligatorio.";
     }
 
+    if (is_numeric($telefono) == false) {
+        $errors[] = "El teléfono no puede contener letras.";
+    }
+
     if (empty($idPuesto)) {
         $errors[] = "El puesto es obligatorio.";
     }
 
+    if (is_numeric($idPuesto) == false) {
+        $errors[] = "El ID Puesto no puede contener letras.";
+    }
+
+    if (idPuesto <= 0) {
+        $errors[] = "El ID Puesto debe ser un número positivo.";
+    }
+
     if (empty($username)) {
         $errors[] = "El nombre de usuario es obligatorio.";
+    }
+
+    if (strlen($username) < 4) {
+        $errors[] = "El nombre de usuario debe tener al menos 4 caracteres.";
     }
 
     // Solo validar contraseña si se proporciona (cambio opcional)
@@ -123,6 +149,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     // Validar longitudes
     if (!empty($identificacion) && (strlen($identificacion) < 7 || strlen($identificacion) > 15)) {
         $errors[] = "La identificación debe tener entre 7 y 15 dígitos.";
+    }
+
+    if (strlen($telefono) != 10) {
+        $errors[] = "El telefono debe contener 10 dígitos.";
     }
 
     // 5. Manejo de Errores de Validación

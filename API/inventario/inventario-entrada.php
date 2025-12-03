@@ -207,7 +207,40 @@ function crearEntrada($conn) {
             return;
         }
         
-        // ... código de validación de duplicados igual ...
+        // Validar productos duplicados
+        $productos_ids = array_column($productos, 'id_producto');
+        $productos_unicos = array_unique($productos_ids);
+        
+        if (count($productos_ids) !== count($productos_unicos)) {
+            // Encontrar cuáles son los duplicados para mostrar en el mensaje
+            $duplicados = array_diff_assoc($productos_ids, $productos_unicos);
+            $ids_duplicados = array_unique($duplicados);
+            
+            // Obtener nombres de productos duplicados
+            $placeholders = implode(',', array_fill(0, count($ids_duplicados), '?'));
+            $stmt = $conn->prepare("SELECT descripcion FROM productos WHERE id IN ($placeholders)");
+            $types = str_repeat('i', count($ids_duplicados));
+            $stmt->bind_param($types, ...$ids_duplicados);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $nombres_duplicados = [];
+            while($row = $result->fetch_assoc()) {
+                $nombres_duplicados[] = $row['descripcion'];
+            }
+            $stmt->close();
+            
+            $mensaje = 'No se pueden agregar productos duplicados en la misma orden de entrada. Productos duplicados: ' . implode(', ', $nombres_duplicados);
+            echo json_encode(['success' => false, 'message' => $mensaje]);
+            return;
+        }
+
+        foreach($productos as $prod) {
+            if ($prod['cantidad'] <= 0 || $prod['costo'] < 0) {
+                echo json_encode(['success' => false, 'message' => 'Cantidad y costo deben ser mayores a cero para todos los productos']);
+                return;
+            }
+        }
         
         $conn->begin_transaction();
         

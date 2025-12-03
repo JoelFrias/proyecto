@@ -55,6 +55,42 @@ $descripcion = isset($input['descripcion']) ? trim($input['descripcion']) : '';
 $permisos = $input['permisos'];
 $creado_por = $_SESSION['idEmpleado'];
 
+if (empty($nombre)) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "El nombre del perfil no puede estar vacío"
+    ]);
+    exit();
+}
+
+if (count($permisos) === 0) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "Debe seleccionar al menos un permiso"
+    ]);
+    exit();
+}
+
+if (strlen($nombre) > 100) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "El nombre del perfil no puede exceder los 100 caracteres"
+    ]);
+    exit();
+}
+
+if (strlen($descripcion) > 255) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "La descripción no puede exceder los 255 caracteres"
+    ]);
+    exit();
+}
+
 // Iniciar transacción
 $conn->begin_transaction();
 

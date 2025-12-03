@@ -155,6 +155,13 @@ function crearSalida($conn) {
             echo json_encode(['success' => false, 'message' => $mensaje]);
             return;
         }
+
+        foreach($productos as $prod) {
+            if($prod['cantidad'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cantidad de cada producto debe ser mayor a cero']);
+                return;
+            }
+        }
         
         $conn->begin_transaction();
         

@@ -34,6 +34,80 @@ $productos = $data['productos'];
 $notas = isset($data['notas']) ? $conn->real_escape_string($data['notas']) : '';
 $idEmpleado = intval($_SESSION['idEmpleado']);
 
+// ==========================
+// VALIDACIONES
+// ==========================
+
+// Validar idCliente
+if (!isset($data['idCliente']) || !is_numeric($data['idCliente']) || $idCliente <= 0) {
+    echo json_encode(['error' => 'El ID del cliente es inválido']);
+    exit();
+}
+
+// Validar descuento
+if (!isset($data['descuento']) || !is_numeric($data['descuento'])) {
+    echo json_encode(['error' => 'El descuento no es válido']);
+    exit();
+}
+
+if ($descuento < 0) {
+    echo json_encode(['error' => 'El descuento no puede ser negativo']);
+    exit();
+}
+
+// Validar total
+if (!isset($data['total']) || !is_numeric($data['total'])) {
+    echo json_encode(['error' => 'El total es inválido']);
+    exit();
+}
+
+if ($total < 0) {
+    echo json_encode(['error' => 'El total no puede ser negativo']);
+    exit();
+}
+
+// Validar subtotal
+if ($subtotal < 0) {
+    echo json_encode(['error' => 'El subtotal no puede ser negativo']);
+    exit();
+}
+
+if (abs(($total + $descuento) - $subtotal) > 0.0001) {
+    echo json_encode(['error' => 'La suma del total y el descuento no coincide con el subtotal']);
+    exit();
+}
+
+// Validar productos
+if (!isset($data['productos']) || !is_array($productos) || count($productos) === 0) {
+    echo json_encode(['error' => 'Debe agregar al menos un producto']);
+    exit();
+}
+
+// Validaciones por cada producto
+foreach ($productos as $p) {
+
+    if (!isset($p['id']) || !is_numeric($p['id']) || intval($p['id']) <= 0) {
+        echo json_encode(['error' => 'Hay un producto con ID inválido']);
+        exit();
+    }
+
+    if (!isset($p['cantidad']) || !is_numeric($p['cantidad']) || floatval($p['cantidad']) <= 0) {
+        echo json_encode(['error' => 'Hay un producto con cantidad inválida']);
+        exit();
+    }
+
+    if (!isset($p['precio']) || !is_numeric($p['precio']) || floatval($p['precio']) < 0) {
+        echo json_encode(['error' => 'Hay un producto con precio inválido']);
+        exit();
+    }
+}
+
+// Validar idEmpleado
+if (!isset($_SESSION['idEmpleado']) || !is_numeric($_SESSION['idEmpleado']) || $idEmpleado <= 0) {
+    echo json_encode(['error' => 'Empleado no autenticado']);
+    exit();
+}
+
 // Iniciar transacción
 $conn->begin_transaction();
 

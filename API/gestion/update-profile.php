@@ -63,6 +63,10 @@ try {
     $user = $conn->real_escape_string($data['user']);
     $password = $conn->real_escape_string($data['password']);
 
+    if (strlen($user) < 4) {
+        throw new Exception("El nombre de usuario debe tener al menos 4 caracteres", 400);
+    }
+
     // Validar seguridad mínima de la contraseña
     if (strlen($password) < 4) {
         throw new Exception("La contraseña debe tener al menos 4 caracteres", 400);

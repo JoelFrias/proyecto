@@ -337,8 +337,8 @@ foreach ($permisos_activos as $codigo) {
                     <div class="form-group">
                         <label for="tipo_identificacion">Tipo de Identificación:</label>
                         <select id="tipo_identificacion" name="tipo_identificacion" required>
-                            <option value="Cedula" <?php echo $empleado['tipo_identificacion'] === 'Cedula' ? 'selected' : ''; ?>>Cédula</option>
-                            <option value="Pasaporte" <?php echo $empleado['tipo_identificacion'] === 'Pasaporte' ? 'selected' : ''; ?>>Pasaporte</option>
+                            <option value="cedula" <?php echo $empleado['tipo_identificacion'] === 'Cedula' ? 'selected' : ''; ?>>Cédula</option>
+                            <option value="pasaporte" <?php echo $empleado['tipo_identificacion'] === 'Pasaporte' ? 'selected' : ''; ?>>Pasaporte</option>
                         </select>
                     </div>
                     <div class="form-group">

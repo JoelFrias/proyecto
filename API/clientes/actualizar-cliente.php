@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $telefono = htmlspecialchars(trim($data['telefono'] ?? ""));
     $notas = htmlspecialchars(trim($data['notas'] ?? ""));
     
-    $limite_credito_raw = $data['limite_credito'] ?? 0.0;
+    $limite_credito = $data['limite_credito'] ?? 0.0;
     
     $no = htmlspecialchars(trim($data['no'] ?? ""));
     $calle = htmlspecialchars(trim($data['calle'] ?? ""));
@@ -98,13 +98,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($apellido)) {
         $errors[] = "El apellido es obligatorio.";
     }
+
+    // Verificar que la forma de pago es válida
+    $validID = ['cedula', 'rnc', 'pasaporte'];
+    if (!in_array($tipo_identificacion, $validID)) {
+        throw new Exception("Tipo de identificacion invalido: " . $tipo_identificacion);
+    }
     
     if (empty($identificacion)) {
         $errors[] = "La identificación es obligatoria.";
     }
+
+    if (is_numeric($identificacion) == false && $tipo_identificacion != 'pasaporte') {
+        $errors[] = "Este tipo de identificación no puede contener letras.";
+    }
     
     if (empty($telefono)) {
         $errors[] = "El teléfono es obligatorio.";
+    }
+
+    if (is_numeric($telefono) == false) {
+        $errors[] = "El teléfono no puede contener letras.";
     }
 
     // **Validaciones de Formato**
@@ -115,10 +129,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/", $apellido)) {
         $errors[] = "El apellido solo puede contener letras y espacios.";
     }
+
+    if (is_numeric($limite_credito) == false) {
+        $errors[] = "El limite de crédito no puede contener letras.";
+    }
     
-    // Validación de Límite de Crédito
-    $limite_credito = filter_var($limite_credito_raw, FILTER_VALIDATE_FLOAT);
-    if ($limite_credito === false || $limite_credito < 0) {
+    if ($limite_credito < 0) {
         $errors[] = "El límite de crédito debe ser un número positivo.";
         $limite_credito = 0.0; 
     }
@@ -130,6 +146,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validar longitudes mínimas/máximas
     if (strlen($identificacion) < 7 || strlen($identificacion) > 15) {
         $errors[] = "La identificación debe tener entre 7 y 15 dígitos.";
+    }
+
+    if (strlen($telefono) != 10) {
+        $errors[] = "El telefono debe contener 10 dígitos.";
     }
 
     // 6. Manejo de Errores de Validación

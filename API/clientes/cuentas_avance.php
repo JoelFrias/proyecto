@@ -124,9 +124,13 @@ try {
         throw new Exception("Cliente no encontrado: " . $idCliente);
     }
 
+    if (is_numeric($montoPagado) == false) {
+        throw new Exception("El monto pagado debe ser un número válido: " . $montoPagado);
+    }
+
     // Verificar que el monto pagado es un número positivo
     if ($montoPagado <= 0) {
-        throw new Exception("El monto pagado debe ser un número positivo: " . $montoPagado);
+        throw new Exception("El monto pagado debe ser un número positivo y mayor a cero: " . $montoPagado);
     }
 
     // Verificar que la forma de pago es válida

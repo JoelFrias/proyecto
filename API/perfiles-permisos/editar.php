@@ -64,6 +64,33 @@ $descripcion = isset($input['descripcion']) ? trim($input['descripcion']) : '';
 $activo = $input['activo'] ? 1 : 0;
 $permisos = $input['permisos'];
 
+if (count($permisos) === 0) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "Debe seleccionar al menos un permiso"
+    ]);
+    exit();
+}
+
+if (strlen($nombre) > 100) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "El nombre del perfil no debe exceder los 100 caracteres"
+    ]);
+    exit();
+}
+
+if (strlen($descripcion) > 255) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "La descripción no debe exceder los 255 caracteres"
+    ]);
+    exit();
+}
+
 // Iniciar transacción
 $conn->begin_transaction();
 

@@ -99,8 +99,8 @@ try {
         if (!isset($producto['id']) || !isset($producto['cantidad'])) {
             throw new Exception("Cada producto debe tener un id y una cantidad.");
         }
-        if (!is_int($producto['id']) || !is_int($producto['cantidad'])) {
-            throw new Exception("El id y la cantidad de cada producto deben ser números enteros.");
+        if (!is_int($producto['id']) || !is_numeric($producto['cantidad'])) {
+            throw new Exception("El id y la cantidad de cada producto deben ser numericos.");
         }
     }
 
