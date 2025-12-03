@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verificar que la forma de pago es válida
     $validID = ['cedula', 'rnc', 'pasaporte'];
     if (!in_array($tipo_identificacion, $validID)) {
-        throw new Exception("Tipo de identificacion invalido: " . $tipo_identificacion);
+        $errors[] = "Tipo de identificacion invalido";
     }
     
     if (empty($identificacion)) {

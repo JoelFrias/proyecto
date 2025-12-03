@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $validID = ['cedula', 'rnc', 'pasaporte'];
     if (!in_array($tipo_identificacion, $validID)) {
-        throw new Exception("Tipo de documento invalido: " . $tipo_identificacion);
+        $errors[] = "Tipo de documento invalido";
     }
     
     if (empty($identificacion)) {
