@@ -105,8 +105,8 @@ class DashboardPDF extends FPDF {
     
     function Header() {
         // Logo (ajusta la ruta según tu estructura)
-        if(file_exists('../assets/img/logo.png')) {
-            $this->Image('../assets/img/logo.png', 10, 6, 30);
+        if(file_exists('../../assets/img/logo.png')) {
+            $this->Image('../../assets/img/logo.png', 10, 6, 30);
         }
         
         // Título

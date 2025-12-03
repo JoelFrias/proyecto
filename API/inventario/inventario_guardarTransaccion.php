@@ -28,15 +28,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     exit();
 }
 
-// Funcion para guardar los logs de facturacion
-function logDebug($message, $data = null) {
-    $logMessage = date('Y-m-d H:i:s') . " - " . $message;
-    if ($data !== null) {
-        $logMessage .= " - Data: " . print_r($data, true);
-    }
-    error_log($logMessage);
-}
-
 // Validar metodo de entrada
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die(json_encode(["success" => false, "error" => "Método no permitido"]));
@@ -45,8 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Obtener datos JSON
 $jsonData = file_get_contents('php://input');
 $data = json_decode($jsonData, true);
-
-logDebug("Datos recibidos", $data);
 
 // Verificar si el JSON es válido
 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -78,11 +67,6 @@ try {
     // Sanitización y asignación de variables
     $idEmpleado = $data['idEmpleado'];
     $productos = $data['productos'];
-
-    logDebug("Variables procesadas", [
-        'idEmpleado' => $idEmpleado,
-        'Productos' => $productos
-    ]);
 
     // Validar que el idEmpleado sea un número entero
     if (!is_int($idEmpleado) || $idEmpleado <= 0) {
@@ -129,7 +113,6 @@ try {
 
 
     $conn->begin_transaction();
-    logDebug("Transacción iniciada");
 
 
     /**
@@ -202,10 +185,6 @@ try {
         if (!$stmt->execute()) {
             throw new Exception("Error ejecutando actualización de inventario: " . $stmt->error);
         }
-    
-        logDebug("Trasaccion realiada", [
-            'idProducto' => $idProducto
-        ]);
 
     }
     
@@ -223,7 +202,6 @@ try {
         if (!$stmt->execute()) {
             throw new Exception("Error registrar las transacciones de inventario del producto -> {$producto['id']}: " . $stmt->error);
         }
-        logDebug("Transaccion de invatario realizada", $producto);
     }
 
     /**
@@ -239,11 +217,6 @@ try {
     if (!$stmt->execute()) {
         throw new Exception("Error ejecutando registro de movimientos de inventario: " . $stmt->error);
     }
-    logDebug("Registro de movimiento de inventario realizado", [
-        'id_emp_reg' => $_SESSION['idEmpleado'],
-        'id_emp_des' => $idEmpleado,
-        'tipo_mov' => $tipo_mov
-    ]);
 
     /**
      *     2. Registrar detalle de transaccion de inventario
@@ -260,7 +233,6 @@ try {
         if (!$stmt->execute()) {
             throw new Exception("Error ejecutando detalle de transacción de inventario: " . $stmt->error);
         }
-        logDebug("Detalle de transacción de inventario registrado", $producto);
     }
 
     /**
@@ -269,7 +241,6 @@ try {
 
     
     $conn->commit();
-    logDebug("Transacción completada exitosamente");
     
     echo json_encode([
         'success' => true, 
@@ -281,11 +252,6 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
-    logDebug("ERROR: " . $e->getMessage(), [
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
-        'trace' => $e->getTraceAsString()
-    ]);
     
     http_response_code(400);
     echo json_encode([

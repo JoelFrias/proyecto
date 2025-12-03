@@ -21,6 +21,11 @@ $registros_por_pagina = 10;
 $pagina_actual = isset($_GET['pagina']) ? intval($_GET['pagina']) : 1;
 $inicio = ($pagina_actual - 1) * $registros_por_pagina;
 
+// inicializar variables para evitar errores
+$types = "";
+$params = [];
+$filtros = [];
+
 // Construir la consulta SQL con filtros de búsqueda
 $sql_base = "SELECT
                 c.id,

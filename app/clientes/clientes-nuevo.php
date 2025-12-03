@@ -98,11 +98,11 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                         </div>
                         <div class="form-group">
                             <label for="identificacion">Número de Identificación:</label>
-                            <input type="text" id="identificacion" name="identificacion" autocomplete="off" placeholder="Ingrese la identificación" required>
+                            <input type="text" id="identificacion" name="identificacion" autocomplete="off" placeholder="00000000000" required>
                         </div>
                         <div class="form-group">
                             <label for="telefono">Teléfono:</label>
-                            <input type="text" id="telefono" name="telefono" autocomplete="off" placeholder="000-000-0000" maxlength="12" minlength="12" required>
+                            <input type="tel" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" maxlength="10" minlength="12" required>
                         </div>
                     </div>
                     <div class="form-group full-width">

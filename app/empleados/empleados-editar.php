@@ -347,7 +347,7 @@ foreach ($permisos_activos as $codigo) {
                     </div>
                     <div class="form-group">
                         <label for="telefono">Teléfono:</label>
-                        <input type="text" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" minlength="10" maxlength="12" value="<?php echo htmlspecialchars($empleado['telefono']); ?>" required>
+                        <input type="text" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" minlength="10" maxlength="10" value="<?php echo htmlspecialchars($empleado['telefono']); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="idPuesto">Puesto:</label>

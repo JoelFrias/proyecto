@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (is_numeric($telefono) == false) {
-        $errors[] = "El teléfono no puede contener letras.";
+        $errors[] = "El teléfono solo puede contener números.";
     }
 
     // **Validaciones de Formato**
@@ -141,7 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // **Sanitización Final**
     $telefono = preg_replace('/\D/', '', $telefono);
-    $identificacion = preg_replace('/\D/', '', $identificacion);
+    if ($tipo_identificacion != "pasaporte") {
+        $identificacion = preg_replace('/\D/', '', $identificacion);
+    }
+
 
     // Validar longitudes mínimas/máximas
     if (strlen($identificacion) < 7 || strlen($identificacion) > 15) {

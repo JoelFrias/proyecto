@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (is_numeric($telefono) == false) {
-        $errors[] = "El teléfono no puede contener letras.";
+        $errors[] = "El teléfono solo puede contener números.";
     }
 
     if (empty($idPuesto)) {
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "El ID Puesto no puede contener letras.";
     }
 
-    if (idPuesto <= 0) {
+    if ($idPuesto <= 0) {
         $errors[] = "El ID Puesto debe ser un número positivo.";
     }
 

@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $telefono = htmlspecialchars(trim($data['telefono'] ?? ""));
     $notas = htmlspecialchars(trim($data['notas'] ?? ""));
     
-    $limite_credito_raw = $data['limite_credito'] ?? 0.0;
+    $limite_credito = $data['limite_credito'] ?? 0.0;
     
     $no = htmlspecialchars(trim($data['no'] ?? ""));
     $calle = htmlspecialchars(trim($data['calle'] ?? ""));
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "La identificación es obligatoria.";
     }
 
-    if (is_numeric($identificacion) == false && $tipo_identificacion != 'pasaporte') {
+    if (!is_numeric($identificacion) && $tipo_identificacion != 'pasaporte') {
         $errors[] = "Este tipo de identificación no puede contener letras.";
     }
     
@@ -101,8 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "El teléfono es obligatorio.";
     }
 
-    if (is_numeric($telefono) == false) {
-        $errors[] = "El teléfono no puede contener letras.";
+    if (!is_numeric($telefono)) {
+        $errors[] = "El teléfono solo puede contener números.";
     }
 
     // **Validaciones de Formato**
@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "El apellido solo puede contener letras y espacios.";
     }
 
-    if (is_numeric($limite_credito) == false) {
+    if (!is_numeric($limite_credito)) {
         $errors[] = "El limite de crédito no puede contener letras.";
     }
 
@@ -122,19 +122,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "El límite de crédito debe ser un número positivo.";
         $limite_credito = 0.0; 
     }
-    
-    // Validación de Límite de Crédito
-    $limite_credito = filter_var($limite_credito_raw, FILTER_VALIDATE_FLOAT);
-    if ($limite_credito === false || $limite_credito < 0) {
-        $errors[] = "El límite de crédito debe ser un número positivo.";
-        $limite_credito = 0.0; // Establecer un valor seguro en caso de error
-    }
 
     // **Sanitización Final**
     // Sanitizar teléfono para que solo queden números
     $telefono_sanitizado = preg_replace('/\D/', '', $telefono);
     // Sanitizar identificación para que solo queden números
-    $identificacion_sanitizada = preg_replace('/\D/', '', $identificacion);
+    $identificacion_sanitizada = ($tipo_identificacion != "pasaporte") ? preg_replace('/\D/', '', $identificacion) : $identificacion;
+
 
     // Reemplazar valores originales con los sanitizados
     $telefono = $telefono_sanitizado;

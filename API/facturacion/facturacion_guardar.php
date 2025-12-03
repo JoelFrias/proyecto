@@ -27,15 +27,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     ]));
 }
 
-// Funcion para guardar los logs de facturacion
-function logDebug($message, $data = null) {
-    $logMessage = date('Y-m-d H:i:s') . " - " . $message;
-    if ($data !== null) {
-        $logMessage .= " - Data: " . print_r($data, true);
-    }
-    error_log($logMessage);
-}
-
 // Validar metodo de entrada
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die(json_encode(["success" => false, "error" => "Método no permitido"]));
@@ -44,8 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Obtener datos JSON
 $jsonData = file_get_contents('php://input');
 $data = json_decode($jsonData, true);
-
-logDebug("Datos recibidos", $data);
 
 // Verificar si el JSON es válido
 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -86,14 +75,6 @@ try {
     $numeroTarjeta = $data['numeroTarjeta'] ?? 'N/A';
     $banco = isset($data['banco']) ? (int)$data['banco'] : 1;
     $destino = isset($data['destino']) ? (int)$data['destino'] : 1;
-
-    logDebug("Variables procesadas", [
-        'idCliente' => $idCliente,
-        'tipoFactura' => $tipoFactura,
-        'formaPago' => $formaPago,
-        'total' => $total,
-        'montoPagado' => $montoPagado
-    ]);
 
     // Validar que el empleado tenga una caja asignada
     if (!isset($_SESSION['numCaja'])) {
@@ -208,7 +189,6 @@ try {
 
 
     $conn->begin_transaction();
-    logDebug("Transacción iniciada");
 
 
     /**
@@ -223,7 +203,6 @@ try {
     $stmt->bind_param('i', $idCliente);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
-    logDebug("Facturas pendientes: ", $result);
     
     if ($result['pendientes'] >= 2 && $tipoFactura === 'credito') {
         throw new Exception("Cliente con el ID $idCliente tiene dos facturas pendientes, el crédito está bloqueado. Para desbloquear el crédito debe de pagar al menos una factura.");
@@ -242,7 +221,6 @@ try {
     $stmt->bind_param('i', $idCliente);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
-    logDebug("Balance adeudado: ", $result);
     
     if ($result['balance'] < ($total - $montoPagado) && $tipoFactura === 'credito') {
         throw new Exception("Cliente ID $idCliente excede el limite de credito disponible");
@@ -269,7 +247,6 @@ try {
     $numFactura = $_SESSION['idEmpleado'] . $fila['num'];
 
     $nuevoNumero = str_pad((int)$fila['num'] + 1, strlen($fila['num']), '0', STR_PAD_LEFT);
-    logDebug("Número de factura generado", ['numfactura' => $numFactura, 'nuevoNumero' => $nuevoNumero]);
     
     $stmtUpdate = $conn->prepare("UPDATE numfactura SET num = ?");
     if (!$stmtUpdate) {
@@ -279,8 +256,6 @@ try {
     if (!$stmtUpdate->execute()) {
         throw new Exception("Error actualizando número de factura: " . $stmtUpdate->error);
     }
-    logDebug("Número de factura actualizado");
-
 
     /**
      *      4. Insertar factura principal
@@ -310,13 +285,6 @@ try {
     if (!$stmt->execute()) {
         throw new Exception("Error insertando factura: " . $stmt->error);
     }
-    logDebug("Factura principal insertada", [
-        'numFactura' => $numFactura,
-        'total' => $total,
-        'balance' => $balance,
-        'estado' => $estado
-    ]);
-
     
     /**
      *      5. Insertar detalles de productos
@@ -334,7 +302,6 @@ try {
         if (!$stmt->execute()) {
             throw new Exception("Error insertando detalle de producto {$producto['id']}: " . $stmt->error);
         }
-        logDebug("Detalle de producto insertado", $producto);
     }
 
 
@@ -370,16 +337,9 @@ try {
             $stmtDelete->bind_param('ii', $idProducto, $_SESSION['idEmpleado']);
             $stmtDelete->execute();
             $stmtDelete->close();
-            logDebug("Fila eliminada para producto ID {$idProducto} del empleado ID {$_SESSION['idEmpleado']}");
         }
 
         $stmtCheck->close();
-
-        logDebug("Inventario personal actualizado", [
-            'id' => $idProducto,
-            'cantidad' => $producto['cantidad'],
-            'idEmpleado' => $_SESSION['idEmpleado']
-        ]);
     }
 
   
@@ -402,7 +362,6 @@ try {
         if ($stmt->affected_rows === 0) {
             throw new Exception("Stock insuficiente para producto ID: " . $producto['id']);
         }
-        logDebug("Inventario actualizado", $producto);
     }
 
 
@@ -420,7 +379,6 @@ try {
         if (!$stmt->execute()) {
             throw new Exception("Error registrar las transacciones de inventario del producto -> {$producto['id']}: " . $stmt->error);
         }
-        logDebug("Transaccion de invatario realizada", $producto);
     }
 
     
@@ -452,7 +410,6 @@ try {
     if (!$stmt->execute()) {
         throw new Exception("Error insertando método de pago: " . $stmt->error);
     }
-    logDebug("Método de pago registrado");
 
 
 
@@ -471,7 +428,6 @@ try {
         throw new Exception("Error insertando el ingreso: " . $stmt->error);
     }
 
-    logDebug("Ingresos en caja registrado");
 
     /**
      *      11. Actualizar balance del cliente
@@ -525,20 +481,12 @@ try {
         throw new Exception("Error actualizando balance del cliente: " . $stmt->error);
     }
 
-    logDebug("Balance del cliente actualizado", [
-        'idCliente' => $idCliente,
-        'limiteCredito' => $limiteCredito,
-        'balancePendiente' => $balancePendiente,
-        'balanceDisponible' => $balanceDisponible
-    ]);
-
 
     /**
      *      12. Confirmar la transacción
      */
     
     $conn->commit();
-    logDebug("Transacción completada exitosamente");
     
     echo json_encode([
         'success' => true, 
@@ -553,11 +501,6 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
-    logDebug("ERROR: " . $e->getMessage(), [
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
-        'trace' => $e->getTraceAsString()
-    ]);
     
     http_response_code(400);
     echo json_encode([

@@ -27,15 +27,6 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     ]));
 }
 
-// Funcion para guardar los logs de depuracion
-function logDebug($message, $data = null) {
-    $logMessage = date('Y-m-d H:i:s') . " - " . $message;
-    if ($data !== null) {
-        $logMessage .= " - Data: " . print_r($data, true);
-    }
-    error_log($logMessage);
-}
-
 // Validar metodo de entrada
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -50,8 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Obtener datos JSON
 $jsonData = file_get_contents('php://input');
 $data = json_decode($jsonData, true);
-
-logDebug("Datos recibidos", $data);
 
 // Verificar si el JSON es válido
 if (json_last_error() !== JSON_ERROR_NONE) {

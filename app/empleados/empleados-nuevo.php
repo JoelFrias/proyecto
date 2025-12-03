@@ -252,7 +252,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     </div>
                     <div class="form-group">
                         <label for="telefono">Teléfono:</label>
-                        <input type="text" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" minlength="12" maxlength="12" required>
+                        <input type="tel" id="telefono" name="telefono" autocomplete="off" placeholder="0000000000" minlength="10" maxlength="10" required>
                     </div>
                     <div class="form-group">
                         <label for="idPuesto">Puesto:</label>

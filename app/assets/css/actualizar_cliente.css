@@ -86,6 +86,7 @@ label {
 
 input[type="text"],
 input[type="number"],
+input[type="tel"],
 select,
 textarea {
     width: 100%;
@@ -111,7 +112,6 @@ select {
     background-repeat: no-repeat;
     background-position: right 0.5rem center;
     padding-right: 1.5rem;
-    width: 270px;
 }
 
 textarea {
@@ -145,6 +145,7 @@ textarea {
     }
     input[type="text"],
     input[type="number"],
+    input[type="tel"],
     select,
     textarea {
         font-size: 16px; /* Prevents zoom on mobile */

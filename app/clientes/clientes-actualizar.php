@@ -146,16 +146,16 @@ if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
                             </div>
                             <div class="form-group">
                                 <label for="identificacion">Identificación:</label>
-                                <input type="text" id="identificacion" name="identificacion" value="<?php echo $cliente['identificacion']; ?>" placeholder="Ingrese la identificación" autocomplete="off">
+                                <input type="text" id="identificacion" name="identificacion" value="<?php echo $cliente['identificacion']; ?>" placeholder="00000000000" autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="telefono">Teléfono:</label>
-                                <input type="text" id="telefono" name="telefono" value="<?php echo $cliente['telefono']; ?>" placeholder="000-000-0000" autocomplete="off" >
+                                <input type="tel" id="telefono" name="telefono" value="<?php echo $cliente['telefono']; ?>" placeholder="0000000000" autocomplete="off" maxlength="10">
                             </div>
-                            <div class="form-group">
-                                <label for="notas">Notas:</label>
-                                <textarea id="notas" name="notas" placeholder="Indique notas del cliente"><?php echo $cliente['notas']; ?></textarea>
-                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="notas">Notas:</label>
+                            <textarea id="notas" name="notas" placeholder="Indique notas del cliente"><?php echo $cliente['notas']; ?></textarea>
                         </div>
                     </fieldset>
 
@@ -190,10 +190,10 @@ if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
                                 <label for="ciudad">Ciudad:</label>
                                 <input type="text" id="ciudad" name="ciudad" minlength="1" value="<?php echo $cliente['ciudad']; ?>" placeholder="Ingrese la ciudad" required>
                             </div>
-                            <div class="form-group">
-                                <label for="referencia">Referencia:</label>
-                                <textarea id="referencia" name="referencia" minlength="1" placeholder="Indique referencia de direccion (Ej: Al lado de una farmacia)" required><?php echo $cliente['referencia']; ?></textarea>
-                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="referencia">Referencia:</label>
+                            <textarea id="referencia" name="referencia" minlength="1" placeholder="Indique referencia de direccion (Ej: Al lado de una farmacia)" required><?php echo $cliente['referencia']; ?></textarea>
                         </div>
                     </fieldset>
 

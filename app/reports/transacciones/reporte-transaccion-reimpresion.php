@@ -179,7 +179,7 @@ class PDF_Reimpresion extends FPDF
         $this->MarcaAgua();
         
         // Logo
-        $logo_path = '../assets/img/logo.png';
+        $logo_path = '../../assets/img/logo.png';
         if (file_exists($logo_path)) {
             $this->Image($logo_path, 15, 10, 20);
         }

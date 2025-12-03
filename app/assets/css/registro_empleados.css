@@ -80,7 +80,8 @@ label {
 
 input[type="text"],
 input[type="number"],
-input[type="password"], /* Agregado */
+input[type="password"],
+input[type="tel"],
 select,
 textarea {
     width: 100%;
@@ -140,7 +141,8 @@ textarea {
     
     input[type="text"],
     input[type="number"],
-    input[type="password"], /* Agregado */
+    input[type="password"],
+    input[type="tel"],
     select,
     textarea {
         font-size: 16px;
