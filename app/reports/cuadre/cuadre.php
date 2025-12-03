@@ -139,7 +139,7 @@ class PDF extends FPDF
     function Header()
     {
         // Logo (ajusta la ruta según tu estructura)
-        // $this->Image('../../assets/img/logo.png', 10, 6, 30);
+        // $this->Image('../assets/img/logo.png', 10, 6, 30);
         
         // Título
         $this->SetFont('Arial', 'B', 16);

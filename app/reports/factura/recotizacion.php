@@ -81,8 +81,8 @@ class PDF extends FPDF
     function Header()
     {
         // Logo
-        if (file_exists('../../assets/img/logo.png')) {
-            $this->Image('../../assets/img/logo.png', 10, 10, 40);
+        if (file_exists('../assets/img/logo.png')) {
+            $this->Image('../assets/img/logo.png', 10, 10, 40);
         }
         
         // Información de la empresa

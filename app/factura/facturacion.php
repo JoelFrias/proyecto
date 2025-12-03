@@ -11,7 +11,7 @@ if (!$conn || !$conn->connect_errno === 0) {
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
 } // Conexión a la base de datos
-require_once '../../core/verificar-sesion.php'; // Verificar Session
+require_once '../../core/verificar-sesion.php';
 
 // Validar permisos de usuario
 require_once '../../core/validar-permisos.php';
@@ -409,7 +409,7 @@ if (!$result) {
 
                 ?>
 
-                <button id="btn-cotizaciones" class="btn-cotizaciones">Abrir Lista Cotización</button><br><br>
+                <button id="btn-cotizaciones" class="btn-cotizaciones">Cargar Cotización</button><br><br>
 
                 <!-- Modal cotización -->
                 <div id="modal-overlay" class="modal-overlay">

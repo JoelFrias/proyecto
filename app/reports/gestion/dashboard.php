@@ -11,7 +11,7 @@ $permiso_necesario = 'PADM002';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     ob_end_clean();
-    header('location: ../errors/403.html');
+    header('location: ../../errors/403.html');
     exit(); 
 }
 
@@ -105,8 +105,8 @@ class DashboardPDF extends FPDF {
     
     function Header() {
         // Logo (ajusta la ruta según tu estructura)
-        if(file_exists('../../assets/img/logo.png')) {
-            $this->Image('../../assets/img/logo.png', 10, 6, 30);
+        if(file_exists('../assets/img/logo.png')) {
+            $this->Image('../assets/img/logo.png', 10, 6, 30);
         }
         
         // Título
