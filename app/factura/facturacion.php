@@ -976,15 +976,13 @@ if (!$result) {
                     return;
                 }
 
+                console.log('Datos de la cotización recibidos:', data);
+
                 // Validar existencia de productos antes de cargar
                 const productosConProblemas = [];
 
-                // console.log('Validando productos...', data.productos);
-
                 data.productos.forEach(producto => {
-                    // console.log(`Producto: ${producto.descripcion}, Cantidad: ${producto.cantidad}, Existencia: ${producto.existencia}`);
-                    
-                    if (producto.cantidad > producto.existencia) {
+                    if (parseFloat(producto.cantidad) > parseFloat(producto.existencia)) {
                         console.log(`Problema detectado con: ${producto.descripcion}`);
                         productosConProblemas.push({
                             descripcion: producto.descripcion,
@@ -1050,11 +1048,11 @@ if (!$result) {
                     orderItem.innerHTML = `
                         <div class="item-info">
                             <span class="item-name">${producto.descripcion}</span>
-                            <span class="item-base-price">RD$${producto.precio.toFixed(2)}</span>
+                            <span class="item-base-price">RD$${producto.precio}</span>
                         </div>
                         <div class="item-total">
                             <span class="item-quantity">x${producto.cantidad}</span>
-                            <span class="item-total-price">RD$${subtotal.toFixed(2)}</span>
+                            <span class="item-total-price">RD$${subtotal}</span>
                         </div>
                         <button class="delete-item" id-producto="${producto.id}" id-elimination="${counter}" onclick="removeFromCart(this, ${subtotal})">&times;</button>
                     `;

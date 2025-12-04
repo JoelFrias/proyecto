@@ -47,7 +47,6 @@ if ($resultCliente->num_rows === 0) {
 $cliente = $resultCliente->fetch_assoc();
 
 // Obtener productos de la cotización con datos adicionales del inventario del empleado
-// Cambiado a LEFT JOIN para incluir productos aunque no estén en el inventario
 $sqlProductos = "SELECT 
                     cd.id_producto,
                     cd.cantidad,

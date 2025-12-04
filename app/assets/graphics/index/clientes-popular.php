@@ -4,7 +4,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once '../../../core/conexion.php';
+require_once '../../../../core/conexion.php';
 
 header('Content-Type: application/json');
 
