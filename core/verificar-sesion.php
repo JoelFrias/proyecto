@@ -54,10 +54,10 @@ function getLoginPath() {
         }
         $depth = count($parts);
 
-        return str_repeat('../', $depth) . 'auth/login.php';
+        return str_repeat('../', $depth) . 'views/auth/login.php';
     }
 
-    return '/app/auth/login.php';
+    return '/app/views/auth/login.php';
 }
 
 /**

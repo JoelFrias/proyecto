@@ -1,5 +1,7 @@
 <?php
 
+// cuenta-avance.php - Validaciones para idCliente
+
 include_once '../../../core/conexion.php'; // Cargar Conexion
 require_once '../../../core/verificar-sesion.php'; // Verificar Session
 
@@ -9,12 +11,178 @@ $permiso_necesario = 'CLI003';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     header('location: ../errors/403.html');
-        
     exit(); 
 }
 
-// Variables
-$idCliente = $_GET["idCliente"];
+// VALIDACIÓN 1: Verificar si se recibió el parámetro idCliente
+if (!isset($_GET['idCliente']) || empty($_GET['idCliente'])) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error - ID Cliente No Proporcionado</title>
+        <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </head>
+    <body>
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'ID Cliente No Proporcionado',
+                text: 'No se proporcionó un ID de cliente. Por favor, seleccione un cliente válido.',
+                confirmButtonText: 'Volver a Clientes',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                confirmButtonColor: '#3085d6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'clientes.php';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
+// VALIDACIÓN 2: Verificar que sea un número entero válido
+$idCliente = filter_var($_GET['idCliente'], FILTER_VALIDATE_INT);
+
+if ($idCliente === false || $idCliente <= 0) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error - ID Cliente Inválido</title>
+        <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </head>
+    <body>
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'ID Cliente Inválido',
+                html: 'El ID del cliente proporcionado <strong>"<?php echo htmlspecialchars($_GET['idCliente']); ?>"</strong> no es válido.<br><br>Debe ser un número entero positivo.',
+                confirmButtonText: 'Volver a Clientes',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                confirmButtonColor: '#3085d6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'clientes.php';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
+// VALIDACIÓN 3: Verificar que el cliente exista en la base de datos
+$sql_validar = "SELECT 
+                    c.id, 
+                    CONCAT(c.nombre, ' ', c.apellido) AS nombreCompleto, 
+                    c.activo,
+                    c.empresa
+                FROM clientes AS c
+                WHERE c.id = ?";
+
+$stmt_validar = $conn->prepare($sql_validar);
+$stmt_validar->bind_param("i", $idCliente);
+$stmt_validar->execute();
+$result_validar = $stmt_validar->get_result();
+
+if ($result_validar->num_rows === 0) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error - Cliente No Encontrado</title>
+        <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </head>
+    <body>
+        <script>
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cliente No Encontrado',
+                html: 'El cliente con ID <strong>#<?php echo htmlspecialchars($idCliente); ?></strong> no existe en la base de datos.<br><br>Es posible que haya sido eliminado o el ID sea incorrecto.',
+                confirmButtonText: 'Volver a Clientes',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                confirmButtonColor: '#3085d6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'clientes.php';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    <?php
+    $stmt_validar->close();
+    exit();
+}
+
+// Obtener datos del cliente validado
+$cliente_validado = $result_validar->fetch_assoc();
+$stmt_validar->close();
+
+// VALIDACIÓN 4 (OPCIONAL): Verificar si el cliente está inactivo
+if ($cliente_validado['activo'] == 0) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Advertencia - Cliente Inactivo</title>
+        <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </head>
+    <body>
+        <script>
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cliente Inactivo',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p><strong>Cliente:</strong> <?php echo htmlspecialchars($cliente_validado['nombreCompleto']); ?></p>
+                        <p><strong>Empresa:</strong> <?php echo htmlspecialchars($cliente_validado['empresa']); ?></p>
+                        <hr style="margin: 10px 0;">
+                        <p style="color: #856404;">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Este cliente está marcado como <strong>INACTIVO</strong>.
+                        </p>
+                        <p style="font-size: 0.9rem;">¿Desea continuar de todas formas?</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, Continuar',
+                cancelButtonText: 'Volver a Clientes',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (!result.isConfirmed) {
+                    window.location.href = 'clientes.php';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    <?php
+    // Si el usuario confirma, el script continúa normalmente
+}
 
 // Tabla Payment History
 $sqlph = "SELECT
@@ -52,7 +220,6 @@ $stmtf = $conn->prepare($sqlf);
 $stmtf->bind_param("i", $idCliente);
 $stmtf->execute();
 $resultsf = $stmtf->get_result();
-
 
 // Informacion del cliente
 $sqlc = "SELECT

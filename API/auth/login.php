@@ -188,7 +188,7 @@ if ($stmt = $conn->prepare($query)) {
                     'idPuesto' => $row['idPuesto']
                 ],
                 'caja' => $datosCaja,
-                'redirect' => '../../app/'
+                'redirect' => '../'
             ]);
         } else {
             http_response_code(401);
