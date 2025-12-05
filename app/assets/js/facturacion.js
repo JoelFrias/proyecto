@@ -93,7 +93,7 @@ document.getElementById("search-input-cliente").addEventListener("keyup", getDat
 function getDataClientes() {
     const input = document.getElementById('search-input-cliente').value;
     const content = document.getElementById('table-body-cliente');
-    const url = '../../api/facturacion/facturacion_buscadorClientes.php';
+    const url = '../../../api/facturacion/facturacion_buscadorClientes.php';
     const formData = new FormData();
     formData.append('campo', input);
 
@@ -122,7 +122,7 @@ function selectCliente(id) {
         return;
     }
 
-    fetch("../../api/facturacion/facturacion_seleccionarCliente.php?id=" + id)
+    fetch("../../../api/facturacion/facturacion_seleccionarCliente.php?id=" + id)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -471,7 +471,7 @@ if (print) {
     invoiceWindow = window.open('about:blank', '_blank');
 }
 
-fetch("../../api/facturacion/facturacion_guardar.php", {
+fetch("../../../api/facturacion/facturacion_guardar.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(datos)
@@ -496,7 +496,7 @@ fetch("../../api/facturacion/facturacion_guardar.php", {
 
             } else {
                 // Redirigir la ventana ya abierta al reporte
-                const invoiceUrl = `../reports/factura/factura.php?factura=${data.numFactura}`;
+                const invoiceUrl = `../../reports/factura/factura.php?factura=${data.numFactura}`;
                 invoiceWindow.location.href = invoiceUrl;
 
                 setTimeout(() => {

@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Obtener los datos del formulario
 $numFactura = isset($_POST['numFactura']) ? intval($_POST['numFactura']) : 0;
 $motivo = isset($_POST['motivo']) ? $conn->real_escape_string($_POST['motivo']) : '';
+$cajaAlternativa = isset($_POST['caja_alternativa']) ? $conn->real_escape_string($_POST['caja_alternativa']) : null;
 $idEmpleadoCancela = $_SESSION['idEmpleado'];
 
 // Validaciones iniciales
@@ -128,8 +129,10 @@ try {
     }
     $metodoPago = $resultCaja->fetch_assoc();
     
-    // 4. VALIDACIÓN CRÍTICA: Verificar si la caja está abierta SOLO si es efectivo y monto > 0
+    // 4. NUEVA LÓGICA: Verificar si requiere devolución y manejar la caja
     $requiereDevolucion = ($metodoPago['metodo'] == 'efectivo' && $metodoPago['monto'] > 0);
+    $numCaja_original = $metodoPago['noCaja'];
+    $numCaja_egreso = null;
     
     if ($requiereDevolucion) {
         // Verificar si la caja del vendedor está abierta
@@ -138,16 +141,74 @@ try {
                             WHERE numCaja = ? AND idEmpleado = ?";
         
         $stmtVerificarCaja = $conn->prepare($sqlVerificarCaja);
-        $stmtVerificarCaja->bind_param("si", $metodoPago['noCaja'], $idEmpleadoVendedor);
+        $stmtVerificarCaja->bind_param("si", $numCaja_original, $idEmpleadoVendedor);
         $stmtVerificarCaja->execute();
         $resultVerificarCaja = $stmtVerificarCaja->get_result();
         $cajaAbierta = $resultVerificarCaja->fetch_assoc()['caja_abierta'];
         
-        if ($cajaAbierta == 0) {
-            throw new Exception(
-                'No se puede cancelar esta factura porque la caja ' . $metodoPago['noCaja'] . 
-                ' del vendedor ya fue cerrada. Para facturas de contado en efectivo, la caja debe estar activa.'
-            );
+        if ($cajaAbierta > 0) {
+            // La caja original está abierta, usarla
+            $numCaja_egreso = $numCaja_original;
+        } else {
+            // La caja original está cerrada
+            if ($cajaAlternativa === null) {
+                // No se proporcionó caja alternativa, retornar lista de cajas abiertas
+                $stmt = $conn->prepare("
+                    SELECT DISTINCT ca.numCaja, CONCAT(e.nombre, ' ', e.apellido) as empleado
+                    FROM cajasabiertas ca
+                    JOIN empleados e ON ca.idEmpleado = e.id
+                    ORDER BY ca.numCaja
+                ");
+                
+                if (!$stmt) {
+                    throw new Exception("Error preparando consulta de cajas abiertas: " . $conn->error);
+                }
+                
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $cajas_abiertas = [];
+                
+                while ($row = $result->fetch_assoc()) {
+                    $cajas_abiertas[] = $row;
+                }
+                $stmt->close();
+                
+                if (empty($cajas_abiertas)) {
+                    throw new Exception("No hay cajas abiertas disponibles para realizar el egreso de devolución");
+                }
+                
+                // Retornar que se necesita seleccionar una caja
+                echo json_encode([
+                    'success' => false,
+                    'requires_cash_selection' => true,
+                    'cajas_disponibles' => $cajas_abiertas,
+                    'message' => 'La caja original está cerrada. Seleccione una caja abierta para realizar el egreso de devolución.'
+                ]);
+                exit;
+            } else {
+                // Validar que la caja alternativa proporcionada esté abierta
+                $stmt = $conn->prepare("
+                    SELECT COUNT(*) as esta_abierta 
+                    FROM cajasabiertas 
+                    WHERE numCaja = ?
+                ");
+                
+                if (!$stmt) {
+                    throw new Exception("Error preparando consulta de caja alternativa: " . $conn->error);
+                }
+                
+                $stmt->bind_param('s', $cajaAlternativa);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $caja_alt_estado = $result->fetch_assoc();
+                $stmt->close();
+                
+                if ($caja_alt_estado['esta_abierta'] == 0) {
+                    throw new Exception("La caja seleccionada no está abierta");
+                }
+                
+                $numCaja_egreso = $cajaAlternativa;
+            }
         }
     }
     
@@ -174,9 +235,14 @@ try {
         throw new Exception('Error al actualizar el estado de la factura');
     }
     
-    // 7. Si requiere devolución (efectivo > 0), registrar EGRESO en la caja
-    if ($requiereDevolucion) {
-        $razonEgreso = "Devolución por cancelación de factura #$numFactura";
+    // 7. Si requiere devolución (efectivo > 0), registrar EGRESO en la caja seleccionada
+    if ($requiereDevolucion && $numCaja_egreso !== null) {
+        // Limitar la razón a 50 caracteres
+        if ($numCaja_egreso !== $numCaja_original) {
+            $razonEgreso = "Dev. cancel. fact. #$numFactura (Caja alt.)";
+        } else {
+            $razonEgreso = "Devolución cancel. fact. #$numFactura";
+        }
         
         $sql = "INSERT INTO cajaegresos (metodo, monto, IdEmpleado, numCaja, razon, fecha) 
                 VALUES ('efectivo', ?, ?, ?, ?, ?)";
@@ -185,7 +251,7 @@ try {
         $stmt->bind_param("disis", 
             $metodoPago['monto'], 
             $idEmpleadoCancela, 
-            $metodoPago['noCaja'], 
+            $numCaja_egreso, 
             $razonEgreso,
             $fechaCancelacion
         );
@@ -195,10 +261,7 @@ try {
         }
     }
 
-    // 8. NO eliminar el ingreso, mantenerlo para auditoría
-    // El ingreso original se mantiene y el egreso lo compensa
-
-    // 9. Actualizar balance del cliente (solo si es a crédito)
+    // 8. Actualizar balance del cliente (solo si es a crédito)
     if ($factura['tipoFactura'] == 'credito') {
         $idCliente = $factura['idCliente'];
 
@@ -220,7 +283,6 @@ try {
 
         $limiteCredito = $row['limite_credito'];
 
-        // Obtener la suma de todos los balances pendientes de facturas
         $stmt = $conn->prepare("SELECT IFNULL(SUM(balance), 0) as balance_pendiente FROM facturas WHERE idCliente = ?");
         if (!$stmt) {
             throw new Exception("Error preparando consulta de balance pendiente: " . $conn->error);
@@ -233,11 +295,8 @@ try {
         $stmt->close();
 
         $balancePendiente = $row['balance_pendiente'];
-
-        // Calcular el nuevo balance disponible
         $balanceDisponible = $limiteCredito - $balancePendiente;
 
-        // Actualizar el balance disponible en clientes_cuenta
         $stmt = $conn->prepare("UPDATE clientes_cuenta SET balance = ? WHERE idCliente = ?");
 
         if (!$stmt) {
@@ -251,7 +310,7 @@ try {
         }
     }
 
-    // 10. Devolver productos al inventario del empleado
+    // 9. Devolver productos al inventario del empleado
     $sqldevb = "SELECT
                     fd.idProducto as id,
                     fd.cantidad as cantidad
@@ -288,7 +347,6 @@ try {
         $resultCheck = $stmtCheck->get_result();
 
         if ($resultCheck->num_rows > 0) {
-            // Existe, entonces actualizar
             $sqldeva = "UPDATE inventarioempleados SET cantidad = cantidad + ? WHERE idProducto = ? AND idEmpleado = ?";
             $stmtdeva = $conn->prepare($sqldeva);
             if (!$stmtdeva) {
@@ -300,7 +358,6 @@ try {
                 throw new Exception("Error actualizando inventario de empleado: " . $stmtdeva->error);
             }
         } else {
-            // No existe, entonces insertar
             $sqlInsert = "INSERT INTO inventarioempleados (idProducto, idEmpleado, cantidad) VALUES (?, ?, ?)";
             $stmtInsert = $conn->prepare($sqlInsert);
             if (!$stmtInsert) {
@@ -313,7 +370,6 @@ try {
             }
         }
 
-        // Actualizar existencia en productos
         $sqldevp = "UPDATE productos SET existencia = existencia + ? WHERE id = ?";
         $stmtdevp = $conn->prepare($sqldevp);
         if (!$stmtdevp) {
@@ -325,7 +381,6 @@ try {
             throw new Exception("Error actualizando existencia del producto: " . $stmtdevp->error);
         }
 
-        // Registrar transacción en inventario
         $stmtdevit = $conn->prepare("INSERT INTO inventariotransacciones (tipo, idProducto, cantidad, fecha, descripcion, idEmpleado) VALUES ('retorno', ?, ?, ?, 'Retorno por factura cancelada #".$numFactura."', ?)");
         if (!$stmtdevit) {
             throw new Exception("Error preparando registro de transacción de inventario: " . $conn->error);
@@ -336,25 +391,29 @@ try {
             throw new Exception("Error al registrar la transacción de inventario del producto ID: " . $resultb['id'] . " - " . $stmtdevit->error);
         }
 
-        // Verificar si se realizó la inserción
         if ($stmtdevit->affected_rows === 0) {
             throw new Exception("No se registró la transacción de inventario para el producto ID: " . $resultb['id']);
         }
     }
     
-    // 11. Confirmar los cambios
+    // 10. Confirmar los cambios
     $conn->commit();
     
     echo json_encode([
         'success' => true, 
         'message' => 'Factura cancelada correctamente',
-        'requirio_devolucion' => $requiereDevolucion,
-        'metodo_pago' => $metodoPago['metodo'],
-        'monto' => $metodoPago['monto']
+        'data' => [
+            'numFactura' => $numFactura,
+            'requirio_devolucion' => $requiereDevolucion,
+            'metodo_pago' => $metodoPago['metodo'],
+            'monto' => $metodoPago['monto'],
+            'caja_original' => $numCaja_original,
+            'caja_utilizada' => $numCaja_egreso,
+            'caja_alternativa_usada' => $numCaja_egreso !== $numCaja_original
+        ]
     ]);
     
 } catch (Exception $e) {
-    // Revertir los cambios en caso de error
     $conn->rollback();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

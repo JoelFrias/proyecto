@@ -116,7 +116,7 @@ try {
     $idCliente = $pago['idCliente'];
     $monto_pago = $pago['monto'];
     $metodo_pago = $pago['metodo'];
-    $numCaja = $pago['numCaja'];
+    $numCaja_original = $pago['numCaja'];
     $fecha_pago = $pago['fecha'];
     $empleado_pago = $pago['idEmpleado'];
     
@@ -131,7 +131,7 @@ try {
         throw new Exception("No se puede cancelar el pago porque han pasado más de 24 horas desde que se realizó");
     }
     
-    // 3. VALIDACIÓN: Verificar que la caja donde se hizo el pago esté abierta
+    // 3. NUEVA LÓGICA: Verificar si la caja original está abierta
     $stmt = $conn->prepare("
         SELECT COUNT(*) as esta_abierta 
         FROM cajasabiertas 
@@ -142,14 +142,82 @@ try {
         throw new Exception("Error preparando consulta de caja abierta: " . $conn->error);
     }
     
-    $stmt->bind_param('si', $numCaja, $empleado_pago);
+    $stmt->bind_param('si', $numCaja_original, $empleado_pago);
     $stmt->execute();
     $result = $stmt->get_result();
     $caja_estado = $result->fetch_assoc();
     $stmt->close();
     
-    if ($caja_estado['esta_abierta'] == 0) {
-        throw new Exception("No se puede cancelar el pago porque la caja " . $numCaja . " ya fue cerrada");
+    $caja_original_abierta = $caja_estado['esta_abierta'] > 0;
+    
+    // Determinar qué caja usar para el egreso
+    $numCaja_egreso = null;
+    
+    if ($caja_original_abierta) {
+        // Si la caja original está abierta, usarla
+        $numCaja_egreso = $numCaja_original;
+    } else {
+        // Si la caja original está cerrada, verificar si el usuario envió una caja alternativa
+        if (!isset($data['caja_alternativa']) || empty($data['caja_alternativa'])) {
+            // Si no se proporcionó caja alternativa, retornar lista de cajas abiertas
+            $stmt = $conn->prepare("
+                SELECT DISTINCT ca.numCaja, CONCAT(e.nombre, ' ', e.apellido) as empleado
+                FROM cajasabiertas ca
+                JOIN empleados e ON ca.idEmpleado = e.id
+                ORDER BY ca.numCaja
+            ");
+            
+            if (!$stmt) {
+                throw new Exception("Error preparando consulta de cajas abiertas: " . $conn->error);
+            }
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $cajas_abiertas = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                $cajas_abiertas[] = $row;
+            }
+            $stmt->close();
+            
+            if (empty($cajas_abiertas)) {
+                throw new Exception("No hay cajas abiertas disponibles para realizar el egreso");
+            }
+            
+            // Retornar que se necesita seleccionar una caja
+            echo json_encode([
+                'success' => false,
+                'requires_cash_selection' => true,
+                'cajas_disponibles' => $cajas_abiertas,
+                'message' => 'La caja original está cerrada. Seleccione una caja abierta para realizar el egreso.'
+            ]);
+            exit;
+        } else {
+            // Validar que la caja alternativa proporcionada esté abierta
+            $caja_alternativa = trim($data['caja_alternativa']);
+            
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) as esta_abierta 
+                FROM cajasabiertas 
+                WHERE numCaja = ?
+            ");
+            
+            if (!$stmt) {
+                throw new Exception("Error preparando consulta de caja alternativa: " . $conn->error);
+            }
+            
+            $stmt->bind_param('s', $caja_alternativa);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $caja_alt_estado = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($caja_alt_estado['esta_abierta'] == 0) {
+                throw new Exception("La caja seleccionada no está abierta");
+            }
+            
+            $numCaja_egreso = $caja_alternativa;
+        }
     }
     
     // 4. Marcar el pago como cancelado (NO eliminarlo)
@@ -177,8 +245,11 @@ try {
     
     $stmt->close();
     
-    // 5. Registrar EGRESO en la caja (devolución del dinero)
+    // 5. Registrar EGRESO en la caja seleccionada
     $razon_egreso = "Cancelación de pago #$registro_pago - Cliente: $idCliente";
+    if ($numCaja_egreso !== $numCaja_original) {
+        $razon_egreso .= " (Caja original: $numCaja_original)";
+    }
     
     $stmt = $conn->prepare("
         INSERT INTO cajaegresos (metodo, monto, IdEmpleado, numCaja, razon, fecha)
@@ -189,7 +260,7 @@ try {
         throw new Exception("Error preparando inserción de egreso: " . $conn->error);
     }
     
-    $stmt->bind_param('sdisss', $metodo_pago, $monto_pago, $empleado_cancela, $numCaja, $razon_egreso, $fecha_cancelacion);
+    $stmt->bind_param('sdisss', $metodo_pago, $monto_pago, $empleado_cancela, $numCaja_egreso, $razon_egreso, $fecha_cancelacion);
     
     if (!$stmt->execute()) {
         throw new Exception("Error registrando egreso en caja: " . $stmt->error);
@@ -232,7 +303,6 @@ try {
     }
 
     // 7. Revertir el pago: AUMENTAR el balance (deuda) de las facturas
-    // Empezamos desde la más reciente (orden inverso al pago original)
     $monto_restante = $monto_pago;
 
     foreach ($facturas as $factura) {
@@ -241,29 +311,21 @@ try {
         }
         
         $registro_factura = $factura['registro'];
-        $balance_actual = $factura['balance'];  // Deuda actual
+        $balance_actual = $factura['balance'];
         $total_factura = $factura['total'];
         $pago_inicial = $factura['pago_inicial'];
         
-        // Calcular el máximo balance (deuda máxima) que puede tener esta factura
-        // Es el total menos lo que se pagó inicialmente
         $balance_maximo = $total_factura - $pago_inicial;
-        
-        // Calcular cuánto espacio hay para AUMENTAR la deuda
         $espacio_disponible = $balance_maximo - $balance_actual;
-        
-        // No podemos aumentar más deuda de la que originalmente tenía
         $monto_a_revertir = min($monto_restante, $espacio_disponible);
         
         if ($monto_a_revertir > 0) {
-            // AUMENTAR el balance (aumentar la deuda)
             $nuevo_balance = $balance_actual + $monto_a_revertir;
             
-            // Determinar el nuevo estado de la factura
             if ($nuevo_balance > 0) {
-                $estado_factura = "Pendiente";  // Ahora tiene deuda
+                $estado_factura = "Pendiente";
             } else {
-                $estado_factura = "Pagada";  // Sigue sin deuda (no debería pasar)
+                $estado_factura = "Pagada";
             }
             
             $stmt = $conn->prepare("
@@ -284,12 +346,10 @@ try {
             
             $stmt->close();
             
-            // Reducir el monto restante
             $monto_restante -= $monto_a_revertir;
         }
     }
     
-    // Verificar que se haya revertido todo el monto
     if ($monto_restante > 0) {
         throw new Exception("No se pudo revertir completamente el pago. Monto restante: $" . number_format($monto_restante, 2));
     }
@@ -306,13 +366,14 @@ try {
         'data' => [
             'registro_pago' => $registro_pago,
             'monto_devuelto' => $monto_pago,
-            'numCaja' => $numCaja,
+            'numCaja' => $numCaja_egreso,
+            'caja_original' => $numCaja_original,
+            'caja_utilizada' => $numCaja_egreso !== $numCaja_original ? 'alternativa' : 'original',
             'fecha_cancelacion' => $fecha_cancelacion
         ]
     ]);
     
 } catch (Exception $e) {
-    // Revertir la transacción en caso de error
     $conn->rollback();
     
     echo json_encode([
@@ -321,7 +382,6 @@ try {
     ]);
 }
 
-// Función para actualizar el balance del cliente
 function actualizarBalanceCliente($conn, $idCliente) {
     $stmt = $conn->prepare("SELECT limite_credito FROM clientes_cuenta WHERE idCliente = ?");
 
@@ -341,7 +401,6 @@ function actualizarBalanceCliente($conn, $idCliente) {
 
     $limiteCredito = $row['limite_credito'];
 
-    // Obtener la suma de todos los balances pendientes de facturas
     $stmt = $conn->prepare("SELECT IFNULL(SUM(balance), 0) as balance_pendiente FROM facturas WHERE idCliente = ?");
     if (!$stmt) {
         throw new Exception("Error preparando consulta de balance pendiente: " . $conn->error);
@@ -354,11 +413,8 @@ function actualizarBalanceCliente($conn, $idCliente) {
     $stmt->close();
 
     $balancePendiente = $row['balance_pendiente'];
-
-    // Calcular el nuevo balance disponible
     $balanceDisponible = $limiteCredito - $balancePendiente;
 
-    // Actualizar el balance disponible en clientes_cuenta
     $stmt = $conn->prepare("UPDATE clientes_cuenta SET balance = ? WHERE idCliente = ?");
 
     if (!$stmt) {

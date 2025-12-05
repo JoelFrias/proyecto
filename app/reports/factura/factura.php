@@ -19,42 +19,6 @@ class ReceiptPDF extends FPDF {
     function Footer() {
         // Empty footer
     }
-    
-    // Función para calcular altura del contenido
-    function GetContentHeight($items_count, $has_customer_info=true, $has_payment_info=true) {
-        // Altura de componentes fijos
-        $fixed_height = 0;
-        
-        // Cabecera (logo, info tienda)
-        $fixed_height += 20;
-        
-        // Info de cliente (si existe)
-        if ($has_customer_info) {
-            $fixed_height += 20;
-        }
-        
-        // Cabecera de productos
-        $fixed_height += 10;
-        
-        // Sección de totales
-        $fixed_height += 20;
-        
-        // Sección de pago
-        if ($has_payment_info) {
-            $fixed_height += 20;
-        }
-        
-        // Pie de página
-        $fixed_height += 20;
-        
-        // Altura por producto (cada producto ocupa ~7mm)
-        $items_height = $items_count * 7;
-        
-        // Margen de seguridad
-        $safety_margin = 10;
-        
-        return $fixed_height + $items_height + $safety_margin;
-    }
 }
 
 // Database connection
@@ -152,26 +116,38 @@ try {
         $stmt_items->execute();
         $result_items = $stmt_items->get_result();
         
-        // Instance of PDF to calculate height
-        $pdf_calculator = new ReceiptPDF();
-        
-        // Get exact content height based on data
+        // Calcular altura dinámica basada en el contenido real
         $itemCount = $result_items->num_rows;
-        $contentHeight = $pdf_calculator->GetContentHeight($itemCount);
         
-        // Create PDF with calculated height - sin espacio adicional
-        $pdf = new ReceiptPDF('P', 'mm', array(76.2, $contentHeight));
+        // Calcular altura del text3 (MultiCell)
+        // Aproximadamente 66mm de ancho, cada línea ocupa ~3mm
+        $text3_length = strlen($info['text3']);
+        $caracteres_por_linea = 80; // Aproximado para fuente Arial 8
+        $lineas_text3 = ceil($text3_length / $caracteres_por_linea);
+        $altura_text3 = $lineas_text3 * 3;
+        
+        // Altura base de componentes fijos
+        $altura_base = 70;  // Cabecera + info cliente
+        $altura_por_item = 8;  // Altura aproximada por producto (nombre + detalle)
+        $altura_totales = 40;  // Sección de totales y método de pago
+        $altura_pie = 15 + $altura_text3;  // "Le atendió" + text3 dinámico
+        
+        // Calcular altura total
+        $altura_total = $altura_base + ($itemCount * $altura_por_item) + $altura_totales + $altura_pie;
+        
+        // Crear PDF con altura dinámica
+        $pdf = new ReceiptPDF('P', 'mm', array(76.2, $altura_total));
         
         // Set PDF document properties
         $pdf->SetDocumentTitle("EasyPOS Factura #" . $invoice['numf']);
         $pdf->SetAuthor('EasyPOS');
         $pdf->SetCreator('EasyPOS Sistema de Facturación');
         
-        // Auto page break only if absolutely necessary
-        $pdf->SetAutoPageBreak(true, 5);
+        // IMPORTANTE: Desactivar el salto de página automático
+        $pdf->SetAutoPageBreak(false);
         
         $pdf->AddPage();
-        $pdf->SetMargins(5, 10, 5);
+        $pdf->SetMargins(5, 5, 5);
         $pdf->SetFont('Arial', 'B', 12);
         
         // Store name and info
@@ -186,9 +162,25 @@ try {
         
         // Customer info
         $pdf->Cell(33, 4, 'Nombre Cliente:', 0, 0);
-        $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['nombrec'])), 0, 1);
+        $nombreCliente = iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['nombrec']));
+        $anchoNombre = $pdf->GetStringWidth($nombreCliente);
+        if ($anchoNombre > 33) {
+            $pdf->Ln();
+            $pdf->MultiCell(66, 4, $nombreCliente, 0, 'L');
+        } else {
+            $pdf->Cell(33, 4, $nombreCliente, 0, 1);
+        }
+        
         $pdf->Cell(33, 4, 'Empresa:', 0, 0);
-        $pdf->Cell(33, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['empresac'])), 0, 1);
+        $empresaCliente = iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($invoice['empresac']));
+        $anchoEmpresa = $pdf->GetStringWidth($empresaCliente);
+        if ($anchoEmpresa > 33) {
+            $pdf->Ln();
+            $pdf->MultiCell(66, 4, $empresaCliente, 0, 'L');
+        } else {
+            $pdf->Cell(33, 4, $empresaCliente, 0, 1);
+        }
+        
         $pdf->Cell(33, 4, 'NCF:', 0, 0);
         $pdf->Cell(33, 4, '0', 0, 1);
         $pdf->Cell(33, 4, 'Tipo de Factura:', 0, 0);

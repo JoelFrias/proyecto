@@ -74,6 +74,6 @@ if (isset($_COOKIE[session_name()])) {
 session_destroy();
 
 // Redirigir al login
-header('Location: ../../app/auth/login.php?logout=1');
+header('Location: ../../app/views/auth/login.php?logout=1');
 exit();
 ?>

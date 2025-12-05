@@ -165,7 +165,7 @@ if ($action === "getKPIs") {
         $queryProductosBajoStock = "
             SELECT COUNT(*) as bajo_stock
             FROM inventario
-            WHERE existencia <= (SELECT reorden FROM productos WHERE id = inventario.idProducto)
+            WHERE (SELECT existencia FROM productos WHERE id = inventario.idProducto) <= (SELECT reorden FROM productos WHERE id = inventario.idProducto)
         ";
         $resultProductosBajoStock = mysqli_query(
             $conn,
@@ -461,11 +461,11 @@ elseif ($action === "getTables") {
         $queryStockBajo = "
         SELECT 
             p.descripcion,
-            i.existencia,
+            p.existencia,
             p.reorden
         FROM inventario i
         INNER JOIN productos p ON i.idProducto = p.id
-        WHERE i.existencia <= p.reorden
+        WHERE p.existencia <= p.reorden
         ORDER BY i.existencia ASC
         LIMIT 10
     ";

@@ -109,7 +109,7 @@ async function loadKPIs(periodo, fechaInicio = null, fechaFin = null) {
             params.append('fechaFin', fechaFin);
         }
         
-        const response = await fetch(`../../api/admin/dashboard.php?${params}`);
+        const response = await fetch(`../../../api/admin/dashboard.php?${params}`);
         const data = await response.json();
         
         if (data.success) {
@@ -167,7 +167,7 @@ async function loadCharts(periodo, fechaInicio = null, fechaFin = null) {
             params.append('fechaFin', fechaFin);
         }
         
-        const response = await fetch(`../../api/admin/dashboard.php?${params}`);
+        const response = await fetch(`../../../api/admin/dashboard.php?${params}`);
         const data = await response.json();
         
         if (data.success) {
@@ -290,7 +290,7 @@ function createCharts(chartsData) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom',
+                    position: 'right',
                     labels: {
                         padding: 20,
                         font: {
@@ -401,7 +401,7 @@ async function loadTables(periodo, fechaInicio = null, fechaFin = null) {
             params.append('fechaFin', fechaFin);
         }
         
-        const response = await fetch(`../../api/admin/dashboard.php?${params}`);
+        const response = await fetch(`../../../api/admin/dashboard.php?${params}`);
         const data = await response.json();
         
         if (data.success) {
@@ -487,7 +487,7 @@ function updateTablesUI(tablesData) {
 // ====================================
 async function loadAlerts() {
     try {
-        const response = await fetch('../../api/admin/dashboard.php?action=getAlerts');
+        const response = await fetch('../../../api/admin/dashboard.php?action=getAlerts');
         const data = await response.json();
         
         if (data.success) {
@@ -594,7 +594,7 @@ function generarReportePDF() {
     const fechaFin = document.getElementById('fechaFin').value;
     
     // Construir URL con parámetros
-    let url = '../reports/gestion/dashboard.php?periodo=' + periodo;
+    let url = '../../reports/gestion/dashboard.php?periodo=' + periodo;
     
     if(periodo === 'personalizado') {
         if(!fechaInicio || !fechaFin) {

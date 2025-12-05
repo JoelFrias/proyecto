@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página No Encontrada</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            max-width: 550px;
+            width: 100%;
+            text-align: center;
+            padding: 40px 30px;
+        }
+        
+        .icon {
+            margin-bottom: 24px;
+        }
+        
+        .icon svg {
+            width: 80px;
+            height: 80px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        p {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .error-code {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 8px 16px;
+            display: inline-block;
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 24px;
+        }
+        
+        .button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .button:hover {
+            background-color: #2980b9;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            p {
+                font-size: 15px;
+            }
+            
+            .icon svg {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        .footer {
+            margin-top: 40px;
+            font-size: 13px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+        </div>
+        <h1>Página No Encontrada</h1>
+        <p>Lo sentimos, pero la página que estás buscando no existe o ha sido movida. Puede que hayas ingresado una dirección incorrecta o que el enlace esté roto.</p>
+        <div class="error-code">Código de error: 404</div>
+        <a href="../../../" class="button">Volver al Inicio</a>
+        <div class="footer">
+            Si crees que esto es un error, por favor contacta con el administrador del sistema.
+        </div>
+    </div>
+</body>
+</html>

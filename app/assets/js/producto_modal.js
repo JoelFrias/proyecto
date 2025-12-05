@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function cargarTiposProducto() {
     tiposTable.innerHTML = '<tr><td colspan="3" class="loading">Cargando...</td></tr>';
     
-    fetch('../../api/productos/producto_tipo.php?action=getAll')
+    fetch('../../../api/productos/producto_tipo.php?action=getAll')
       .then(response => {
         if (!response.ok) {
           throw new Error('Error en la respuesta del servidor');
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     formData.append('descripcion', nuevoNombre);
     formData.append('action', 'update');
     
-    fetch('../../api/productos/producto_tipo.php', {
+    fetch('../../../api/productos/producto_tipo.php', {
       method: 'POST',
       body: formData
     })
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // btnDelete.addEventListener('click', () => eliminarTipoProducto(tipoId));
           
           // Actualizar el select de la página principal
-          fetch('../../api/productos/producto_tipo.php?action=getAll')
+          fetch('../../../api/productos/producto_tipo.php?action=getAll')
             .then(response => response.json())
             .then(data => {
               if (data.status === 'success') {
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     formData.append('descripcion', nombre);
     formData.append('action', 'create');
     
-    fetch('../../api/productos/producto_tipo.php', {
+    fetch('../../../api/productos/producto_tipo.php', {
       method: 'POST',
       body: formData
     })
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('id', tipoId);
         formData.append('action', 'delete');
         
-        fetch('../../api/productos/producto_tipo.php', {
+        fetch('../../../api/productos/producto_tipo.php', {
           method: 'POST',
           body: formData
         })
@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
               }
               
               // Actualizar el select de la página principal
-              fetch('../../api/productos/producto_tipo.php?action=getAll')
+              fetch('../../../api/productos/producto_tipo.php?action=getAll')
                 .then(response => response.json())
                 .then(data => {
                   if (data.status === 'success') {

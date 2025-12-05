@@ -31,7 +31,7 @@ if (isset($_SESSION['username'])) {
     echo json_encode([
         'success' => false,
         'error' => 'Ya existe una sesión activa, por favor actualiza la página',
-        'redirect' => '../../'
+        'redirect' => '../views/'
     ]);
     exit();
 }
