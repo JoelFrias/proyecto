@@ -10,21 +10,8 @@
 # LOGS Y TEMPORALES
 # ============================================
 /logs/
-/test/
-/tests/
 /docs/
 *.log
-*.tmp
-*.bak
-*.swp
-
-# ============================================
-# ARCHIVOS DE USUARIO Y SUBIDAS
-# ============================================
-/storage/uploads/*
-!/storage/uploads/.gitkeep
-/reports/*.pdf
-!/reports/.gitkeep
 
 # ============================================
 # BASE DE DATOS
@@ -32,3 +19,10 @@
 *.sql
 *.sqlite
 *.db
+
+# ============================================
+# Incluir el diseños inicial de base de datos
+# ============================================
+
+!/app/assets/sql/easypos.sql
+!/app/assets/sql/easypos_auditoria.sql
