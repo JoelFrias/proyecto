@@ -127,7 +127,6 @@ $result_pagos = $stmt->get_result();
 // Crear PDF
 class PDF extends FPDF
 {
-    private $empresa = 'EasyPOS';
     private $numCaja;
     private $estado;
     
@@ -143,7 +142,7 @@ class PDF extends FPDF
         
         // Título
         $this->SetFont('Arial', 'B', 16);
-        $this->Cell(0, 10, $this->empresa, 0, 1, 'C');
+        $this->Cell(0, 10, getenv('APP_NAME'), 0, 1, 'C');
         $this->SetFont('Arial', '', 10);
         $this->Cell(0, 5, 'Reporte de Cuadre de Caja', 0, 1, 'C');
         $this->Cell(0, 5, 'Caja #' . $this->numCaja . ' - Estado: ' . strtoupper($this->estado), 0, 1, 'C');

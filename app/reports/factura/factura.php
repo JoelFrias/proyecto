@@ -151,7 +151,7 @@ try {
         $pdf->SetFont('Arial', 'B', 12);
         
         // Store name and info
-        $pdf->Cell(66, 6, '               ' . iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['name'])), 0, 1, 'L');
+        $pdf->Cell(66, 6, iconv('UTF-8', 'ISO-8859-1', getenv('APP_NAME')), 0, 1, 'C');
         $pdf->SetFont('Arial', '', 7);
         $pdf->Cell(66, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['text1'])), 0, 1, 'C');
         $pdf->Cell(66, 4, iconv('UTF-8', 'ISO-8859-1', htmlspecialchars($info['text2'])), 0, 1, 'C');

@@ -115,7 +115,7 @@ try {
             // Información de la empresa
             $this->SetFont('Arial', 'B', 16);
             $this->SetTextColor(33, 37, 41);
-            $this->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1', 'EasyPOS'), 0, 1, 'R');
+            $this->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1', getenv('APP_NAME')), 0, 1, 'R');
             
             $this->SetFont('Arial', '', 9);
             $this->SetTextColor(108, 117, 125);

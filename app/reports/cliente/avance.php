@@ -34,7 +34,7 @@ class PDF_Receipt extends FPDF {
     // Función para el encabezado del recibo
     function Header() {
         $this->SetFont('Arial', 'B', 12);
-        $this->Cell(0, 6, 'EasyPOS', 0, 1, 'C');
+        $this->Cell(0, 6, getenv('APP_NAME'), 0, 1, 'C');
         $this->SetFont('Arial', 'B', 10);
         $this->Cell(0, 5, 'COMPROBANTE DE PAGO', 0, 1, 'C');
         $this->Ln(3);
