@@ -586,7 +586,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                     <option value="${prod.id}" 
                         data-costo="${prod.precioCompra}"
                         data-existencia="${prod.existencia}">
-                        ${prod.descripcion} (Stock: ${parseFloat(prod.existencia).toFixed(2)})
+                        ID: ${prod.id} ${prod.descripcion} (Stock: ${parseFloat(prod.existencia).toFixed(2)})
                     </option>`;
             });
 

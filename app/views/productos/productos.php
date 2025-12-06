@@ -10,11 +10,13 @@ if (!$conn || !$conn->connect_errno === 0) {
         "error" => "Error de conexión a la base de datos",
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
-} // Conexión a la base de datos
+}
 require_once '../../../core/verificar-sesion.php'; // Verificar Session
 
 // Inicializar variables de búsqueda y filtros
 $search = isset($_GET['search']) ? trim($_GET['search']) : "";
+$filtro_tipo = isset($_GET['tipo']) ? trim($_GET['tipo']) : "";
+$filtro_estado = isset($_GET['estado']) ? trim($_GET['estado']) : "";
 $filtros = array(); // Inicializar array de filtros
 
 // Configuración de paginación
@@ -45,12 +47,29 @@ $sql_base = "SELECT
 $params = [];
 $types = "";
 
+// Filtro de búsqueda por descripción
 if (!empty($search)) {
     $sql_base .= " AND (p.descripcion LIKE ? OR pt.descripcion LIKE ?)";
     $params[] = "%$search%";
     $params[] = "%$search%";
     $types .= "ss";
     $filtros['search'] = $search;
+}
+
+// Filtro por tipo de producto
+if (!empty($filtro_tipo)) {
+    $sql_base .= " AND p.idTipo = ?";
+    $params[] = $filtro_tipo;
+    $types .= "i";
+    $filtros['tipo'] = $filtro_tipo;
+}
+
+// Filtro por estado
+if ($filtro_estado !== "") {
+    $sql_base .= " AND p.activo = ?";
+    $params[] = $filtro_estado;
+    $types .= "i";
+    $filtros['estado'] = $filtro_estado;
 }
 
 // Consulta para total de registros
@@ -104,7 +123,7 @@ if (!empty($params)) {
 function construirQueryFiltros($filtros) {
     $query = '';
     foreach ($filtros as $key => $value) {
-        if (!empty($value)) {
+        if (!empty($value) || $value === '0') {
             $query .= "&{$key}=" . urlencode($value);
         }
     }
@@ -112,7 +131,7 @@ function construirQueryFiltros($filtros) {
 }
 
 // Obtener tipos de producto
-$query_tipos = "SELECT id, descripcion FROM productos_tipo";
+$query_tipos = "SELECT id, descripcion FROM productos_tipo ORDER BY descripcion ASC";
 $result_tipos = $conn->query($query_tipos);
 
 if (!$result_tipos) {
@@ -149,7 +168,127 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
             background-color: #2563eb;
         }
 
+        /* Estilos para los filtros */
+        .filters-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .filter-group select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background-color: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .filters-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .btn-filter {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-filter-apply {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-filter-apply:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-filter-clear {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-filter-clear:hover {
+            background-color: #e5e7eb;
+        }
+
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background-color: #dbeafe;
+            color: #1e40af;
+            border-radius: 9999px;
+            font-size: 0.813rem;
+        }
+
+        .filter-tag button {
+            background: none;
+            border: none;
+            color: #1e40af;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
         @media (max-width: 768px) {
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-actions {
+                flex-direction: column;
+            }
+
+            .btn-filter {
+                width: 100%;
+            }
+
             .title-container {
                 flex-wrap: wrap;
             }
@@ -241,13 +380,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                         <div class="botones">
 
                             <?php
-
                             // Validar permisos para imprimir reporte
                             require_once '../../../core/validar-permisos.php';
                             $permiso_necesario = 'PRO002';
                             $id_empleado = $_SESSION['idEmpleado'];
                             if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                             ?>
 
                             <!-- Botón para imprimir reporte -->
@@ -263,13 +400,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                             <?php endif; ?>
 
                             <?php
-
                             // Validar permisos para nuevo producto
                             require_once '../../../core/validar-permisos.php';
                             $permiso_necesario = 'PRO001';
                             $id_empleado = $_SESSION['idEmpleado'];
                             if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                             ?>
 
                                 <button class="btn btn-new" id="btnNew" onclick="window.location.href='productos-nuevo.php'">
@@ -279,35 +414,110 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                     <span>Nuevo</span>
                                 </button>
 
-
                             <?php endif; ?>
                         </div>
 
                     </div>
-                    
-                    <!-- Sección de búsqueda -->
-                    <div class="search-section">
-                        <form method="GET" action="" class="search-form">
-                            <div class="search-input-container">
-                                <div class="search-input-wrapper">
-                                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="11" cy="11" r="8"></circle>
-                                        <path d="m21 21-4.3-4.3"></path>
-                                    </svg>
-                                    <input 
-                                        type="text" 
-                                        id="search" 
-                                        name="search" 
-                                        value="<?php echo htmlspecialchars($search ?? ''); ?>" 
-                                        placeholder="Buscardor de productos"
-                                        autocomplete="off"
-                                    >
+
+                    <!-- Sección de filtros -->
+                    <div class="filters-section">
+                        <form method="GET" action="" id="filterForm">
+                            
+                            <div class="filters-grid">
+                                <!-- Filtro por descripción -->
+                                <div class="filter-group">
+                                    <label for="search">Buscar por Descripción</label>
+                                    <div class="search-input-wrapper">
+                                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.3-4.3"></path>
+                                        </svg>
+                                        <input 
+                                            type="text" 
+                                            id="search" 
+                                            name="search" 
+                                            value="<?php echo htmlspecialchars($search ?? ''); ?>" 
+                                            placeholder="Buscar producto..."
+                                            autocomplete="off"
+                                            style="padding-left: 35px;"
+                                        >
+                                    </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <!-- boton de buscar -->
-                                    Buscar
+
+                                <!-- Filtro por tipo de producto -->
+                                <div class="filter-group">
+                                    <label for="tipo">Tipo de Producto</label>
+                                    <select name="tipo" id="tipo">
+                                        <option value="">Todos los tipos</option>
+                                        <?php foreach ($tipos_producto as $tipo): ?>
+                                            <option value="<?php echo $tipo['id']; ?>" 
+                                                <?php echo ($filtro_tipo == $tipo['id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($tipo['descripcion']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <!-- Filtro por estado -->
+                                <div class="filter-group">
+                                    <label for="estado">Estado</label>
+                                    <select name="estado" id="estado">
+                                        <option value="">Todos los estados</option>
+                                        <option value="1" <?php echo ($filtro_estado === '1') ? 'selected' : ''; ?>>Activo</option>
+                                        <option value="0" <?php echo ($filtro_estado === '0') ? 'selected' : ''; ?>>Inactivo</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filters-actions">
+                                <button type="button" class="btn-filter btn-filter-clear" onclick="limpiarFiltros()">
+                                    <i class="fas fa-times"></i> Limpiar filtros
+                                </button>
+                                <button type="submit" class="btn-filter btn-filter-apply">
+                                    <i class="fas fa-filter"></i> Aplicar filtros
                                 </button>
                             </div>
+
+                            <!-- Mostrar filtros activos -->
+                            <?php if (!empty($filtros)): ?>
+                            <div class="active-filters">
+                                <?php if (!empty($search)): ?>
+                                    <span class="filter-tag">
+                                        Búsqueda: "<?php echo htmlspecialchars($search); ?>"
+                                        <button type="button" onclick="removerFiltro('search')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($filtro_tipo)): ?>
+                                    <?php 
+                                    $tipo_nombre = '';
+                                    foreach ($tipos_producto as $tipo) {
+                                        if ($tipo['id'] == $filtro_tipo) {
+                                            $tipo_nombre = $tipo['descripcion'];
+                                            break;
+                                        }
+                                    }
+                                    ?>
+                                    <span class="filter-tag">
+                                        Tipo: <?php echo htmlspecialchars($tipo_nombre); ?>
+                                        <button type="button" onclick="removerFiltro('tipo')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                <?php endif; ?>
+                                
+                                <?php if ($filtro_estado !== ""): ?>
+                                    <span class="filter-tag">
+                                        Estado: <?php echo $filtro_estado === '1' ? 'Activo' : 'Inactivo'; ?>
+                                        <button type="button" onclick="removerFiltro('estado')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                         </form>
                     </div>
                 </div>
@@ -330,19 +540,16 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         <th>Tipo</th>
 
                                         <?php
-
                                         // Validar permisos
                                         require_once '../../../core/validar-permisos.php';
                                         $permiso_necesario = 'ALM001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                         <th>Existencia</th>
 
                                         <?php
-
                                         endif;
 
                                         // Validar permisos
@@ -350,7 +557,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         $permiso_necesario = 'PRO001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                             <th>Precio Compra</th>
@@ -362,19 +568,16 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         <th>Reorden</th>
 
                                         <?php
-
                                         // Validar permisos
                                         require_once '../../../core/validar-permisos.php';
                                         $permiso_necesario = 'ALM001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                         <th>Estado</th>
 
                                         <?php
-                                        
                                         endif;
 
                                         // Validar permisos
@@ -382,7 +585,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         $permiso_necesario = 'PRO001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                             <th>Acciones</th>
@@ -408,19 +610,16 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         <td><?php echo htmlspecialchars($row['tipo']); ?></td>
 
                                         <?php
-
                                         // Validar permisos
                                         require_once '../../../core/validar-permisos.php';
                                         $permiso_necesario = 'ALM001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                         <td><?php echo htmlspecialchars($row['existencia']); ?></td>
 
                                         <?php
-
                                         endif;
 
                                         // Validar permisos
@@ -428,7 +627,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         $permiso_necesario = 'PRO001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                         <td><?php echo htmlspecialchars("RD$ " . number_format($row['precioCompra'], 2)); ?></td>
@@ -439,13 +637,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         <td><?php echo htmlspecialchars("RD$ " . number_format($row['precioVenta2'], 2)); ?></td>
 
                                         <?php
-
                                         // Validar permisos
                                         require_once '../../../core/validar-permisos.php';
                                         $permiso_necesario = 'ALM001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                         <td><?php echo htmlspecialchars($row['reorden']); ?></td>
@@ -459,13 +655,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                         </td>
 
                                         <?php
-
                                         // Validar permisos
                                         require_once '../../../core/validar-permisos.php';
                                         $permiso_necesario = 'PRO001';
                                         $id_empleado = $_SESSION['idEmpleado'];
                                         if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                         ?>
 
                                             <td>
@@ -495,7 +689,7 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                     
                                     } else {
 
-                                        echo '<td colspan="10">No se encontraron resultados</td>';
+                                        echo '<tr><td colspan="10" style="text-align: center;">No se encontraron resultados</td></tr>';
 
                                     }
                                     
@@ -519,8 +713,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                     $row['existencia'] = number_format($row['existencia'], 0);
                     $row['reorden'] = number_format($row['reorden'], 0);
 
-                    // fomateo de monedas se realizo directamente en la tabla
-
                     ?>
                     <div class="mobile-record">
                         <div class="mobile-record-header">
@@ -540,13 +732,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                 </div>
 
                                 <?php
-
                                 // Validar permisos
                                 require_once '../../../core/validar-permisos.php';
                                 $permiso_necesario = 'ALM001';
                                 $id_empleado = $_SESSION['idEmpleado'];
                                 if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                 ?>
 
                                 <div class="mobile-info-item">
@@ -555,7 +745,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                 </div>
 
                                <?php
-
                                 endif;
 
                                 // Validar permisos
@@ -563,7 +752,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                 $permiso_necesario = 'PRO001';
                                 $id_empleado = $_SESSION['idEmpleado'];
                                 if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                 ?>
 
                                 <div class="mobile-info-item">
@@ -583,13 +771,11 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                 </div>
 
                                 <?php
-
                                 // Validar permisos
                                 require_once '../../../core/validar-permisos.php';
                                 $permiso_necesario = 'ALM001';
                                 $id_empleado = $_SESSION['idEmpleado'];
                                 if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                 ?>
                                 
                                 <div class="mobile-info-item">
@@ -598,7 +784,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                 </div>
 
                                 <?php
-
                                 endif;
 
                                 // Validar permisos
@@ -606,7 +791,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                                 $permiso_necesario = 'PRO001';
                                 $id_empleado = $_SESSION['idEmpleado'];
                                 if (validarPermiso($conn, $permiso_necesario, $id_empleado)):
-
                                 ?>
                                 
                                 <div class="mobile-actions">
@@ -650,16 +834,17 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                 </div>
 
                 <div class="pagination">
+                    <?php $query_string = construirQueryFiltros($filtros); ?>
                     <!-- Botón primera página -->
                     <li>
-                        <a href="?pagina=1<?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=1<?php echo $query_string; ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-double-left"></i>
                         </a>
                     </li>
                     
                     <!-- Botón página anterior -->
                     <li>
-                        <a href="?pagina=<?php echo max(1, $pagina_actual - 1); ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=<?php echo max(1, $pagina_actual - 1); ?><?php echo $query_string; ?>" <?php echo ($pagina_actual == 1) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-left"></i>
                         </a>
                     </li>
@@ -672,7 +857,7 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                     for ($i = $start_page; $i <= $end_page; $i++): 
                     ?>
                         <li>
-                            <a href="?pagina=<?php echo $i; ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>" <?php echo ($i == $pagina_actual) ? 'class="active"' : ''; ?>>
+                            <a href="?pagina=<?php echo $i; ?><?php echo $query_string; ?>" <?php echo ($i == $pagina_actual) ? 'class="active"' : ''; ?>>
                                 <?php echo $i; ?>
                             </a>
                         </li>
@@ -680,14 +865,14 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                     
                     <!-- Botón página siguiente -->
                     <li>
-                        <a href="?pagina=<?php echo min($total_paginas, $pagina_actual + 1); ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=<?php echo min($total_paginas, $pagina_actual + 1); ?><?php echo $query_string; ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-right"></i>
                         </a>
                     </li>
                     
                     <!-- Botón última página -->
                     <li>
-                        <a href="?pagina=<?php echo $total_paginas; ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
+                        <a href="?pagina=<?php echo $total_paginas; ?><?php echo $query_string; ?>" <?php echo ($pagina_actual == $total_paginas) ? 'class="disabled"' : ''; ?>>
                             <i class="fas fa-angle-double-right"></i>
                         </a>
                     </li>
@@ -722,23 +907,23 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
                     });
                 </script>
             ";
-            unset($_SESSION['status'], $_SESSION['message']); // Limpiar el estado después de mostrar el mensaje
+            unset($_SESSION['status'], $_SESSION['message']);
         }
 
         // Mostrar mensajes de error
         if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
-            $errors = json_encode($_SESSION['errors']); // Convertir el array de errores a JSON
+            $errors = json_encode($_SESSION['errors']);
             echo "
                 <script>
                     Swal.fire({
                         title: '¡Error!',
-                        html: `{$errors}`.split(',').join('<br>'), // Mostrar errores en líneas separadas
+                        html: `{$errors}`.split(',').join('<br>'),
                         icon: 'error',
                         confirmButtonText: 'Aceptar'
                     });
                 </script>
             ";
-            unset($_SESSION['errors']); // Limpiar los errores después de mostrarlos
+            unset($_SESSION['errors']);
         }
     ?>
 
@@ -746,9 +931,8 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
     <script>
 
         function mostrarModal(button) {
-            if (!button) return;  // Evita ejecutar si no hay un botón específico
+            if (!button) return;
 
-            // Obtener datos del producto desde los atributos data-*
             const idProducto = button.getAttribute("data-id");
             const descripcion = button.getAttribute("data-descripcion");
             const precioCompra = button.getAttribute("data-preciocompra");
@@ -757,7 +941,6 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
             const reorden = button.getAttribute("data-reorden");
             const activo = button.getAttribute("data-activo");
 
-            // Asignar valores a los campos del formulario
             if (idProducto) document.getElementById("idProducto").value = idProducto;
             if (descripcion) document.getElementById("descripcion").value = descripcion;
             if (precioCompra) document.getElementById("precioCompra").value = precioCompra;
@@ -766,27 +949,35 @@ while ($row_tipo = $result_tipos->fetch_assoc()) {
             if (reorden) document.getElementById("reorden").value = reorden;
             if (activo) document.getElementById("activo").value = activo;
 
-            // Establecer el valor seleccionado del tipo de producto
-            const tipoActual = button.getAttribute("data-tipo");  // Obtener el idTipo
+            const tipoActual = button.getAttribute("data-tipo");
             const selectTipo = document.getElementById("tipo");
-            selectTipo.value = tipoActual;  // Establecer el valor seleccionado
+            selectTipo.value = tipoActual;
 
-            // Mostrar el modal
             document.getElementById("modalActualizar").style.display = "flex";
-            console.log("Tipo de producto (idTipo):", tipoActual);  // Verificar el valor del tipo
         }
 
         function cerrarModal() {
             document.getElementById("modalActualizar").style.display = "none";
         }
 
-        // Cerrar el modal si el usuario hace clic fuera de él
         window.onclick = function(event) {
             let modal = document.getElementById("modalActualizar");
             if (event.target == modal) {
                 modal.style.display = "none";
             }
         };
+
+        // Funciones para manejar filtros
+        function limpiarFiltros() {
+            window.location.href = 'productos.php';
+        }
+
+        function removerFiltro(filtro) {
+            const url = new URL(window.location);
+            url.searchParams.delete(filtro);
+            url.searchParams.delete('pagina'); // Reset a página 1
+            window.location.href = url.toString();
+        }
     </script>
 
     <script src="../../assets/js/deslizar.js"></script>

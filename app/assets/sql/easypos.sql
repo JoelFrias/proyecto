@@ -11,6 +11,8 @@ CREATE DATABASE IF NOT EXISTS easypos
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_general_ci;
 
+USE easypos;
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "-04:00";
@@ -20,10 +22,6 @@ SET time_zone = "-04:00";
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
-
---
--- Database: `easypos`
---
 
 -- --------------------------------------------------------
 

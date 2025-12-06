@@ -368,7 +368,7 @@ if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
                                     <span>Entrada Inventario</span>
                                 </label>
                                 <label>
-                                    <input type="checkbox" name="permisos[salida-inventario]" id="Salida-inventario">
+                                    <input type="checkbox" name="permisos[salida-inventario]" id="salida-inventario">
                                     <span>Salida Inventario</span>
                                 </label>
                             </div>

@@ -10,7 +10,7 @@ if (!$conn || !$conn->connect_errno === 0) {
         "error" => "Error de conexión a la base de datos",
         "error_code" => "DATABASE_CONNECTION_ERROR"
     ]));
-} // Conexión a la base de datos
+}
 require_once '../../../core/verificar-sesion.php'; // Verificar Session
 
 // Validar permisos de usuario
@@ -19,106 +19,116 @@ $permiso_necesario = 'EMP001';
 $id_empleado = $_SESSION['idEmpleado'];
 if (!validarPermiso($conn, $permiso_necesario, $id_empleado)) {
     header('location: ../errors/403.html');
-        
     exit(); 
 }
 
-// Inicializar la variable de búsqueda
-$busqueda = '';
-if (isset($_GET['busqueda'])) {
-    $busqueda = trim($_GET['busqueda']);
-}
+// Inicializar variables de búsqueda y filtros
+$search = isset($_GET['search']) ? trim($_GET['search']) : "";
+$filtro_puesto = isset($_GET['puesto']) ? trim($_GET['puesto']) : "";
+$filtro_estado = isset($_GET['estado']) ? trim($_GET['estado']) : "";
+$filtros = array();
 
-// Obtener la lista de empleados con filtro de búsqueda si existe
-$sql = "SELECT e.id, e.nombre, e.apellido, e.tipo_identificacion, e.identificacion, e.telefono, p.descripcion AS puesto , e.activo
+// Construir consulta SQL base
+$sql = "SELECT e.id, e.nombre, e.apellido, e.tipo_identificacion, e.identificacion, 
+        e.telefono, p.descripcion AS puesto, e.idPuesto, e.activo
         FROM empleados e 
-        JOIN empleados_puestos p ON e.idPuesto = p.id 
+        LEFT JOIN empleados_puestos p ON e.idPuesto = p.id 
         WHERE 1=1";
 
-// Agregar condición de búsqueda si se proporcionó un término
-if (!empty($busqueda)) {
-    $busqueda = '%' . $busqueda . '%';
-    $sql .= " AND (e.nombre LIKE ? OR e.apellido LIKE ? OR e.identificacion LIKE ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sss", $busqueda, $busqueda, $busqueda);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-} else {
-    $resultado = $conn->query($sql);
+$params = [];
+$types = "";
+
+// Filtro de búsqueda general (nombre, apellido, identificación, teléfono)
+if (!empty($search)) {
+    $sql .= " AND (e.nombre LIKE ? OR e.apellido LIKE ? OR CONCAT(e.nombre, ' ', e.apellido) LIKE ? OR e.identificacion LIKE ? OR e.telefono LIKE ?)";
+    $search_param = "%$search%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $types .= "sssss";
+    $filtros['search'] = $search;
 }
 
-// Obtener los datos del empleado a editar (si se ha hecho clic en "Modificar")
-$empleado_editar = null;
-if (isset($_GET['editar'])) {
-    $id_editar = intval($_GET['editar']);
-    $sql_editar = "SELECT e.*, p.descripcion AS puesto 
-                   FROM empleados e 
-                   JOIN empleados_puestos p ON e.idPuesto = p.id 
-                   WHERE e.id = $id_editar";
-    $resultado_editar = $conn->query($sql_editar);
-    if ($resultado_editar->num_rows > 0) {
-        $empleado_editar = $resultado_editar->fetch_assoc();
+// Filtro por puesto
+if (!empty($filtro_puesto)) {
+    $sql .= " AND e.idPuesto = ?";
+    $params[] = $filtro_puesto;
+    $types .= "i";
+    $filtros['puesto'] = $filtro_puesto;
+}
+
+// Filtro por estado
+if ($filtro_estado !== "") {
+    $sql .= " AND e.activo = ?";
+    $params[] = $filtro_estado;
+    $types .= "i";
+    $filtros['estado'] = $filtro_estado;
+}
+
+$sql .= " ORDER BY e.nombre ASC";
+
+// Ejecutar consulta
+if (!empty($params)) {
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+    
+    // Para vista móvil
+    $stmt_mobile = $conn->prepare($sql);
+    $stmt_mobile->bind_param($types, ...$params);
+    $stmt_mobile->execute();
+    $resultado_mobile = $stmt_mobile->get_result();
+} else {
+    $resultado = $conn->query($sql);
+    $resultado_mobile = $conn->query($sql);
+}
+
+$total_registros = $resultado->num_rows;
+
+// Función para construir URL con filtros
+function construirQueryFiltros($filtros) {
+    $query = '';
+    foreach ($filtros as $key => $value) {
+        if (!empty($value) || $value === '0') {
+            $query .= "&{$key}=" . urlencode($value);
+        }
     }
+    return $query;
+}
+
+// Obtener puestos de empleados
+$query_puestos = "SELECT id, descripcion FROM empleados_puestos ORDER BY descripcion ASC";
+$result_puestos = $conn->query($query_puestos);
+
+if (!$result_puestos) {
+    die("Error en consulta de puestos: " . $conn->error);
+}
+
+$puestos_empleados = [];
+while ($row_puesto = $result_puestos->fetch_assoc()) {
+    $puestos_empleados[] = $row_puesto;
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Empleados</title>
     <link rel="icon" href="../../assets/img/logo-ico.ico" type="image/x-icon">
-    <link rel="stylesheet" href="../../assets/css/menu.css"> <!-- CSS menu -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Importación de iconos -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Librería para alertas -->
+    <link rel="stylesheet" href="../../assets/css/menu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-
-        body{
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f5f6fa;
         }
 
-        /* Estilos para el formulario de búsqueda */
-        .emp_search-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .emp_search-input-container {
-        display: flex;
-        flex: 1;
-        min-width: 0; /* Permite que el contenedor se encoja si es necesario */
-        }
-
-        .emp_search-input {
-            flex-grow: 1;
-        padding: 0.5rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.375rem 0 0 0.375rem;
-        font-size: 0.875rem;
-        border-right: none;
-        }
-
-        .emp_search-button {
-            padding: 0.5rem 1rem;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: nowrap;
-        }
-
-        .emp_search-button:hover {
-            background-color: #2563eb;
-        }
-
-        /* Estilos específicos para la tabla de empleados - con prefijo emp_ para evitar conflictos */
         .emp_general-container {
             margin: 0 auto;
             padding: 1rem;
@@ -126,7 +136,6 @@ if (isset($_GET['editar'])) {
             overflow: auto;
         }
 
-        /* Header Styles */
         .emp_header {
             margin-bottom: 1.5rem;
             text-align: left;
@@ -138,6 +147,155 @@ if (isset($_GET['editar'])) {
             margin-bottom: 1rem;
             text-align: left;
             color: #333;
+        }
+
+        .emp_header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .emp_header h1 {
+            margin-bottom: 0;
+        }
+
+        .emp_new-button {
+            padding: 0.5rem 1rem;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .emp_new-button:hover {
+            background-color: #059669;
+        }
+
+        /* Estilos para los filtros */
+        .filters-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .filter-group select,
+        .filter-group input[type="text"] {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background-color: white;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        .filter-group select {
+            cursor: pointer;
+        }
+
+        .filter-group select:focus,
+        .filter-group input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .filter-group .search-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .filters-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .btn-filter {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-filter-apply {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-filter-apply:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-filter-clear {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-filter-clear:hover {
+            background-color: #e5e7eb;
+        }
+
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background-color: #dbeafe;
+            color: #1e40af;
+            border-radius: 9999px;
+            font-size: 0.813rem;
+        }
+
+        .filter-tag button {
+            background: none;
+            border: none;
+            color: #1e40af;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
         }
 
         /* Desktop Table Styles */
@@ -252,78 +410,26 @@ if (isset($_GET['editar'])) {
             background-color: #2563eb;
         }
 
-        .emp_header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .emp_results-count {
+            margin-top: 0.5rem;
             margin-bottom: 1rem;
-        }
-
-        .emp_header h1 {
-            margin-bottom: 0; /* Anulamos el margen inferior existente */
-        }
-
-        .emp_new-button {
-            padding: 0.5rem 1rem;
-            background-color: #10b981;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
             font-size: 0.875rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+            color: #64748b;
         }
 
-        .emp_new-button:hover {
-            background-color: #059669;
-        }
-
-
-        /* Estilos responsivos */
-        /*manipulacion para que se quede siempre de lado al input*/
         @media (max-width: 768px) {
-            .emp_search-container {
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-actions {
                 flex-direction: column;
-                align-items: stretch;
             }
 
-            .emp_search-form {
+            .btn-filter {
                 width: 100%;
-                flex-direction: row;
-                gap: 10px;
             }
 
-            .emp_search-button,
-            .emp_new-button {
-                width: auto;
-                text-align: center;
-            }
-        }
-        /*manipulacion para que se quede siempre de lado al input*/
-        @media (max-width: 480px) {
-            .emp_search-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .emp_search-form {
-                width: 100%;
-                flex-direction: row;
-                gap: 10px;
-            }
-
-            .emp_search-button,
-            .emp_new-button {
-                width: auto;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
             .emp_header-top {
                 flex-direction: column;
                 align-items: flex-start;
@@ -333,160 +439,7 @@ if (isset($_GET['editar'])) {
             .emp_new-button {
                 align-self: flex-end;
             }
-        }
 
-        /* Modal Styles - More compact and responsive */
-        .emp_modal {
-            display: <?php echo ($empleado_editar ? 'flex' : 'none'); ?>;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 1rem;
-        }
-
-        .emp_modal-content {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 95%;
-            max-width: 600px; /* Reduced from 800px for a more compact look */
-            padding: 1.25rem; /* Reduced padding */
-            animation: emp_modalFadeIn 0.3s ease;
-            max-height: 85vh; /* Slightly reduced height */
-            overflow-y: auto;
-        }
-
-        @keyframes emp_modalFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .emp_modal h2 {
-            font-size: 1.125rem; /* Slightly smaller font */
-            font-weight: 600;
-            margin-bottom: 1rem; /* Reduced margin */
-            color: #333;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 0.5rem; /* Reduced padding */
-        }
-
-        .emp_form-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.75rem; /* Reduced gap */
-        }
-
-        @media (min-width: 768px) {
-            .emp_form-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem; /* Reduced from 1.5rem */
-            }
-        }
-
-        .emp_form-group {
-            margin-bottom: 0.75rem; /* Reduced margin */
-        }
-
-        .emp_form-group label {
-            display: block;
-            font-size: 0.8125rem; /* Slightly smaller */
-            color: #64748b;
-            margin-bottom: 0.375rem; /* Reduced margin */
-        }
-
-        .emp_form-group input,
-        .emp_form-group select {
-            width: 100%;
-            padding: 0.5rem; /* Reduced padding */
-            border: 1px solid #e2e8f0;
-            border-radius: 0.375rem;
-            font-size: 0.8125rem; /* Slightly smaller */
-            background-color: white;
-        }
-
-        .emp_form-group input:focus,
-        .emp_form-group select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-        }
-
-        .emp_form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem; /* Reduced gap */
-            margin-top: 1rem; /* Reduced margin */
-            grid-column: 1 / -1;
-        }
-
-        .emp_form-actions button {
-            padding: 0.5rem 0.875rem; /* Reduced padding */
-            border-radius: 0.375rem;
-            font-size: 0.8125rem; /* Slightly smaller */
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .emp_form-actions button[type="submit"] {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-        }
-
-        .emp_form-actions button[type="submit"]:hover {
-            background-color: #2563eb;
-        }
-
-        .emp_form-actions button[type="button"] {
-            background-color: #f1f5f9;
-            color: #64748b;
-            border: 1px solid #e2e8f0;
-        }
-
-        .emp_form-actions button[type="button"]:hover {
-            background-color: #e2e8f0;
-        }
-
-        /* Enhanced Mobile Responsiveness */
-        @media (max-width: 640px) {
-            .emp_modal-content {
-                width: 95%;
-                padding: 1rem;
-                max-width: none;
-            }
-            
-            .emp_form-group input,
-            .emp_form-group select {
-                padding: 0.5rem;
-                font-size: 16px; /* Prevent zoom on mobile */
-            }
-            
-            .emp_form-actions {
-                flex-direction: column-reverse;
-                width: 100%;
-            }
-            
-            .emp_form-actions button {
-                width: 100%;
-                padding: 0.625rem;
-                margin-bottom: 0.5rem;
-            }
-        }
-
-        /* Improved table responsiveness */
-        @media (max-width: 768px) {
             .emp_desktop-view {
                 display: none;
             }
@@ -494,46 +447,6 @@ if (isset($_GET['editar'])) {
             .emp_mobile-view {
                 display: block;
             }
-        }
-
-        /* Estilos para el overlay */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 998;
-            display: none;
-        }
-
-        .overlay.active {
-            display: block;
-        }
-
-        /* Estilos para el botón de limpiar búsqueda */
-        .emp_clear-search {
-            padding: 0.5rem 1rem;
-            background-color: #64748b;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .emp_clear-search:hover {
-            background-color: #475569;
-        }
-
-        /* Estilos para el contador de resultados */
-        .emp_results-count {
-            margin-top: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-            color: #64748b;
         }
     </style>
 </head>
@@ -555,15 +468,108 @@ if (isset($_GET['editar'])) {
                             <i class="fas fa-plus"></i> Nuevo Empleado
                         </a>
                     </div>
-                
-                    <!-- Formulario de búsqueda -->
-                    <form action="" method="GET" class="emp_search-form">
-                        
-                        <input type="text" name="busqueda" placeholder="Buscar por nombre o identificación..." class="emp_search-input" value="<?php echo htmlspecialchars($_GET['busqueda'] ?? ''); ?>">
-                        
-                        <button type="submit" class="emp_search-button"><i class="fas fa-search"></i> Buscar</button>
-                
-                    </form>
+
+                    <!-- Sección de filtros -->
+                    <div class="filters-section">
+                        <form method="GET" action="" id="filterForm">
+                            
+                            <div class="filters-grid">
+                                <!-- Filtro por búsqueda general -->
+                                <div class="filter-group">
+                                    <label for="search">Buscar Empleado</label>
+                                    <div class="search-input-wrapper">
+                                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.3-4.3"></path>
+                                        </svg>
+                                        <input 
+                                            type="text" 
+                                            id="search" 
+                                            name="search" 
+                                            value="<?php echo htmlspecialchars($search ?? ''); ?>" 
+                                            placeholder="Nombre, apellido, identificación..."
+                                            autocomplete="off"
+                                            style="padding-left: 35px;"
+                                        >
+                                    </div>
+                                </div>
+
+                                <!-- Filtro por puesto -->
+                                <div class="filter-group">
+                                    <label for="puesto">Puesto</label>
+                                    <select name="puesto" id="puesto">
+                                        <option value="">Todos los puestos</option>
+                                        <?php foreach ($puestos_empleados as $puesto): ?>
+                                            <option value="<?php echo $puesto['id']; ?>" 
+                                                <?php echo ($filtro_puesto == $puesto['id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($puesto['descripcion']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <!-- Filtro por estado -->
+                                <div class="filter-group">
+                                    <label for="estado">Estado</label>
+                                    <select name="estado" id="estado">
+                                        <option value="">Todos los estados</option>
+                                        <option value="1" <?php echo ($filtro_estado === '1') ? 'selected' : ''; ?>>Activo</option>
+                                        <option value="0" <?php echo ($filtro_estado === '0') ? 'selected' : ''; ?>>Inactivo</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filters-actions">
+                                <button type="button" class="btn-filter btn-filter-clear" onclick="limpiarFiltros()">
+                                    <i class="fas fa-times"></i> Limpiar filtros
+                                </button>
+                                <button type="submit" class="btn-filter btn-filter-apply">
+                                    <i class="fas fa-filter"></i> Aplicar filtros
+                                </button>
+                            </div>
+
+                            <!-- Mostrar filtros activos -->
+                            <?php if (!empty($filtros)): ?>
+                            <div class="active-filters">
+                                <?php if (!empty($search)): ?>
+                                    <span class="filter-tag">
+                                        Búsqueda: "<?php echo htmlspecialchars($search); ?>"
+                                        <button type="button" onclick="removerFiltro('search')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($filtro_puesto)): ?>
+                                    <?php 
+                                    $puesto_nombre = '';
+                                    foreach ($puestos_empleados as $puesto) {
+                                        if ($puesto['id'] == $filtro_puesto) {
+                                            $puesto_nombre = $puesto['descripcion'];
+                                            break;
+                                        }
+                                    }
+                                    ?>
+                                    <span class="filter-tag">
+                                        Puesto: <?php echo htmlspecialchars($puesto_nombre); ?>
+                                        <button type="button" onclick="removerFiltro('puesto')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                <?php endif; ?>
+                                
+                                <?php if ($filtro_estado !== ""): ?>
+                                    <span class="filter-tag">
+                                        Estado: <?php echo $filtro_estado === '1' ? 'Activo' : 'Inactivo'; ?>
+                                        <button type="button" onclick="removerFiltro('estado')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                        </form>
+                    </div>
                 </div>
             
                 <!-- Vista de Escritorio -->
@@ -592,17 +598,7 @@ if (isset($_GET['editar'])) {
                                             <td><?php echo htmlspecialchars($fila['identificacion']); ?></td>
                                             <td><?php echo htmlspecialchars($fila['telefono']); ?></td>
                                             <td><?php echo htmlspecialchars($fila['puesto']); ?></td>
-                                            
-                                            <?php 
-                                                if($fila['activo'] == 1){
-                                                    $var = "Activo";
-                                                } else {
-                                                    $var = "Inactivo";
-                                                }
-                                            ?>
-
-                                            <td><?php echo htmlspecialchars($var) ?></td>
-
+                                            <td><?php echo $fila['activo'] == 1 ? 'Activo' : 'Inactivo'; ?></td>
                                             <td>
                                                 <a href="empleados-editar.php?id=<?php echo $fila['id']; ?>" class="emp_btn-edit">Modificar</a>
                                             </td>
@@ -610,7 +606,7 @@ if (isset($_GET['editar'])) {
                                     <?php endwhile; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="7">No hay empleados registrados<?php echo !empty($busqueda) ? ' que coincidan con la búsqueda.' : '.'; ?></td>
+                                        <td colspan="8" style="text-align: center;">No se encontraron empleados con los criterios seleccionados</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -620,11 +616,10 @@ if (isset($_GET['editar'])) {
             
                 <!-- Vista Móvil -->
                 <div class="emp_mobile-view">
-                    <?php if ($resultado && $resultado->num_rows > 0): ?>
+                    <?php if ($resultado_mobile && $resultado_mobile->num_rows > 0): ?>
                         <?php 
-                        // Reiniciar el puntero del resultado para la vista móvil
-                        $resultado->data_seek(0);
-                        while ($fila = $resultado->fetch_assoc()): 
+                        $resultado_mobile->data_seek(0);
+                        while ($fila = $resultado_mobile->fetch_assoc()): 
                         ?>
                             <div class="emp_mobile-card">
                                 <div class="emp_mobile-card-header">
@@ -649,21 +644,14 @@ if (isset($_GET['editar'])) {
                                     </div>
                                     <div class="emp_mobile-card-item">
                                         <span class="emp_mobile-card-label">Estado</span>
-                                        <?php 
-                                            if($fila['activo'] == 1){
-                                                $var = "Activo";
-                                            } else {
-                                                $var = "Inactivo";
-                                            }
-                                        ?>
-                                        <span class="emp_mobile-card-value"><?php echo htmlspecialchars($var); ?></span>
+                                        <span class="emp_mobile-card-value"><?php echo $fila['activo'] == 1 ? 'Activo' : 'Inactivo'; ?></span>
                                     </div>
                                 </div>
                             </div>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <div class="emp_mobile-card">
-                            <p>No hay empleados registrados<?php echo !empty($busqueda) ? ' que coincidan con la búsqueda.' : '.'; ?></p>
+                            <p>No se encontraron empleados con los criterios seleccionados</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -675,7 +663,6 @@ if (isset($_GET['editar'])) {
 
     <!-- Script para mostrar mensajes de éxito o error -->
     <?php if (isset($_SESSION['success_message'])): ?>
-
         <script>
             Swal.fire({
                 icon: 'success',
@@ -685,11 +672,9 @@ if (isset($_GET['editar'])) {
             });
             <?php unset($_SESSION['success_message']); ?>
         </script>
-
     <?php endif; ?>
 
     <?php if (isset($_SESSION['error_message'])): ?>
-
         <script>
             Swal.fire({
                 icon: 'error',
@@ -699,8 +684,20 @@ if (isset($_GET['editar'])) {
             });
             <?php unset($_SESSION['error_message']); ?>
         </script>
-
     <?php endif; ?>
+
+    <script>
+        // Funciones para manejar filtros
+        function limpiarFiltros() {
+            window.location.href = 'empleados.php';
+        }
+
+        function removerFiltro(filtro) {
+            const url = new URL(window.location);
+            url.searchParams.delete(filtro);
+            window.location.href = url.toString();
+        }
+    </script>
 
 </body>
 </html>
